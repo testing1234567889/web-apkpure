@@ -1159,6 +1159,7 @@
 
           <div class="reviewForm">
             <div class="rateStars" id="rateStars"></div>
+<div class="hint" id="selectedLabel">Belum memilih rating</div>
 
             <textarea id="commentBox" placeholder="Tulis ulasan kamu (opsional)..."></textarea>
 
@@ -1260,132 +1261,142 @@
 
     // ===== Review UI =====
     function setupReviewUI(appId){
-      const rateStarsEl = document.getElementById("rateStars");
-      const commentBox = document.getElementById("commentBox");
-      const submitBtn = document.getElementById("submitReviewBtn");
-      const loginReviewBtn = document.getElementById("reviewLoginBtn");
-      const hintEl = document.getElementById("reviewHint");
-      const charInfo = document.getElementById("charInfo");
+  const rateStarsEl = document.getElementById("rateStars");
+  const commentBox = document.getElementById("commentBox");
+  const submitBtn = document.getElementById("submitReviewBtn");
+  const loginReviewBtn = document.getElementById("reviewLoginBtn");
+  const hintEl = document.getElementById("reviewHint");
+  const charInfo = document.getElementById("charInfo");
+  const selectedLabel = document.getElementById("selectedLabel");
 
-      let selectedStars = 0;     // ini yang dipilih user (belum terkirim)
-      let hoverStars = 0;        // warna saat hover
-      let hasExisting = false;   // sudah pernah review?
+  let selectedStars = 0;     // ✅ hanya berubah saat klik/tap
+  const MAX_LEN = 500;
 
-      const MAX_LEN = 500;
+  function updateSelectedLabel(){
+    if (!selectedLabel) return;
+    selectedLabel.textContent = selectedStars
+      ? `Rating dipilih: ${selectedStars}/5`
+      : "Belum memilih rating";
+  }
 
-      function updateCharInfo(){
-        const len = (commentBox.value || "").length;
-        charInfo.textContent = ` • ${len}/${MAX_LEN}`;
-        if (len > MAX_LEN){
-          charInfo.classList.add("danger");
-          charInfo.textContent = ` • ${len}/${MAX_LEN} (kepanjangan)`;
-        } else {
-          charInfo.classList.remove("danger");
-        }
-      }
-
-      function renderStars(){
-        rateStarsEl.innerHTML = "";
-        const show = hoverStars || selectedStars;
-        for (let i=1;i<=5;i++){
-          const btn = document.createElement("button");
-          btn.type = "button";
-          btn.className = "starBtn";
-          btn.innerHTML = starSvg(i <= show);
-          btn.onmouseenter = () => { hoverStars = i; renderStars(); };
-          btn.onmouseleave = () => { hoverStars = 0; renderStars(); };
-          btn.onclick = () => { selectedStars = i; renderStars(); };
-          rateStarsEl.appendChild(btn);
-        }
-      }
-
-      async function loadMyExistingReview(){
-        if (!currentUser){
-          hasExisting = false;
-          selectedStars = 0;
-          commentBox.value = "";
-          submitBtn.textContent = "Kirim";
-          hintEl.textContent = "Login untuk memberi ulasan.";
-          loginReviewBtn.style.display = "inline-flex";
-          renderStars();
-          updateCharInfo();
-          return;
-        }
-
-        loginReviewBtn.style.display = "none";
-        hintEl.textContent = "Pilih bintang, tulis ulasan, lalu klik Kirim.";
-
-        const mine = await getMyReview(appId);
-        if (mine){
-          hasExisting = true;
-          selectedStars = Number(mine.stars || 0);
-          commentBox.value = String(mine.comment || "");
-          submitBtn.textContent = "Perbarui";
-          hintEl.textContent = `Ulasan kamu terakhir diupdate: ${timeAgo(mine.updatedAt)}`;
-        } else {
-          hasExisting = false;
-          selectedStars = 0;
-          commentBox.value = "";
-          submitBtn.textContent = "Kirim";
-        }
-        renderStars();
-        updateCharInfo();
-      }
-
-      loginReviewBtn.onclick = async () => {
-        try{
-          await signInWithPopup(auth, provider);
-          toast("Login berhasil!");
-          await loadMyExistingReview();
-        } catch (e){
-          toast("Login gagal. Cek Authorized domains.");
-          console.error(e);
-        }
-      };
-
-      commentBox.addEventListener("input", updateCharInfo);
-
-      submitBtn.onclick = async () => {
-        if (!currentUser){
-          toast("Login dulu untuk ulasan.");
-          loginReviewBtn.style.display = "inline-flex";
-          return;
-        }
-        if (selectedStars < 1 || selectedStars > 5){
-          toast("Pilih rating 1–5 bintang dulu.");
-          return;
-        }
-        const comment = (commentBox.value || "").trim();
-        if (comment.length > MAX_LEN){
-          toast("Komentar terlalu panjang (max 500).");
-          return;
-        }
-
-        try{
-          await submitReview(appId, selectedStars, comment);
-          submitBtn.textContent = "Perbarui";
-          hintEl.textContent = "Ulasan tersimpan. Kamu bisa perbarui kapan saja.";
-          // refresh list display (apps listener akan update juga)
-          renderReviewsList(appId);
-        } catch (e){
-          toast("Gagal menyimpan ulasan.");
-          console.error(e);
-        }
-      };
-
-      renderStars();
-      updateCharInfo();
-      loadMyExistingReview();
-
-      // Jika user login/logout saat modal terbuka, reload review form
-      const unsub = onAuthStateChanged(auth, async () => {
-        if (currentAppId === appId){
-          await loadMyExistingReview();
-        }
-      });
-      // simpan unsub untuk close? (tidak wajib untuk demo; kecil)
-      setupReviewUI._unsub = unsub;
+  function updateCharInfo(){
+    const len = (commentBox.value || "").length;
+    if (!charInfo) return;
+    charInfo.textContent = ` • ${len}/${MAX_LEN}`;
+    if (len > MAX_LEN){
+      charInfo.classList.add("danger");
+      charInfo.textContent = ` • ${len}/${MAX_LEN} (kepanjangan)`;
+    } else {
+      charInfo.classList.remove("danger");
     }
+  }
+
+  function renderStars(){
+    rateStarsEl.innerHTML = "";
+    for (let i=1;i<=5;i++){
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "starBtn";
+      btn.innerHTML = starSvg(i <= selectedStars);
+
+      // ✅ pointerdown biar di HP sekali tap langsung kepilih
+      btn.onpointerdown = (e) => {
+        e.preventDefault();
+        selectedStars = i;
+        renderStars();
+        updateSelectedLabel();
+      };
+
+      rateStarsEl.appendChild(btn);
+    }
+  }
+
+  async function loadMyExistingReview(){
+    if (!currentUser){
+      selectedStars = 0;
+      commentBox.value = "";
+      submitBtn.textContent = "Kirim";
+      hintEl.textContent = "Login untuk memberi ulasan.";
+      loginReviewBtn.style.display = "inline-flex";
+      renderStars();
+      updateSelectedLabel();
+      updateCharInfo();
+      return;
+    }
+
+    loginReviewBtn.style.display = "none";
+    hintEl.textContent = "Pilih bintang, tulis ulasan, lalu klik Kirim.";
+
+    const mine = await getMyReview(appId);
+    if (mine){
+      selectedStars = Number(mine.stars || 0);
+      commentBox.value = String(mine.comment || "");
+      submitBtn.textContent = "Perbarui";
+      hintEl.textContent = `Ulasan kamu terakhir diupdate: ${timeAgo(mine.updatedAt)}`;
+    } else {
+      selectedStars = 0;
+      commentBox.value = "";
+      submitBtn.textContent = "Kirim";
+    }
+
+    renderStars();
+    updateSelectedLabel();
+    updateCharInfo();
+  }
+
+  loginReviewBtn.onclick = async () => {
+    try{
+      await signInWithPopup(auth, provider);
+      toast("Login berhasil!");
+      await loadMyExistingReview();
+    } catch (e){
+      toast("Login gagal. Cek Authorized domains.");
+      console.error(e);
+    }
+  };
+
+  commentBox.addEventListener("input", updateCharInfo);
+
+  submitBtn.onclick = async () => {
+    if (!currentUser){
+      toast("Login dulu untuk ulasan.");
+      loginReviewBtn.style.display = "inline-flex";
+      return;
+    }
+    if (selectedStars < 1 || selectedStars > 5){
+      toast("Pilih rating 1–5 bintang dulu (klik bintangnya).");
+      return;
+    }
+    const comment = (commentBox.value || "").trim();
+    if (comment.length > MAX_LEN){
+      toast("Komentar terlalu panjang (max 500).");
+      return;
+    }
+
+    try{
+      await submitReview(appId, selectedStars, comment);
+      submitBtn.textContent = "Perbarui";
+      hintEl.textContent = "Ulasan tersimpan. Kamu bisa perbarui kapan saja.";
+      renderReviewsList(appId);
+    } catch (e){
+      toast("Gagal menyimpan ulasan.");
+      console.error(e);
+    }
+  };
+
+  renderStars();
+  updateSelectedLabel();
+  updateCharInfo();
+  loadMyExistingReview();
+
+  // kalau login/logout saat modal terbuka, refresh form
+  onAuthStateChanged(auth, async () => {
+    if (currentAppId === appId){
+      await loadMyExistingReview();
+    }
+  });
+}
+
 
     function renderReviewsList(appId){
       const a = allApps.find(x => x.id === appId);
