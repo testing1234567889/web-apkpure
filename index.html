@@ -860,6 +860,15 @@
     .stat .k{color:var(--muted);font-size:12px;}
     .stat .v{margin-top:4px;font-weight:1000;font-size:16px;}
 
+    .stat .v.copyable{
+      display:inline-block;
+      cursor:pointer;
+      user-select:none;
+      text-decoration: underline dotted rgba(100,116,139,.55);
+      text-underline-offset: 3px;
+    }
+    .stat .v.copyable:active{transform:scale(.99);}
+
     .cardList{
       border: 1px solid rgba(229,231,235,.85);
       border-radius: 22px;
@@ -1117,6 +1126,33 @@
       toastEl._t = setTimeout(()=>toastEl.style.display="none", 1900);
     }
 
+        async function copyToClipboard(text){
+          // Clipboard API (secure context), dengan fallback untuk browser/file lama
+          try{
+            if (navigator.clipboard && window.isSecureContext){
+              await navigator.clipboard.writeText(String(text));
+              return true;
+            }
+          } catch(e){}
+          try{
+            const ta = document.createElement("textarea");
+            ta.value = String(text);
+            ta.setAttribute("readonly","");
+            ta.style.position = "fixed";
+            ta.style.left = "-9999px";
+            ta.style.top = "0";
+            document.body.appendChild(ta);
+            ta.select();
+            ta.setSelectionRange(0, ta.value.length);
+            const ok = document.execCommand("copy");
+            document.body.removeChild(ta);
+            return !!ok;
+          } catch(e){
+            return false;
+          }
+        }
+    
+    
     function openDialog(title, html){
       // Pastikan tidak ketutup overlay preview/detail
       if (overlay.classList.contains("show")) closeDetail();
@@ -1835,7 +1871,7 @@
 
             <div class="profileStats">
               <div class="stat"><div class="k">Whitelist</div><div class="v">${wItems.length}</div></div>
-              <div class="stat"><div class="k">UID</div><div class="v" title="${escapeHtml(currentUser.uid)}">${escapeHtml(currentUser.uid).slice(0,8)}…</div></div>
+              <div class="stat"><div class="k">UID</div><div class="v copyable" id="uidCopy" title="Klik untuk menyalin UID">${escapeHtml(currentUser.uid).slice(0,8)}…</div></div>
             </div>
           </div>
         </div>
@@ -1848,47 +1884,65 @@
           <div class="cardListBody" id="wlBody"></div>
         </div>
 
+        
+                ${isAdminUid(currentUser.uid) ? `
+        
         <div class="cardList">
-          <div class="cardListHead"><h3>Tentang</h3><span class="pill">v1</span></div>
-          <div class="cardListBody">
-            <div class="settingRow" id="howData">
-              <div class="settingLeft">
-                <div class="settingIcon">🧩</div>
-                <div class="settingText">
-                  <div class="settingTitle">Struktur data <span class="chevMini">›</span></div>
-                  <div class="settingDesc">apps/{appId} + reviews/{uid} + whitelist</div>
-                </div>
-              </div>
-              
-            </div>
+                  <div class="cardListHead"><h3>Admin</h3><span class="pill">v1</span></div>
+                  <div class="cardListBody">
+                    <div class="settingRow" id="howData">
+                      <div class="settingLeft">
+                        <div class="settingIcon">🧩</div>
+                        <div class="settingText">
+                          <div class="settingTitle">Struktur data <span class="chevMini">›</span></div>
+                          <div class="settingDesc">apps/{appId} + reviews/{uid} + whitelist</div>
+                        </div>
+                      </div>
+                    </div>
 
-            <div class="settingRow" id="rulesTip">
-              <div class="settingLeft">
-                <div class="settingIcon">🛡️</div>
-                <div class="settingText">
-                  <div class="settingTitle">Keamanan <span class="chevMini">›</span></div>
-                  <div class="settingDesc">Rules: auth.uid == $uid (review & whitelist)</div>
-                </div>
-              </div>
-              
-            </div>
+                    <div class="settingRow" id="rulesTip">
+                      <div class="settingLeft">
+                        <div class="settingIcon">🛡️</div>
+                        <div class="settingText">
+                          <div class="settingTitle">Keamanan <span class="chevMini">›</span></div>
+                          <div class="settingDesc">Rules: auth.uid == $uid (review & whitelist)</div>
+                        </div>
+                      </div>
+                    </div>
 
-            <div class="settingRow" id="logoutRow">
-              <div class="settingLeft">
-                <div class="settingIcon">🚪</div>
-                <div class="settingText">
-                  <div class="settingTitle">Logout <span class="chevMini">›</span></div>
-                  <div class="settingDesc">Keluar dari akun Google</div>
+                    <div class="settingRow" id="logoutRow">
+                      <div class="settingLeft">
+                        <div class="settingIcon">🚪</div>
+                        <div class="settingText">
+                          <div class="settingTitle">Logout <span class="chevMini">›</span></div>
+                          <div class="settingDesc">Keluar dari akun Google</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-              </div>
-              
-            </div>
-          </div>
-        </div>
+                ` : `
+        
+        <div class="cardList">
+                  <div class="cardListHead"><h3>Akun</h3><span class="pill">Login</span></div>
+                  <div class="cardListBody">
+                    <div class="settingRow" id="logoutRow">
+                      <div class="settingLeft">
+                        <div class="settingIcon">🚪</div>
+                        <div class="settingText">
+                          <div class="settingTitle">Logout <span class="chevMini">›</span></div>
+                          <div class="settingDesc">Keluar dari akun Google</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                `}
       `;
       contentEl.appendChild(shell);
 
-      shell.querySelector("#howData").onclick = ()=>{
+      const howDataRow = shell.querySelector("#howData");
+      if (howDataRow) howDataRow.onclick = ()=>{
         openDialog("Struktur data", `
           <div class="panel">
             <div class="panelHead"><h3>Struktur data</h3></div>
@@ -1905,7 +1959,8 @@
         `);
       };
 
-      shell.querySelector("#rulesTip").onclick = ()=>{
+      const rulesTipRow = shell.querySelector("#rulesTip");
+      if (rulesTipRow) rulesTipRow.onclick = ()=>{
         openDialog("Keamanan", `
           <div class="panel">
             <div class="panelHead"><h3>Keamanan</h3></div>
@@ -1925,6 +1980,22 @@
       };
 
       shell.querySelector("#logoutRow").onclick = ()=>confirmLogout();
+
+
+      // Tap UID untuk auto-copy (tanpa tombol)
+      const uidCopyEl = shell.querySelector("#uidCopy");
+      if (uidCopyEl){
+        uidCopyEl.onclick = async ()=>{
+          const ok = await copyToClipboard(currentUser.uid);
+          if (ok){
+            toast("UID disalin.");
+            try{ navigator.vibrate?.(18); }catch{}
+          } else {
+            toast("Gagal menyalin UID.");
+          }
+        };
+      }
+
 
       const wlBody = shell.querySelector("#wlBody");
       if (!wItems.length){
