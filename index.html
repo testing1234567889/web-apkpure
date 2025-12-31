@@ -531,40 +531,6 @@
       box-shadow: 0 0 0 4px rgba(26,115,232,.10);
     }
 
-    /* Top category nav (TOP page) */
-    .topControls{
-      margin-left:auto;
-      display:flex;
-      gap:10px;
-      align-items:center;
-      flex-wrap:wrap;
-      justify-content:flex-end;
-    }
-    .catNav{
-      display:flex;
-      gap:8px;
-      align-items:center;
-      flex-wrap:wrap;
-    }
-    .catBtn{
-      height: 40px;
-      border-radius: 999px;
-      border: 1px solid var(--line);
-      background: #fff;
-      padding: 0 14px;
-      cursor: pointer;
-      font-weight: 1000;
-      font-size: 13px;
-      color: var(--text);
-      outline:none;
-    }
-    .catBtn.active{
-      background: var(--brand);
-      border-color: var(--brand);
-      color:#fff;
-    }
-
-
     .btn svg{width:18px;height:18px}
     .btn.primary{
       background: var(--brand);border-color: transparent;color:#fff;
@@ -1046,7 +1012,6 @@
     </div>
   </div>
 
-
   <div id="toast" style="
     position:fixed;left:50%;bottom:calc(var(--navH) + 18px + var(--safeB));transform:translateX(-50%);
     background:rgba(2,6,23,.92);color:#fff;padding:10px 12px;border-radius:999px;
@@ -1335,7 +1300,6 @@
       tab: "apps",      // apps|games
       page: "home",     // home|top|profile
       query: "",
-      category: "",  // "" = Semua (filter kategori di halaman Top)
       sort: "popular"   // popular|rating|latest (ONLY on Top page)
     };
 
@@ -1437,7 +1401,6 @@
       const tab = e.target?.dataset?.tab;
       if (!tab) return;
       state.tab = tab;
-      state.category = "";
       // keep current page (home/top/profile) when switching tab
       // so switching Apps/Game does not force back to Home.
       setActiveTabs();
@@ -1450,7 +1413,6 @@
     document.querySelectorAll(".navBtn").forEach(btn=>{
       btn.addEventListener("click", ()=>{
         state.page = btn.dataset.page;
-        if (state.page === "top") state.category = "";
         setActiveNav();
         updateHeaderVisibility();
         render();
@@ -1694,7 +1656,6 @@
       contentEl.appendChild(bannerSec);
       bannerSec.querySelector("#goTopBtn").onclick = ()=>{
         state.page = "top";
-        state.category = "";
         setActiveNav();
         updateHeaderVisibility();
         render();
@@ -1707,7 +1668,6 @@
         if (!items.length) continue;
         contentEl.appendChild(sectionBlock(c, items.slice(0, 12), ()=>{
           state.page = "top";
-          state.category = c;
           setActiveNav();
           updateHeaderVisibility();
           render();
@@ -1716,16 +1676,7 @@
     }
 
     function renderTop(){
-      let apps = filteredApps();
-
-      // kategori (hanya dipakai di halaman Top)
-      const allCats = categoriesForTab();
-      if (state.category && !allCats.includes(state.category)) state.category = "";
-
-      if (state.category){
-        apps = apps.filter(a => (a.category || "Lainnya") === state.category);
-      }
-
+      const apps = filteredApps();
       countPill.textContent = `${apps.length}`;
       contentEl.innerHTML = "";
 
@@ -1733,34 +1684,16 @@
       head.className = "sectionHead";
       head.innerHTML = `
         <div class="sectionTitle">Top ${state.tab === "games" ? "Game" : "Aplikasi"}</div>
-        <div class="topControls">
-          <div class="catNav" id="catNav" aria-label="Kategori"></div>
-          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
-            <div class="pill">Urutkan</div>
-            <select id="sortOnly" class="selectPill" aria-label="Urutkan daftar">
-              <option value="popular">Populer</option>
-              <option value="rating">Rating</option>
-              <option value="latest">Terbaru</option>
-            </select>
-          </div>
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+          <div class="pill">Urutkan</div>
+          <select id="sortOnly" class="selectPill" aria-label="Urutkan daftar">
+            <option value="popular">Populer</option>
+            <option value="rating">Rating</option>
+            <option value="latest">Terbaru</option>
+          </select>
         </div>
       `;
       contentEl.appendChild(head);
-
-      // navigasi kategori (4 tombol: Semua + 3 kategori teratas)
-      const catNav = head.querySelector("#catNav");
-      const navCats = ["Semua", ...allCats.slice(0, 3)];
-      navCats.forEach((c)=>{
-        const btn = document.createElement("button");
-        btn.type = "button";
-        btn.className = "catBtn" + (((c === "Semua" && !state.category) || state.category === c) ? " active" : "");
-        btn.textContent = c;
-        btn.onclick = ()=>{
-          state.category = (c === "Semua") ? "" : c;
-          render();
-        };
-        catNav.appendChild(btn);
-      });
 
       const sortOnly = head.querySelector("#sortOnly");
       sortOnly.value = state.sort;
@@ -1780,7 +1713,9 @@
       contentEl.appendChild(vlist);
     }
 
-function renderProfile(){
+    function appById(id){ return allApps.find(x=>x.id===id); }
+
+    async function renderProfile(){
       contentEl.innerHTML = "";
       countPill.textContent = "";
 
@@ -1806,7 +1741,7 @@ function renderProfile(){
 
               <div class="profileStats">
                 <div class="stat"><div class="k">Whitelist</div><div class="v">0</div></div>
-                
+                <div class="stat"><div class="k">Tab</div><div class="v">${state.tab === "games" ? "Game" : "Aplikasi"}</div></div>
                 
               </div>
             </div>
@@ -1853,7 +1788,7 @@ function renderProfile(){
             <div class="profileStats">
               <div class="stat"><div class="k">Whitelist</div><div class="v">${wItems.length}</div></div>
               <div class="stat"><div class="k">UID</div><div class="v" title="${escapeHtml(currentUser.uid)}">${escapeHtml(currentUser.uid).slice(0,8)}…</div></div>
-              
+              <div class="stat"><div class="k">Tab</div><div class="v">${state.tab === "games" ? "Game" : "Aplikasi"}</div></div>
             </div>
           </div>
         </div>
