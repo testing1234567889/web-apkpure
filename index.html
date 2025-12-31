@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>APK Download</title>
-  <meta name="description" content="Download APK terbaru - cepat, ringan, dan realtime." />
+  <meta name="description" content="Download APK terbaru - cepat, ringan, realtime." />
 
   <style>
     :root{
@@ -94,7 +94,53 @@
       user-select:none;
       white-space:nowrap;
     }
-    .pill:active{transform:scale(.99)}
+
+    .auth{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      flex:0 0 auto;
+    }
+    .auth .btnAuth{
+      border-radius:999px;
+      padding:9px 12px;
+      border:1px solid rgba(255,255,255,.25);
+      background:rgba(255,255,255,.16);
+      color:#fff;
+      font-size:13px;
+      cursor:pointer;
+      font-weight:800;
+      white-space:nowrap;
+    }
+    .auth .btnAuth:hover{filter:brightness(.98)}
+    .auth .btnAuth:active{transform:scale(.99)}
+    .user{
+      display:none;
+      align-items:center;
+      gap:8px;
+      padding:7px 10px;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,.25);
+      background:rgba(255,255,255,.16);
+      white-space:nowrap;
+      max-width:240px;
+    }
+    .avatar{
+      width:26px; height:26px;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,.3);
+      background:rgba(255,255,255,.25);
+      object-fit:cover;
+      flex:0 0 auto;
+    }
+    .user .name{
+      font-size:13px;
+      font-weight:800;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      white-space:nowrap;
+    }
+
     .container{
       max-width:1100px;
       margin:0 auto;
@@ -242,11 +288,12 @@
       display:inline-flex;
       gap:2px;
       transform: translateY(1px);
+      align-items:center;
     }
     .stars svg{width:13px;height:13px}
     .stars .on{fill: #fbbf24}
     .stars .off{fill: #e5e7eb}
-
+    .ratingText{font-weight:800; color:var(--text)}
     .state{
       padding:14px;
       border:1px dashed rgba(100,116,139,.35);
@@ -267,7 +314,7 @@
     }
     .overlay.show{display:block}
     .modal{
-      max-width:820px;
+      max-width:860px;
       margin:40px auto;
       background:var(--card);
       border-radius:18px;
@@ -346,6 +393,10 @@
     .section h3{
       margin:0 0 8px;
       font-size:14px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
     }
     .section p{
       margin:0;
@@ -397,6 +448,33 @@
       flex:0 0 auto;
     }
 
+    /* Rating widget */
+    .rateWrap{
+      display:flex;
+      flex-wrap:wrap;
+      gap:10px;
+      align-items:center;
+      justify-content:space-between;
+    }
+    .rateStars{
+      display:flex;
+      gap:6px;
+      align-items:center;
+    }
+    .rateBtnStar{
+      border:none;
+      background:transparent;
+      cursor:pointer;
+      padding:4px;
+      border-radius:10px;
+    }
+    .rateBtnStar:active{transform:scale(.98)}
+    .rateBtnStar svg{width:26px;height:26px}
+    .rateHint{
+      font-size:12px;
+      color:var(--muted);
+    }
+
     /* Toast */
     .toast{
       position:fixed;
@@ -423,12 +501,10 @@
 </head>
 
 <body>
-  <!-- Top Bar -->
   <div class="topbar">
     <div class="topbar-inner">
       <div class="logo" title="APK Download">
         <div class="logo-badge" aria-hidden="true">
-          <!-- simple icon -->
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
             <path d="M7 7h10v10H7z" stroke="white" stroke-width="2" opacity=".95"/>
             <path d="M9 4h6" stroke="white" stroke-width="2" stroke-linecap="round"/>
@@ -445,15 +521,25 @@
             <path d="M21 21l-4.3-4.3" stroke="white" stroke-width="2" stroke-linecap="round"/>
             <path d="M10.5 18a7.5 7.5 0 1 1 0-15 7.5 7.5 0 0 1 0 15Z" stroke="white" stroke-width="2"/>
           </svg>
-          <input id="q" type="text" placeholder="Cari aplikasi (contoh: capcut, game, editor)..." autocomplete="off"/>
+          <input id="q" type="text" placeholder="Cari aplikasi (capcut, game, editor)..." autocomplete="off"/>
         </div>
         <div id="countPill" class="pill" title="Jumlah aplikasi">0 Apps</div>
+      </div>
+
+      <div class="auth">
+        <button class="btnAuth" id="loginBtn">Login Google</button>
+
+        <div class="user" id="userBox" title="Akun login">
+          <img class="avatar" id="userAvatar" alt="avatar" />
+          <div class="name" id="userName">User</div>
+        </div>
+
+        <button class="btnAuth" id="logoutBtn" style="display:none;">Logout</button>
       </div>
     </div>
   </div>
 
   <div class="container">
-    <!-- Toolbar -->
     <div class="toolbar">
       <div class="chips" id="chips"></div>
       <div class="sort">
@@ -467,14 +553,8 @@
       </div>
     </div>
 
-    <!-- List -->
     <div class="grid" id="list">
       <div class="state">Loading aplikasi...</div>
-    </div>
-
-    <div style="height:18px"></div>
-    <div class="state" style="display:none" id="hint">
-      Tip: icon bisa pakai folder GitHub kamu, contoh <b>icon/capcut.png</b>. Screenshot opsional di field <b>screenshots</b>.
     </div>
   </div>
 
@@ -497,7 +577,20 @@
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+    import {
+      getAuth,
+      GoogleAuthProvider,
+      signInWithPopup,
+      signOut,
+      onAuthStateChanged
+    } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+    import {
+      getDatabase,
+      ref,
+      onValue,
+      get,
+      set
+    } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
     // ✅ config dari kamu
     const firebaseConfig = {
@@ -513,6 +606,7 @@
 
     const $ = (id) => document.getElementById(id);
 
+    // UI refs
     const listEl = $("list");
     const chipsEl = $("chips");
     const qEl = $("q");
@@ -522,7 +616,13 @@
     const closeBtn = $("closeBtn");
     const toastEl = $("toast");
     const countPill = $("countPill");
-    const hintEl = $("hint");
+
+    // Auth UI
+    const loginBtn = $("loginBtn");
+    const logoutBtn = $("logoutBtn");
+    const userBox = $("userBox");
+    const userAvatar = $("userAvatar");
+    const userName = $("userName");
 
     function toast(msg){
       toastEl.textContent = msg;
@@ -547,7 +647,7 @@
       if (!d) return false;
       const now = new Date();
       const diff = (now - d) / (1000*60*60*24);
-      return diff <= 30; // NEW jika <= 30 hari terakhir
+      return diff <= 30;
     }
 
     function fmtDate(updatedAt){
@@ -559,18 +659,18 @@
 
     function fmtNum(n){
       const x = Number(n);
-      if (!isFinite(x)) return "-";
+      if (!isFinite(x)) return "0";
       if (x >= 1e6) return (x/1e6).toFixed(1).replace(/\.0$/,"")+"M";
       if (x >= 1e3) return (x/1e3).toFixed(1).replace(/\.0$/,"")+"K";
       return String(Math.round(x));
     }
 
-    function stars(r){
+    function starsHtml(r){
       const rating = Math.max(0, Math.min(5, Number(r)||0));
-      const full = Math.round(rating * 2) / 2; // 0.5 steps visual-ish
+      const full = Math.round(rating * 10) / 10;
       let html = `<span class="stars" title="Rating ${full}">`;
       for(let i=1;i<=5;i++){
-        const on = (i <= full);
+        const on = (i <= Math.round(rating));
         html += `
           <svg viewBox="0 0 24 24" class="${on ? "on":"off"}" aria-hidden="true">
             <path d="M12 17.3l-6.2 3.4 1.5-7L1.9 8.9l7.2-1L12 1.5l2.9 6.4 7.2 1-5.4 4.8 1.5 7z"/>
@@ -580,15 +680,69 @@
       return html;
     }
 
-    // State
-    let allApps = [];     // normalized array
-    let categories = [];  // strings
+    function starSvg(fillOn){
+      return `
+        <svg viewBox="0 0 24 24" class="${fillOn ? "on":"off"}" aria-hidden="true">
+          <path d="M12 17.3l-6.2 3.4 1.5-7L1.9 8.9l7.2-1L12 1.5l2.9 6.4 7.2 1-5.4 4.8 1.5 7z"/>
+        </svg>
+      `;
+    }
+
+    // Firebase init
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+    const auth = getAuth(app);
+    const provider = new GoogleAuthProvider();
+
+    // Auth state
+    let currentUser = null;
+
+    onAuthStateChanged(auth, (user) => {
+      currentUser = user || null;
+
+      if (currentUser){
+        loginBtn.style.display = "none";
+        logoutBtn.style.display = "inline-flex";
+        userBox.style.display = "inline-flex";
+
+        userName.textContent = currentUser.displayName || "User";
+        userAvatar.src = currentUser.photoURL || "";
+        userAvatar.style.display = currentUser.photoURL ? "block" : "none";
+      } else {
+        loginBtn.style.display = "inline-flex";
+        logoutBtn.style.display = "none";
+        userBox.style.display = "none";
+      }
+    });
+
+    loginBtn.onclick = async () => {
+      try{
+        await signInWithPopup(auth, provider);
+        toast("Login berhasil!");
+      } catch (e){
+        toast("Login gagal. Cek Authorized domains.");
+        console.error(e);
+      }
+    };
+
+    logoutBtn.onclick = async () => {
+      try{
+        await signOut(auth);
+        toast("Logout berhasil.");
+      } catch (e){
+        toast("Logout gagal.");
+        console.error(e);
+      }
+    };
+
+    // ===== App listing state =====
+    let allApps = [];
+    let categories = [];
     let activeCat = "Semua";
     let query = "";
     let sortBy = "latest";
 
     function normalizeApps(raw){
-      // raw: object {id: {...}}
       const arr = [];
       if (!raw || typeof raw !== "object") return arr;
 
@@ -600,20 +754,37 @@
           description: safeText(a.description, ""),
           version: safeText(a.version, ""),
           size: safeText(a.size, ""),
-          updatedAt: a.updatedAt ?? a.updateAt ?? a.updated ?? null,
+          updatedAt: a.updatedAt ?? null,
           category: safeText(a.category, "Lainnya"),
           developer: safeText(a.developer, ""),
           minAndroid: safeText(a.minAndroid, ""),
           downloads: Number(a.downloads || 0),
-          rating: Number(a.rating || 0),
-          mod: Boolean(a.mod || a.isMod || false),
+          mod: Boolean(a.mod || false),
           icon: safeText(a.icon, "icon/default.png"),
           downloadUrl: safeText(a.downloadUrl, ""),
           changelog: safeText(a.changelog, ""),
           screenshots: Array.isArray(a.screenshots) ? a.screenshots.slice(0, 12) : [],
+          ratings: (a.ratings && typeof a.ratings === "object") ? a.ratings : null
         });
       }
       return arr;
+    }
+
+    function computeRatingStats(app){
+      // real stats dihitung dari apps/{id}/ratings/{uid}
+      const r = app.ratings;
+      if (!r) return { avg: 0, count: 0 };
+
+      let sum = 0;
+      let count = 0;
+      for (const uid in r){
+        const stars = Number(r[uid]?.stars);
+        if (isFinite(stars) && stars >= 1 && stars <= 5){
+          sum += stars;
+          count += 1;
+        }
+      }
+      return { avg: count ? (sum / count) : 0, count };
     }
 
     function buildCategories(){
@@ -657,7 +828,11 @@
       } else if (sortBy === "popular"){
         copy.sort((x,y)=> (y.downloads||0) - (x.downloads||0));
       } else if (sortBy === "rating"){
-        copy.sort((x,y)=> (y.rating||0) - (x.rating||0));
+        copy.sort((x,y)=>{
+          const rx = computeRatingStats(x).avg;
+          const ry = computeRatingStats(y).avg;
+          return ry - rx;
+        });
       } else { // latest
         copy.sort((x,y)=>{
           const dx = parseDate(x.updatedAt)?.getTime() || 0;
@@ -669,9 +844,10 @@
     }
 
     function createCard(a){
+      const {avg, count} = computeRatingStats(a);
+
       const card = document.createElement("div");
       card.className = "card";
-      card.setAttribute("data-id", a.id);
 
       const img = document.createElement("img");
       img.className = "icon";
@@ -691,7 +867,6 @@
 
       const badges = document.createElement("div");
       badges.className = "badges";
-
       if (isNew(a.updatedAt)) {
         const b = document.createElement("span");
         b.className = "badge new";
@@ -715,9 +890,11 @@
       const sub = document.createElement("div");
       sub.className = "subrow";
       sub.innerHTML = `
-        <span>${stars(a.rating)}</span>
+        <span>${starsHtml(avg)}</span>
+        <span class="ratingText">${avg ? avg.toFixed(1) : "0.0"}</span>
+        <span>(${count})</span>
         <span class="dot">•</span>
-        <span>${safeText(a.version,"-") ? "v"+safeText(a.version,"-") : "-"}</span>
+        <span>${a.version ? "v"+a.version : "-"}</span>
         <span class="dot">•</span>
         <span>Updated ${fmtDate(a.updatedAt)}</span>
         <span class="dot">•</span>
@@ -740,7 +917,6 @@
           toast("Link download belum diisi.");
           return;
         }
-        // biar klik tombol tidak buka modal
         e.stopPropagation();
       };
 
@@ -748,7 +924,6 @@
       card.appendChild(meta);
       card.appendChild(btn);
 
-      // klik card = buka detail
       card.onclick = () => openDetail(a.id);
 
       return card;
@@ -774,11 +949,37 @@
       }
     }
 
+    // ===== Detail + Rating (1 akun 1 vote) =====
+    async function getMyRating(appId){
+      if (!currentUser) return null;
+      const uid = currentUser.uid;
+      const snap = await get(ref(db, `apps/${appId}/ratings/${uid}`));
+      return snap.exists() ? snap.val() : null;
+    }
+
+    async function setMyRating(appId, stars){
+      if (!currentUser){
+        toast("Login dulu untuk rating.");
+        return;
+      }
+      const uid = currentUser.uid;
+      const ratingRef = ref(db, `apps/${appId}/ratings/${uid}`);
+
+      // 1 akun = 1 data (overwrite rating lama, tetap 1 vote)
+      await set(ratingRef, {
+        stars: Number(stars),
+        updatedAt: Date.now()
+      });
+
+      toast("Rating tersimpan!");
+    }
+
     function openDetail(id){
       const a = allApps.find(x => x.id === id);
       if (!a) return;
 
-      // update url (shareable)
+      const {avg, count} = computeRatingStats(a);
+
       const url = new URL(location.href);
       url.searchParams.set("id", id);
       history.replaceState({}, "", url);
@@ -798,7 +999,9 @@
           <div style="min-width:0">
             <h2>${a.name}</h2>
             <div class="small">
-              <span>${stars(a.rating)}</span>
+              <span>${starsHtml(avg)}</span>
+              <span style="font-weight:900;color:var(--text)">${avg ? avg.toFixed(1) : "0.0"}</span>
+              <span>(${count} rating)</span>
               <span style="opacity:.6">•</span>
               <span>${a.category || "Lainnya"}</span>
               <span style="opacity:.6">•</span>
@@ -827,6 +1030,24 @@
         </div>
 
         <div class="section">
+          <h3>
+            <span>Rating (1 akun = 1 vote)</span>
+            <span class="rateHint" id="rateStatus">Loading...</span>
+          </h3>
+
+          <div class="rateWrap">
+            <div class="rateStars" id="rateStars"></div>
+            <div style="display:flex; gap:8px; flex-wrap:wrap">
+              <button class="btn" id="rateLoginBtn" style="display:none;">Login untuk Rating</button>
+            </div>
+          </div>
+
+          <div class="rateHint" style="margin-top:8px;">
+            Rating kamu disimpan per akun Google (UID). Kamu bisa ubah rating, tapi tetap dihitung 1 vote.
+          </div>
+        </div>
+
+        <div class="section">
           <h3>Deskripsi</h3>
           <p>${(a.description || "-")}</p>
         </div>
@@ -844,11 +1065,11 @@
       overlay.classList.add("show");
       overlay.setAttribute("aria-hidden", "false");
 
-      // buttons
+      // share/copy buttons
       const copyBtn = document.getElementById("copyLinkBtn");
       const shareBtn = document.getElementById("shareBtn");
-
       const shareUrl = location.href;
+
       copyBtn.onclick = async () => {
         try{
           await navigator.clipboard.writeText(shareUrl);
@@ -867,12 +1088,70 @@
           toast("Browser belum support Share. Pakai Copy Link.");
         }
       };
+
+      // rating widget
+      const rateStarsEl = document.getElementById("rateStars");
+      const rateStatusEl = document.getElementById("rateStatus");
+      const rateLoginBtn = document.getElementById("rateLoginBtn");
+
+      rateLoginBtn.onclick = async () => {
+        try{
+          await signInWithPopup(auth, provider);
+          toast("Login berhasil!");
+          // after login, refresh rating view
+          renderMyRating();
+        } catch (e){
+          toast("Login gagal. Cek Authorized domains.");
+          console.error(e);
+        }
+      };
+
+      const renderStars = (selected) => {
+        rateStarsEl.innerHTML = "";
+        for (let i=1;i<=5;i++){
+          const btn = document.createElement("button");
+          btn.className = "rateBtnStar";
+          btn.type = "button";
+          btn.innerHTML = starSvg(i <= selected);
+          btn.onclick = async () => {
+            if (!currentUser){
+              toast("Login dulu untuk rating.");
+              rateLoginBtn.style.display = "inline-flex";
+              return;
+            }
+            try{
+              await setMyRating(id, i);
+              renderStars(i);
+              rateStatusEl.textContent = "Rating kamu: " + i + "/5";
+            } catch (e){
+              toast("Gagal simpan rating.");
+              console.error(e);
+            }
+          };
+          rateStarsEl.appendChild(btn);
+        }
+      };
+
+      const renderMyRating = async () => {
+        if (!currentUser){
+          renderStars(0);
+          rateStatusEl.textContent = "Login untuk memberi rating";
+          rateLoginBtn.style.display = "inline-flex";
+          return;
+        }
+        rateLoginBtn.style.display = "none";
+        const mine = await getMyRating(id);
+        const myStars = Number(mine?.stars || 0);
+        renderStars(myStars);
+        rateStatusEl.textContent = myStars ? ("Rating kamu: " + myStars + "/5") : "Klik bintang untuk rating";
+      };
+
+      renderMyRating();
     }
 
     function closeDetail(){
       overlay.classList.remove("show");
       overlay.setAttribute("aria-hidden","true");
-      // remove id param
       const url = new URL(location.href);
       url.searchParams.delete("id");
       history.replaceState({}, "", url);
@@ -901,33 +1180,22 @@
       renderList();
     });
 
-    // Firebase init
-    try{
-      const app = initializeApp(firebaseConfig);
-      const db = getDatabase(app);
+    // Load apps realtime
+    const appsRef = ref(db, "apps");
+    onValue(appsRef, (snapshot)=>{
+      const raw = snapshot.val();
+      allApps = normalizeApps(raw);
+      buildCategories();
+      renderList();
 
-      // apps data
-      const appsRef = ref(db, "apps");
-
-      onValue(appsRef, (snapshot)=>{
-        const raw = snapshot.val();
-        allApps = normalizeApps(raw);
-
-        hintEl.style.display = allApps.length ? "block" : "none";
-        buildCategories();
-        renderList();
-
-        // auto open detail if ?id=...
-        const url = new URL(location.href);
-        const id = url.searchParams.get("id");
-        if (id) openDetail(id);
-      }, (err)=>{
-        listEl.innerHTML = `<div class="state">Gagal load data. Cek Rules / koneksi internet.<br><br><b>${safeText(err?.message,"")}</b></div>`;
-      });
-
-    } catch (e){
-      listEl.innerHTML = `<div class="state">Firebase init error: ${safeText(e?.message,"")}</div>`;
-    }
+      // auto open detail if ?id=...
+      const url = new URL(location.href);
+      const id = url.searchParams.get("id");
+      if (id) openDetail(id);
+    }, (err)=>{
+      listEl.innerHTML = `<div class="state">Gagal load data. Cek Rules / koneksi internet.<br><br><b>${safeText(err?.message,"")}</b></div>`;
+      console.error(err);
+    });
   </script>
 </body>
 </html>
