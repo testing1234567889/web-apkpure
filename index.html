@@ -2,262 +2,409 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>APK Download</title>
-  <meta name="description" content="Download APK terbaru - realtime, ringan, UI mirip Play Store." />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>APK Store</title>
+  <meta name="description" content="APK Store — UI ala Play Store: Apps & Games, kategori scroll, detail + rating & komentar (1 user 1 ulasan)." />
 
   <style>
     :root{
-      --bg:#f3f5f7;
+      --bg:#f6f7fb;
       --card:#ffffff;
       --text:#0f172a;
       --muted:#64748b;
-      --line:#e2e8f0;
-      --brand:#00a6ff;
-      --brand2:#0ea5e9;
+      --line:#e5e7eb;
+      --brand:#1a73e8;      /* Play Store-ish blue */
+      --brand2:#0b57d0;
       --good:#10b981;
       --warn:#f59e0b;
       --danger:#ef4444;
-      --star:#fbbf24;     /* kuning */
-      --starOff:#cbd5e1;  /* abu */
-      --shadow: 0 10px 25px rgba(15, 23, 42, .08);
-      --radius:14px;
+      --star:#fbbf24;
+      --starOff:#cbd5e1;
+      --shadow: 0 10px 25px rgba(15, 23, 42, .07);
+      --radius:16px;
+      --tap: rgba(26,115,232,.12);
+      --safeT: env(safe-area-inset-top);
+      --safeB: env(safe-area-inset-bottom);
+      --safeL: env(safe-area-inset-left);
+      --safeR: env(safe-area-inset-right);
     }
     *{box-sizing:border-box}
+    html,body{height:100%}
     body{
       margin:0;
       font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
       background:var(--bg);
       color:var(--text);
+      -webkit-tap-highlight-color: transparent;
     }
-    a{color:inherit}
-
-    /* Top bar */
-    .topbar{
-      position:sticky; top:0; z-index:20;
-      background:linear-gradient(90deg,var(--brand),var(--brand2));
-      color:#fff;
-      box-shadow: 0 6px 18px rgba(2,132,199,.25);
-    }
-    .topbar-inner{
-      max-width:1100px;
-      margin:0 auto;
-      padding:14px 14px 12px;
-      display:flex;
-      align-items:center;
-      gap:12px;
-    }
-    .logo{
-      display:flex; align-items:center; gap:10px;
-      font-weight:900; letter-spacing:.3px;
-      white-space:nowrap;
-    }
-    .logo-badge{
-      width:34px; height:34px;
-      border-radius:10px;
-      background:rgba(255,255,255,.18);
-      display:grid; place-items:center;
-      border:1px solid rgba(255,255,255,.25);
-    }
-    .search-wrap{
-      flex:1;
-      display:flex;
-      gap:10px;
-      align-items:center;
-      min-width:0;
-    }
-    .search{
-      flex:1;
-      display:flex;
-      align-items:center;
-      gap:10px;
-      background:rgba(255,255,255,.18);
-      border:1px solid rgba(255,255,255,.25);
-      border-radius:999px;
-      padding:10px 12px;
-      min-width:0;
-    }
-    .search input{
-      border:none;
-      outline:none;
-      background:transparent;
-      color:#fff;
-      width:100%;
-      font-size:14px;
-    }
-    .search input::placeholder{color:rgba(255,255,255,.85)}
-    .pill{
-      border-radius:999px;
-      padding:8px 10px;
-      border:1px solid rgba(255,255,255,.25);
-      background:rgba(255,255,255,.16);
-      color:#fff;
-      font-size:13px;
-      white-space:nowrap;
-      user-select:none;
+    a{color:inherit;text-decoration:none}
+    button, input, textarea, select{font:inherit}
+    .wrap{
+      max-width: 1120px;
+      margin: 0 auto;
+      padding: 14px;
+      padding-left: calc(14px + var(--safeL));
+      padding-right: calc(14px + var(--safeR));
     }
 
-    /* Auth */
+    /* ===== Header ===== */
+    .header{
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      background: rgba(246,247,251,.84);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(229,231,235,.7);
+    }
+    .header-inner{
+      max-width: 1120px;
+      margin: 0 auto;
+      padding: 10px 14px 10px;
+      padding-top: calc(10px + var(--safeT));
+      padding-left: calc(14px + var(--safeL));
+      padding-right: calc(14px + var(--safeR));
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+    }
+    .topRow{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      min-width:0;
+    }
+    .brand{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      min-width:0;
+    }
+    .brand .mark{
+      width:34px;height:34px;border-radius:12px;
+      background: linear-gradient(135deg,var(--brand),var(--brand2));
+      display:grid;place-items:center;
+      box-shadow: 0 10px 20px rgba(26,115,232,.2);
+      flex:0 0 auto;
+    }
+    .brand .title{
+      font-weight:1000;
+      letter-spacing:.2px;
+      font-size:15px;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+
     .auth{
       display:flex;
       align-items:center;
-      gap:10px;
+      gap:8px;
       flex:0 0 auto;
     }
     .btnAuth{
+      height:38px;
       border-radius:999px;
-      padding:9px 12px;
-      border:1px solid rgba(255,255,255,.25);
-      background:rgba(255,255,255,.16);
-      color:#fff;
+      padding:0 12px;
+      border:1px solid var(--line);
+      background: var(--card);
+      color: var(--text);
       font-size:13px;
-      cursor:pointer;
       font-weight:900;
-      white-space:nowrap;
+      cursor:pointer;
     }
-    .btnAuth:hover{filter:brightness(.98)}
+    .btnAuth.primary{
+      background: var(--brand);
+      border-color: transparent;
+      color:#fff;
+      box-shadow: 0 10px 18px rgba(26,115,232,.18);
+    }
     .btnAuth:active{transform:scale(.99)}
-    .user{
+    .userPill{
       display:none;
       align-items:center;
       gap:8px;
-      padding:7px 10px;
-      border-radius:999px;
-      border:1px solid rgba(255,255,255,.25);
-      background:rgba(255,255,255,.16);
-      white-space:nowrap;
-      max-width:240px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: var(--card);
+      max-width: 220px;
     }
     .avatar{
-      width:26px; height:26px;
-      border-radius:999px;
-      border:1px solid rgba(255,255,255,.3);
-      background:rgba(255,255,255,.25);
-      object-fit:cover;
+      width:26px;height:26px;border-radius:999px;
+      object-fit:cover;border:1px solid var(--line);
+      background:#fff;
       flex:0 0 auto;
     }
-    .user .uname{
-      font-size:13px;
+    .uname{
       font-weight:900;
+      font-size:13px;
       overflow:hidden;
       text-overflow:ellipsis;
       white-space:nowrap;
     }
 
-    /* Page */
-    .container{
-      max-width:1100px;
-      margin:0 auto;
-      padding:14px;
-    }
-    .toolbar{
+    .searchBar{
       display:flex;
-      flex-wrap:wrap;
-      gap:10px;
       align-items:center;
-      justify-content:space-between;
-      margin:10px 0 12px;
+      gap:10px;
+      padding: 10px 12px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: var(--card);
+      box-shadow: 0 10px 22px rgba(15,23,42,.06);
     }
-    .chips{
+    .searchBar svg{flex:0 0 auto;opacity:.75}
+    .searchBar input{
+      width:100%;
+      border:none;
+      outline:none;
+      background:transparent;
+      font-size:16px; /* iOS anti-zoom */
+    }
+    .pill{
+      font-size:12px;
+      font-weight:900;
+      color: var(--muted);
+      white-space:nowrap;
+    }
+
+    .tabs{
+      display:flex;
+      gap:14px;
+      align-items:flex-end;
+      overflow:auto;
+      scrollbar-width:none;
+    }
+    .tabs::-webkit-scrollbar{display:none}
+    .tab{
+      position:relative;
+      padding: 8px 2px;
+      font-weight:1000;
+      color: var(--muted);
+      cursor:pointer;
+      user-select:none;
+      white-space:nowrap;
+    }
+    .tab.active{color: var(--text)}
+    .tab.active:after{
+      content:"";
+      position:absolute;
+      left:0; right:0; bottom:0;
+      height:3px;
+      border-radius:999px;
+      background: var(--brand);
+    }
+
+    .subcats{
       display:flex;
       gap:8px;
       overflow:auto;
-      padding-bottom:4px;
+      padding-bottom: 2px;
       scrollbar-width:thin;
+      -webkit-overflow-scrolling: touch;
     }
     .chip{
-      background:var(--card);
-      border:1px solid var(--line);
-      border-radius:999px;
-      padding:8px 12px;
+      height:36px;
+      border-radius: 999px;
+      padding: 0 12px;
+      border: 1px solid var(--line);
+      background: var(--card);
+      color: var(--text);
       font-size:13px;
-      color:var(--text);
+      font-weight:900;
       cursor:pointer;
       white-space:nowrap;
-      box-shadow: 0 1px 0 rgba(15,23,42,.02);
-      font-weight:700;
     }
     .chip.active{
-      border-color:rgba(0,166,255,.45);
-      box-shadow: 0 0 0 4px rgba(0,166,255,.14);
-    }
-    .sort{
-      display:flex;
-      gap:8px;
-      align-items:center;
-    }
-    select{
-      border:1px solid var(--line);
-      border-radius:10px;
-      padding:8px 10px;
-      background:var(--card);
-      color:var(--text);
-      font-size:13px;
-      outline:none;
+      border-color: rgba(26,115,232,.45);
+      box-shadow: 0 0 0 4px rgba(26,115,232,.12);
     }
 
-    .grid{
+    /* ===== Bottom nav (mobile) ===== */
+    .bottomNav{
+      position: sticky;
+      bottom: 0;
+      z-index: 40;
+      background: rgba(246,247,251,.90);
+      backdrop-filter: blur(10px);
+      border-top: 1px solid rgba(229,231,235,.75);
+      padding-bottom: var(--safeB);
+    }
+    .bottomNav-inner{
+      max-width: 1120px;
+      margin: 0 auto;
+      padding: 8px 14px;
+      padding-left: calc(14px + var(--safeL));
+      padding-right: calc(14px + var(--safeR));
       display:grid;
-      grid-template-columns: repeat(12, 1fr);
-      gap:12px;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 6px;
     }
-    .card{
-      grid-column: span 12;
-      background:var(--card);
-      border:1px solid var(--line);
-      border-radius:var(--radius);
-      box-shadow: var(--shadow);
-      padding:12px;
-      display:flex;
-      gap:12px;
-      align-items:center;
+    .navBtn{
+      border:none;
+      background:transparent;
+      border-radius: 14px;
+      padding: 8px 6px;
       cursor:pointer;
-      transition: transform .08s ease, box-shadow .08s ease;
+      display:flex;
+      flex-direction:column;
+      gap:4px;
+      align-items:center;
+      justify-content:center;
+      color: var(--muted);
+      font-weight:900;
+      font-size:11px;
     }
-    .card:hover{
-      transform: translateY(-1px);
-      box-shadow: 0 14px 30px rgba(15, 23, 42, .10);
+    .navBtn.active{
+      color: var(--brand2);
+      background: rgba(26,115,232,.10);
     }
-    .icon{
-      width:64px; height:64px;
-      border-radius:16px;
+    .navBtn:active{transform:scale(.99)}
+    .navBtn svg{width:20px;height:20px}
+
+    /* ===== Content ===== */
+    .content{
+      min-height: calc(100vh - 220px);
+      padding-bottom: 14px;
+    }
+    .state{
+      padding: 14px;
+      border: 1px dashed rgba(100,116,139,.35);
+      border-radius: 16px;
+      color: var(--muted);
+      background: rgba(255,255,255,.6);
+      text-align:center;
+    }
+
+    .section{
+      margin-top: 14px;
+      background: transparent;
+    }
+    .sectionHead{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      margin-bottom: 10px;
+    }
+    .sectionTitle{
+      font-weight:1000;
+      font-size:15px;
+    }
+    .linkBtn{
+      border:none;
+      background:transparent;
+      cursor:pointer;
+      font-weight:1000;
+      font-size:13px;
+      color: var(--brand2);
+      padding: 6px 10px;
+      border-radius: 999px;
+    }
+    .linkBtn:hover{background: rgba(26,115,232,.08)}
+    .linkBtn:active{transform:scale(.99)}
+
+    .hscroll{
+      display:flex;
+      gap: 10px;
+      overflow:auto;
+      padding-bottom: 6px;
+      -webkit-overflow-scrolling: touch;
+      scroll-snap-type: x proximity;
+    }
+    .tile{
+      scroll-snap-align: start;
+      min-width: 220px;
+      max-width: 220px;
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      box-shadow: var(--shadow);
+      padding: 12px;
+      cursor:pointer;
+      display:flex;
+      gap: 10px;
+      align-items:flex-start;
+    }
+    .tile:active{transform:scale(.995)}
+    .ico{
+      width: 56px; height:56px;
+      border-radius: 16px;
+      border: 1px solid var(--line);
       object-fit:cover;
-      border:1px solid var(--line);
       background:#fff;
       flex:0 0 auto;
     }
-    .meta{flex:1; min-width:0}
-    .name-row{
+    .tileMain{min-width:0; flex:1}
+    .tileName{
+      font-weight:1000;
+      font-size:14px;
+      line-height:1.25;
+      display:-webkit-box;
+      -webkit-line-clamp:2;
+      -webkit-box-orient:vertical;
+      overflow:hidden;
+      margin:0;
+    }
+    .tileMeta{
+      margin-top:6px;
       display:flex;
+      flex-wrap:wrap;
+      gap: 8px;
+      align-items:center;
+      color: var(--muted);
+      font-size:12px;
+    }
+
+    /* Vertical list (search/charts) */
+    .vlist{
+      display:grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+    }
+    .rowCard{
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      box-shadow: var(--shadow);
+      padding: 12px;
+      cursor:pointer;
+      display:flex;
+      gap: 12px;
+      align-items:center;
+    }
+    .rowCard:hover{box-shadow: 0 16px 32px rgba(15,23,42,.10)}
+    .rowMain{min-width:0; flex:1}
+    .rowTitle{
+      display:flex;
+      justify-content:space-between;
       gap:10px;
       align-items:flex-start;
-      justify-content:space-between;
     }
-    .name{
-      font-weight:900;
-      font-size:16px;
+    .rowName{
+      font-weight:1000;
+      font-size:15px;
       margin:0;
-      line-height:1.2;
       overflow:hidden;
       text-overflow:ellipsis;
       white-space:nowrap;
     }
-    .badges{display:flex; gap:6px; align-items:center; flex:0 0 auto}
     .badge{
       font-size:11px;
       padding:4px 8px;
-      border-radius:999px;
-      border:1px solid var(--line);
+      border-radius: 999px;
+      border: 1px solid var(--line);
       background:#fff;
-      color:var(--muted);
+      color: var(--muted);
+      font-weight:1000;
       white-space:nowrap;
-      font-weight:800;
     }
     .badge.new{border-color:rgba(16,185,129,.4); background:rgba(16,185,129,.08); color:var(--good);}
     .badge.mod{border-color:rgba(245,158,11,.45); background:rgba(245,158,11,.10); color:var(--warn);}
-    .desc{
-      margin:6px 0 8px;
-      color:var(--muted);
+    .rowDesc{
+      margin-top:6px;
+      color: var(--muted);
       font-size:13px;
       line-height:1.4;
       display:-webkit-box;
@@ -265,414 +412,470 @@
       -webkit-box-orient:vertical;
       overflow:hidden;
     }
-    .subrow{
+    .rowMeta{
+      margin-top:8px;
       display:flex;
       flex-wrap:wrap;
-      gap:10px 12px;
+      gap: 10px 12px;
       align-items:center;
-      color:var(--muted);
+      color: var(--muted);
       font-size:12px;
     }
-    .dot{opacity:.55}
-
-    .dl-btn{
-      flex:0 0 auto;
-      text-decoration:none;
-      background:var(--brand);
+    .btnInstall{
+      height: 40px;
+      border-radius: 999px;
+      padding: 0 14px;
+      border: 1px solid var(--line);
+      background: var(--brand);
       color:#fff;
-      border:none;
-      padding:10px 14px;
-      border-radius:999px;
-      font-weight:900;
-      font-size:13px;
+      font-weight:1000;
       cursor:pointer;
+      box-shadow: 0 10px 18px rgba(26,115,232,.16);
       white-space:nowrap;
-      box-shadow: 0 12px 20px rgba(0,166,255,.22);
+      flex:0 0 auto;
     }
-    .dl-btn:hover{filter:brightness(.98)}
-    .dl-btn:active{transform:scale(.99)}
+    .btnInstall:active{transform:scale(.99)}
 
-    /* Stars (display) */
-    .stars{
-      display:inline-flex;
-      gap:2px;
-      transform: translateY(1px);
-      align-items:center;
-    }
+    /* Stars */
+    .stars{display:inline-flex;gap:2px;align-items:center;transform: translateY(1px)}
     .stars svg{width:13px;height:13px}
-    .stars .on{fill: var(--star)}
-    .stars .off{fill: var(--starOff)}
-    .ratingNum{font-weight:900; color:var(--text)}
+    .on{fill: var(--star)}
+    .off{fill: var(--starOff)}
+    .ratingNum{font-weight:1000;color: var(--text)}
 
-    .state{
-      padding:14px;
-      border:1px dashed rgba(100,116,139,.35);
-      border-radius:14px;
-      color:var(--muted);
-      background:rgba(255,255,255,.6);
-      text-align:center;
-    }
-
-    /* Modal */
+    /* ===== Modal (bottom sheet on mobile) ===== */
     .overlay{
       position:fixed; inset:0;
-      background:rgba(2,6,23,.55);
+      background: rgba(2,6,23,.56);
       display:none;
-      z-index:50;
-      padding:16px;
+      z-index: 80;
+      padding: 14px;
+      padding-bottom: calc(14px + var(--safeB));
+      padding-left: calc(14px + var(--safeL));
+      padding-right: calc(14px + var(--safeR));
       overflow:auto;
+      -webkit-overflow-scrolling: touch;
     }
     .overlay.show{display:block}
     .modal{
-      max-width:920px;
-      margin:34px auto;
-      background:var(--card);
-      border-radius:18px;
-      border:1px solid var(--line);
-      box-shadow: 0 25px 60px rgba(2,6,23,.35);
+      width: min(960px, 100%);
+      margin: 32px auto;
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 22px;
+      box-shadow: 0 30px 80px rgba(2,6,23,.38);
       overflow:hidden;
     }
-    .modal-top{
-      padding:14px 14px 10px;
-      border-bottom:1px solid var(--line);
+    .modalTop{
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--line);
       display:flex;
-      align-items:center;
       justify-content:space-between;
+      align-items:center;
       gap:10px;
     }
-    .modal-title{
-      display:flex;
-      align-items:center;
-      gap:10px;
+    .modalTitle{
       font-weight:1000;
+      font-size:14px;
+      color: var(--muted);
+      overflow:hidden;
+      text-overflow:ellipsis;
+      white-space:nowrap;
+      min-width:0;
     }
     .xbtn{
+      width: 42px; height: 42px;
+      border-radius: 14px;
+      border: 1px solid var(--line);
       background:#fff;
-      border:1px solid var(--line);
-      width:40px; height:40px;
-      border-radius:12px;
       cursor:pointer;
       display:grid; place-items:center;
-      box-shadow: 0 6px 14px rgba(15,23,42,.06);
+      box-shadow: 0 10px 20px rgba(15,23,42,.06);
     }
     .xbtn:active{transform:scale(.99)}
-    .modal-body{
-      padding:14px;
+    .modalBody{
+      padding: 14px;
       display:grid;
-      gap:14px;
+      gap: 14px;
+      max-height: calc(100dvh - 140px);
+      overflow:auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    @supports not (height: 100dvh){
+      .modalBody{max-height: calc(100vh - 140px)}
     }
 
     .hero{
       display:flex;
-      gap:14px;
+      gap: 14px;
       align-items:flex-start;
     }
-    .hero .icon{
-      width:86px; height:86px;
-      border-radius:22px;
+    .hero .ico{
+      width: 86px; height: 86px;
+      border-radius: 22px;
     }
     .hero h2{
       margin:0;
-      font-size:20px;
-      line-height:1.2;
-      font-weight:1000;
+      font-size: 20px;
+      line-height:1.15;
+      font-weight: 1000;
     }
-    .hero .small{
-      margin-top:6px;
-      color:var(--muted);
-      font-size:13px;
+    .heroSmall{
+      margin-top: 8px;
+      color: var(--muted);
       display:flex;
       flex-wrap:wrap;
-      gap:10px;
+      gap: 10px;
       align-items:center;
+      font-size: 13px;
     }
-
     .actions{
       display:flex;
+      gap: 10px;
       flex-wrap:wrap;
-      gap:10px;
       align-items:center;
-      justify-content:space-between;
-      margin-top:12px;
+      margin-top: 12px;
     }
     .btn{
-      padding:10px 14px;
-      border-radius:999px;
-      border:1px solid var(--line);
+      height: 42px;
+      padding: 0 14px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
       background:#fff;
       cursor:pointer;
-      font-weight:900;
-      font-size:13px;
+      font-weight: 1000;
+      font-size: 13px;
     }
     .btn.primary{
-      background:var(--brand);
+      background: var(--brand);
+      border-color: transparent;
       color:#fff;
-      border-color:transparent;
-      box-shadow: 0 12px 20px rgba(0,166,255,.22);
+      box-shadow: 0 10px 18px rgba(26,115,232,.18);
       text-decoration:none;
       display:inline-flex;
       align-items:center;
       gap:8px;
     }
-    .btn.primary:hover{filter:brightness(.98)}
     .btn:active{transform:scale(.99)}
 
     .kv{
       display:grid;
       grid-template-columns: repeat(2, minmax(0,1fr));
-      gap:10px;
+      gap: 10px;
     }
     .kv .box{
-      border:1px solid var(--line);
-      border-radius:14px;
-      padding:10px 12px;
-      background:rgba(255,255,255,.75);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 10px 12px;
+      background: rgba(255,255,255,.8);
     }
-    .kv .k{font-size:12px; color:var(--muted)}
-    .kv .v{font-size:14px; font-weight:1000; margin-top:4px}
+    .kv .k{color:var(--muted); font-size:12px}
+    .kv .v{margin-top:4px; font-weight:1000; font-size:14px}
 
-    .section{
-      border:1px solid var(--line);
-      border-radius:14px;
-      padding:12px;
-      background:rgba(255,255,255,.75);
+    .panel{
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 12px;
+      background: rgba(255,255,255,.8);
     }
-    .section h3{
-      margin:0 0 10px;
-      font-size:14px;
-      font-weight:1000;
+    .panelHead{
       display:flex;
       align-items:center;
       justify-content:space-between;
-      gap:10px;
+      gap: 10px;
+      margin-bottom: 10px;
     }
-    .section p{
+    .panelHead h3{
       margin:0;
-      color:var(--muted);
-      line-height:1.5;
-      font-size:13px;
-      white-space:pre-wrap;
+      font-size: 14px;
+      font-weight: 1000;
+    }
+    .panel p{
+      margin:0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.55;
+      white-space: pre-wrap;
     }
 
-    /* Review UI (Play Store-ish) */
-    .reviewHeader{
+    .shots{
       display:flex;
-      flex-wrap:wrap;
-      align-items:center;
-      gap:10px;
-      justify-content:space-between;
+      gap: 10px;
+      overflow:auto;
+      padding-bottom: 6px;
+      -webkit-overflow-scrolling: touch;
+      scroll-snap-type: x proximity;
     }
+    .shot{
+      width: 190px; height: 118px;
+      border-radius: 16px;
+      border: 1px solid var(--line);
+      object-fit: cover;
+      background:#fff;
+      scroll-snap-align: start;
+      flex:0 0 auto;
+    }
+
+    /* Reviews */
     .reviewSummary{
       display:flex;
       align-items:center;
       gap:8px;
       flex-wrap:wrap;
-      color:var(--muted);
-      font-size:13px;
+      color: var(--muted);
+      font-size: 13px;
     }
-    .reviewForm{
+    .reviewGrid{
       display:grid;
-      gap:10px;
-      margin-top:10px;
+      grid-template-columns: 1fr;
+      gap: 12px;
+      margin-top: 10px;
     }
+    .reviewStats{
+      display:grid;
+      grid-template-columns: 120px 1fr;
+      gap: 12px;
+      align-items:center;
+    }
+    .bigRating{
+      display:flex;
+      flex-direction:column;
+      gap: 6px;
+      align-items:flex-start;
+    }
+    .bigRating .num{font-size:36px;font-weight:1000;line-height:1}
+    .bars{
+      display:grid;
+      gap: 6px;
+    }
+    .barRow{
+      display:grid;
+      grid-template-columns: 20px 1fr 34px;
+      gap: 8px;
+      align-items:center;
+      color: var(--muted);
+      font-size: 12px;
+    }
+    .bar{
+      height: 8px;
+      border-radius: 999px;
+      background: rgba(100,116,139,.18);
+      overflow:hidden;
+      position:relative;
+    }
+    .bar > span{
+      position:absolute; left:0; top:0; bottom:0;
+      width: 0%;
+      background: var(--brand);
+      border-radius: 999px;
+    }
+
     .rateStars{
       display:flex;
-      gap:6px;
-      align-items:center;
+      gap: 6px;
       flex-wrap:wrap;
+      align-items:center;
     }
     .starBtn{
       border:none;
       background:transparent;
+      padding: 6px;
+      border-radius: 14px;
       cursor:pointer;
-      padding:6px;
-      border-radius:12px;
-      outline:none;
+      touch-action: manipulation;
     }
-    .starBtn:hover{background:rgba(2,132,199,.06)}
-    .starBtn:active{transform:scale(.99)}
-    .starBtn svg{width:28px;height:28px}
-    .starOn{fill:var(--star)}
-    .starOff{fill:var(--starOff)}
-    .formRow{
-      display:flex;
-      gap:10px;
-      flex-wrap:wrap;
-      align-items:center;
-      justify-content:space-between;
-    }
+    .starBtn:hover{background: rgba(26,115,232,.08)}
+    .starBtn svg{width: 30px; height: 30px}
+    .hint{color: var(--muted); font-size: 12px}
     textarea{
       width:100%;
-      min-height:92px;
-      resize:vertical;
-      padding:10px 12px;
-      border-radius:14px;
-      border:1px solid var(--line);
+      min-height: 92px;
+      resize: vertical;
+      border-radius: 16px;
+      border: 1px solid var(--line);
+      padding: 10px 12px;
       outline:none;
-      font-size:13px;
+      font-size: 14px;
       background:#fff;
     }
     textarea:focus{
-      box-shadow: 0 0 0 4px rgba(0,166,255,.14);
-      border-color: rgba(0,166,255,.35);
+      border-color: rgba(26,115,232,.35);
+      box-shadow: 0 0 0 4px rgba(26,115,232,.12);
     }
-    .hint{
-      font-size:12px;
-      color:var(--muted);
-    }
-    .danger{color:var(--danger); font-weight:900}
+    .danger{color: var(--danger); font-weight:1000}
 
     .reviewsList{
       display:grid;
-      gap:10px;
-      margin-top:10px;
+      gap: 10px;
+      margin-top: 10px;
     }
     .reviewItem{
       background:#fff;
-      border:1px solid var(--line);
-      border-radius:14px;
-      padding:10px 12px;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 10px 12px;
       display:flex;
-      gap:10px;
+      gap: 10px;
       align-items:flex-start;
     }
-    .reviewItem .rAvatar{
-      width:34px; height:34px;
-      border-radius:999px;
-      border:1px solid var(--line);
-      object-fit:cover;
+    .rAvatar{
+      width: 36px; height: 36px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      object-fit: cover;
       background:#fff;
       flex:0 0 auto;
     }
-    .reviewItem .rMain{flex:1; min-width:0}
-    .reviewItem .rTop{
+    .rMain{min-width:0; flex:1}
+    .rTop{
       display:flex;
-      gap:8px;
       align-items:center;
       justify-content:space-between;
+      gap: 8px;
       flex-wrap:wrap;
     }
-    .reviewItem .rName{
+    .rName{
       font-weight:1000;
-      font-size:13px;
+      font-size: 13px;
+      max-width: 260px;
       overflow:hidden;
       text-overflow:ellipsis;
       white-space:nowrap;
-      max-width: 260px;
     }
-    .reviewItem .rTime{
-      color:var(--muted);
-      font-size:12px;
+    .rTime{
+      color: var(--muted);
+      font-size: 12px;
       white-space:nowrap;
     }
-    .reviewItem .rComment{
-      margin-top:6px;
-      color:var(--text);
-      font-size:13px;
-      line-height:1.45;
-      white-space:pre-wrap;
-      word-break:break-word;
+    .rComment{
+      margin-top: 6px;
+      font-size: 13px;
+      line-height: 1.45;
+      color: var(--text);
+      white-space: pre-wrap;
+      word-break: break-word;
     }
 
-    /* Toast */
-    .toast{
-      position:fixed;
-      left:50%;
-      bottom:18px;
-      transform:translateX(-50%);
-      background:rgba(2,6,23,.92);
-      color:#fff;
-      padding:10px 12px;
-      border-radius:999px;
-      font-size:13px;
-      display:none;
-      z-index:80;
-      box-shadow: 0 18px 40px rgba(2,6,23,.35);
-      max-width:92vw;
-    }
-    .toast.show{display:block}
-
+    /* Desktop tweaks */
     @media (min-width: 860px){
-      .card{grid-column: span 6;}
+      .header-inner{grid-template-columns: 1fr}
       .kv{grid-template-columns: repeat(4, minmax(0,1fr));}
+      .reviewGrid{grid-template-columns: 1fr 1fr;}
+    }
+
+    /* Bottom sheet behavior on small screens */
+    @media (max-width: 560px){
+      .overlay{display:none}
+      .overlay.show{
+        display:flex;
+        align-items:flex-end;
+      }
+      .modal{
+        margin: 0;
+        width: 100%;
+        border-radius: 22px 22px 0 0;
+      }
+      .modalBody{
+        max-height: calc(100dvh - 90px);
+      }
+      .tile{min-width: 200px; max-width: 200px;}
+      .hero{flex-direction: column;}
+      .hero .ico{width: 74px; height: 74px; border-radius: 18px;}
     }
   </style>
 </head>
 
 <body>
-  <div class="topbar">
-    <div class="topbar-inner">
-      <div class="logo" title="APK Download">
-        <div class="logo-badge" aria-hidden="true">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-            <path d="M7 7h10v10H7z" stroke="white" stroke-width="2" opacity=".95"/>
-            <path d="M9 4h6" stroke="white" stroke-width="2" stroke-linecap="round"/>
-            <path d="M12 14v-6" stroke="white" stroke-width="2" stroke-linecap="round"/>
-            <path d="M9 11h6" stroke="white" stroke-width="2" stroke-linecap="round"/>
-          </svg>
-        </div>
-        APK Download
-      </div>
-
-      <div class="search-wrap">
-        <div class="search" role="search">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-            <path d="M21 21l-4.3-4.3" stroke="white" stroke-width="2" stroke-linecap="round"/>
-            <path d="M10.5 18a7.5 7.5 0 1 1 0-15 7.5 7.5 0 0 1 0 15Z" stroke="white" stroke-width="2"/>
-          </svg>
-          <input id="q" type="text" placeholder="Cari aplikasi (capcut, game, editor)..." autocomplete="off"/>
-        </div>
-        <div id="countPill" class="pill">0 Apps</div>
-      </div>
-
-      <div class="auth">
-        <button class="btnAuth" id="loginBtn">Login Google</button>
-
-        <div class="user" id="userBox" title="Akun login">
-          <img class="avatar" id="userAvatar" alt="avatar" />
-          <div class="uname" id="userName">User</div>
+  <header class="header">
+    <div class="header-inner">
+      <div class="topRow">
+        <div class="brand" title="APK Store">
+          <div class="mark" aria-hidden="true">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+              <path d="M7 7h10v10H7z" stroke="white" stroke-width="2" opacity=".95"/>
+              <path d="M9 4h6" stroke="white" stroke-width="2" stroke-linecap="round"/>
+              <path d="M12 14v-6" stroke="white" stroke-width="2" stroke-linecap="round"/>
+              <path d="M9 11h6" stroke="white" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <div class="title">APK Store</div>
         </div>
 
-        <button class="btnAuth" id="logoutBtn" style="display:none;">Logout</button>
+        <div class="auth">
+          <button class="btnAuth primary" id="loginBtn">Login Google</button>
+          <div class="userPill" id="userBox" title="Akun login">
+            <img class="avatar" id="userAvatar" alt="avatar">
+            <div class="uname" id="userName">User</div>
+          </div>
+          <button class="btnAuth" id="logoutBtn" style="display:none;">Logout</button>
+        </div>
       </div>
-    </div>
-  </div>
 
-  <div class="container">
-    <div class="toolbar">
-      <div class="chips" id="chips"></div>
-      <div class="sort">
-        <label for="sort" style="font-size:13px;color:var(--muted);font-weight:900">Sort</label>
-        <select id="sort">
-          <option value="latest">Terbaru</option>
-          <option value="popular">Populer</option>
-          <option value="name">Nama (A-Z)</option>
-          <option value="rating">Rating</option>
-        </select>
+      <div class="searchBar" role="search">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M21 21l-4.3-4.3" stroke="#0f172a" stroke-width="2" stroke-linecap="round" opacity=".85"/>
+          <path d="M10.5 18a7.5 7.5 0 1 1 0-15 7.5 7.5 0 0 1 0 15Z" stroke="#0f172a" stroke-width="2" opacity=".85"/>
+        </svg>
+        <input id="q" type="text" placeholder="Cari aplikasi atau game..." inputmode="search" enterkeyhint="search" autocapitalize="off" autocomplete="off" />
+        <div id="countPill" class="pill">0</div>
       </div>
-    </div>
 
-    <div class="grid" id="list">
-      <div class="state">Loading aplikasi...</div>
-    </div>
-  </div>
+      <div class="tabs" id="mainTabs" aria-label="Tabs">
+        <div class="tab active" data-tab="apps">Aplikasi</div>
+        <div class="tab" data-tab="games">Game</div>
+      </div>
 
-  <!-- Modal -->
+      <div class="subcats" id="subcats" aria-label="Kategori"></div>
+    </div>
+  </header>
+
+  <main class="wrap content">
+    <div id="content">
+      <div class="state">Loading data...</div>
+    </div>
+  </main>
+
+  <nav class="bottomNav" aria-label="Navigasi">
+    <div class="bottomNav-inner">
+      <button class="navBtn active" data-page="home" id="navHome">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M4 10.5 12 4l8 6.5V20a1 1 0 0 1-1 1h-5v-6H10v6H5a1 1 0 0 1-1-1v-9.5Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
+        Home
+      </button>
+      <button class="navBtn" data-page="charts" id="navCharts">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M4 20V10m5 10V4m5 16v-7m5 7v-12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        Charts
+      </button>
+      <button class="navBtn" data-page="categories" id="navCats">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M4 7a3 3 0 0 1 3-3h3v6H7a3 3 0 0 1-3-3Zm10-3h3a3 3 0 0 1 3 3 3 3 0 0 1-3 3h-3V4Zm-10 13a3 3 0 0 1 3-3h3v6H7a3 3 0 0 1-3-3Zm10-3h3a3 3 0 0 1 3 3 3 3 0 0 1-3 3h-3v-6Z" stroke="currentColor" stroke-width="2"/></svg>
+        Kategori
+      </button>
+      <button class="navBtn" data-page="account" id="navAcc">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M20 21a8 8 0 1 0-16 0" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M12 11a4 4 0 1 0-4-4 4 4 0 0 0 4 4Z" stroke="currentColor" stroke-width="2"/></svg>
+        Akun
+      </button>
+    </div>
+  </nav>
+
+  <!-- Detail modal -->
   <div class="overlay" id="overlay" aria-hidden="true">
     <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
-      <div class="modal-top">
-        <div class="modal-title" id="modalTitle">Detail</div>
+      <div class="modalTop">
+        <div class="modalTitle" id="modalTitle">Detail</div>
         <button class="xbtn" id="closeBtn" aria-label="Tutup">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-            <path d="M6 6l12 12M18 6L6 18" stroke="#0f172a" stroke-width="2" stroke-linecap="round"/>
+            <path d="M6 6l12 12M18 6 6 18" stroke="#0f172a" stroke-width="2" stroke-linecap="round"/>
           </svg>
         </button>
       </div>
-      <div class="modal-body" id="modalBody"></div>
+      <div class="modalBody" id="modalBody"></div>
     </div>
   </div>
 
-  <div class="toast" id="toast"></div>
+  <div id="toast" style="
+    position:fixed;left:50%;bottom:calc(18px + var(--safeB));transform:translateX(-50%);
+    background:rgba(2,6,23,.92);color:#fff;padding:10px 12px;border-radius:999px;
+    font-size:13px;display:none;z-index:90;box-shadow:0 18px 40px rgba(2,6,23,.35);
+    max-width:92vw;"></div>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
@@ -691,7 +894,7 @@
       set
     } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-    // ✅ Firebase config kamu
+    // ====== Firebase config ======    // ✅ Firebase config kamu
     const firebaseConfig = {
       apiKey: "AIzaSyAu--L2T5_o9xLVT09mXFLIcpPuLLWlL1Q",
       authDomain: "aplikasi-percobaan-dbf84.firebaseapp.com",
@@ -703,20 +906,18 @@
       measurementId: "G-H6WCVTQQEM"
     };
 
-    const $ = (id) => document.getElementById(id);
-
-    // UI refs
-    const listEl = $("list");
-    const chipsEl = $("chips");
+    // ====== Helpers ======
+    const $ = (id)=>document.getElementById(id);
+    const contentEl = $("content");
     const qEl = $("q");
-    const sortEl = $("sort");
+    const countPill = $("countPill");
+    const subcatsEl = $("subcats");
     const overlay = $("overlay");
     const modalBody = $("modalBody");
+    const modalTitle = $("modalTitle");
     const closeBtn = $("closeBtn");
     const toastEl = $("toast");
-    const countPill = $("countPill");
 
-    // Auth UI
     const loginBtn = $("loginBtn");
     const logoutBtn = $("logoutBtn");
     const userBox = $("userBox");
@@ -725,42 +926,35 @@
 
     function toast(msg){
       toastEl.textContent = msg;
-      toastEl.classList.add("show");
+      toastEl.style.display = "block";
       clearTimeout(toastEl._t);
-      toastEl._t = setTimeout(()=>toastEl.classList.remove("show"), 1800);
+      toastEl._t = setTimeout(()=>toastEl.style.display="none", 1800);
     }
-
-    function safeText(v, fallback=""){
-      return (typeof v === "string" || typeof v === "number") ? String(v) : fallback;
+    function safeText(v, fallback=""){ return (typeof v === "string" || typeof v === "number") ? String(v) : fallback; }
+    function escapeHtml(s){
+      return String(s)
+        .replaceAll("&","&amp;")
+        .replaceAll("<","&lt;")
+        .replaceAll(">","&gt;")
+        .replaceAll('"',"&quot;")
+        .replaceAll("'","&#039;");
     }
-
     function parseDate(v){
       if (!v) return null;
       if (typeof v === "number") return new Date(v);
       const d = new Date(v);
       return isNaN(d.getTime()) ? null : d;
     }
-
-    function isNew(updatedAt){
-      const d = parseDate(updatedAt);
-      if (!d) return false;
-      const now = new Date();
-      const diff = (now - d) / (1000*60*60*24);
-      return diff <= 30;
-    }
-
-    function fmtDate(updatedAt){
-      const d = parseDate(updatedAt);
+    function fmtDate(v){
+      const d = parseDate(v);
       if (!d) return "-";
       const months = ["Jan","Feb","Mar","Apr","Mei","Jun","Jul","Agu","Sep","Okt","Nov","Des"];
       return `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`;
     }
-
     function timeAgo(ts){
       const d = new Date(Number(ts)||0);
       if (!ts || isNaN(d.getTime())) return "";
-      const now = Date.now();
-      const diff = Math.max(0, now - d.getTime());
+      const diff = Math.max(0, Date.now() - d.getTime());
       const m = Math.floor(diff/60000);
       if (m < 1) return "baru saja";
       if (m < 60) return `${m} menit lalu`;
@@ -770,15 +964,19 @@
       if (day < 30) return `${day} hari lalu`;
       return fmtDate(d.getTime());
     }
-
     function fmtNum(n){
       const x = Number(n);
       if (!isFinite(x)) return "0";
-      if (x >= 1e6) return (x/1e6).toFixed(1).replace(/\.0$/,"")+"M";
-      if (x >= 1e3) return (x/1e3).toFixed(1).replace(/\.0$/,"")+"K";
+      if (x >= 1e6) return (x/1e6).toFixed(1).replace(/\\.0$/,"")+"M";
+      if (x >= 1e3) return (x/1e3).toFixed(1).replace(/\\.0$/,"")+"K";
       return String(Math.round(x));
     }
-
+    function isNew(updatedAt){
+      const d = parseDate(updatedAt);
+      if (!d) return false;
+      const diff = (Date.now() - d.getTime()) / (1000*60*60*24);
+      return diff <= 30;
+    }
     function starsDisplay(avg){
       const rating = Math.max(0, Math.min(5, Number(avg)||0));
       let html = `<span class="stars" title="Rating ${rating.toFixed(1)}">`;
@@ -792,7 +990,6 @@
       html += `</span>`;
       return html;
     }
-
     function starSvg(on){
       return `
         <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -802,82 +999,57 @@
       `;
     }
 
-    // Firebase init
+    function computeReviewStats(reviewsObj){
+      // reviewsObj: {uid: {stars, comment, updatedAt, userName, userPhoto}}
+      if (!reviewsObj || typeof reviewsObj !== "object") return { avg: 0, count: 0, dist:[0,0,0,0,0] };
+      let sum = 0, count = 0;
+      const dist = [0,0,0,0,0]; // index 0..4 => 1..5
+      for (const uid in reviewsObj){
+        const s = Number(reviewsObj[uid]?.stars);
+        if (isFinite(s) && s >= 1 && s <= 5){
+          sum += s; count += 1;
+          dist[s-1] += 1;
+        }
+      }
+      return { avg: count ? (sum/count) : 0, count, dist };
+    }
+
+    // ====== Firebase init ======
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
     const auth = getAuth(app);
     const provider = new GoogleAuthProvider();
 
-    // Auth state
+    // ====== State ======
     let currentUser = null;
-
-    onAuthStateChanged(auth, (user) => {
-      currentUser = user || null;
-
-      if (currentUser){
-        loginBtn.style.display = "none";
-        logoutBtn.style.display = "inline-flex";
-        userBox.style.display = "inline-flex";
-
-        userName.textContent = currentUser.displayName || "User";
-        userAvatar.src = currentUser.photoURL || "";
-        userAvatar.style.display = currentUser.photoURL ? "block" : "none";
-      } else {
-        loginBtn.style.display = "inline-flex";
-        logoutBtn.style.display = "none";
-        userBox.style.display = "none";
-      }
-    });
-
-    loginBtn.onclick = async () => {
-      try{
-        await signInWithPopup(auth, provider);
-        toast("Login berhasil!");
-      } catch (e){
-        toast("Login gagal. Cek Authorized domains.");
-        console.error(e);
-      }
-    };
-
-    logoutBtn.onclick = async () => {
-      try{
-        await signOut(auth);
-        toast("Logout berhasil.");
-      } catch (e){
-        toast("Logout gagal.");
-        console.error(e);
-      }
-    };
-
-    // ===== App listing state =====
     let allApps = [];
-    let categories = [];
-    let activeCat = "Semua";
-    let query = "";
-    let sortBy = "latest";
+    let currentAppId = null;
 
-    function computeReviewStats(reviewsObj){
-      // reviewsObj: {uid: {stars, comment, updatedAt, userName, userPhoto}}
-      if (!reviewsObj || typeof reviewsObj !== "object") return { avg: 0, count: 0 };
-      let sum = 0, count = 0;
-      for (const uid in reviewsObj){
-        const s = Number(reviewsObj[uid]?.stars);
-        if (isFinite(s) && s >= 1 && s <= 5){
-          sum += s; count += 1;
-        }
-      }
-      return { avg: count ? (sum/count) : 0, count };
+    const state = {
+      tab: "apps",          // "apps" | "games"
+      category: "Semua",
+      page: "home",         // home|charts|categories|account
+      query: ""
+    };
+
+    function typeOfApp(a){
+      const t = String(a.type || "").toLowerCase().trim();
+      if (t === "game" || t === "games") return "games";
+      if (t === "app" || t === "apps") return "apps";
+      // fallback heuristik
+      const cat = String(a.category || "").toLowerCase();
+      if (cat.includes("game") || cat.includes("games")) return "games";
+      return "apps";
     }
 
     function normalizeApps(raw){
       const arr = [];
       if (!raw || typeof raw !== "object") return arr;
-
       for(const id of Object.keys(raw)){
         const a = raw[id] || {};
-        const reviews = (a.reviews && typeof a.reviews === "object") ? a.reviews : null;
         arr.push({
           id,
+          type: safeText(a.type, ""),              // disarankan isi: "app" / "game"
           name: safeText(a.name, "Untitled"),
           description: safeText(a.description, ""),
           version: safeText(a.version, ""),
@@ -892,177 +1064,410 @@
           downloadUrl: safeText(a.downloadUrl, ""),
           changelog: safeText(a.changelog, ""),
           screenshots: Array.isArray(a.screenshots) ? a.screenshots.slice(0, 12) : [],
-          reviews
+          reviews: (a.reviews && typeof a.reviews === "object") ? a.reviews : null
         });
       }
       return arr;
     }
 
+    // ====== Auth ======
+    onAuthStateChanged(auth, (user)=>{
+      currentUser = user || null;
+      if (currentUser){
+        loginBtn.style.display = "none";
+        logoutBtn.style.display = "inline-flex";
+        userBox.style.display = "inline-flex";
+        userName.textContent = currentUser.displayName || "User";
+        userAvatar.src = currentUser.photoURL || "";
+        userAvatar.style.display = currentUser.photoURL ? "block" : "none";
+      } else {
+        loginBtn.style.display = "inline-flex";
+        logoutBtn.style.display = "none";
+        userBox.style.display = "none";
+      }
+      // kalau modal review sedang terbuka, refresh form
+      if (currentAppId) refreshReviewForm(currentAppId);
+      if (state.page === "account") render();
+    });
+
+    loginBtn.onclick = async ()=>{
+      try{
+        await signInWithPopup(auth, provider);
+        toast("Login berhasil!");
+      } catch (e){
+        toast("Login gagal. Cek Authorized domains.");
+        console.error(e);
+      }
+    };
+    logoutBtn.onclick = async ()=>{
+      try{
+        await signOut(auth);
+        toast("Logout berhasil.");
+      } catch (e){
+        toast("Logout gagal.");
+        console.error(e);
+      }
+    };
+
+    // ====== Tabs + Nav ======
+    document.getElementById("mainTabs").addEventListener("click",(e)=>{
+      const tab = e.target?.dataset?.tab;
+      if (!tab) return;
+      state.tab = tab;
+      state.category = "Semua";
+      state.page = "home";
+      setActiveTabs();
+      setActiveNav();
+      render();
+    });
+
+    document.querySelectorAll(".navBtn").forEach(btn=>{
+      btn.addEventListener("click", ()=>{
+        state.page = btn.dataset.page;
+        setActiveNav();
+        render();
+      });
+    });
+
+    function setActiveTabs(){
+      document.querySelectorAll(".tab").forEach(t=>{
+        t.classList.toggle("active", t.dataset.tab === state.tab);
+      });
+    }
+    function setActiveNav(){
+      document.querySelectorAll(".navBtn").forEach(b=>{
+        b.classList.toggle("active", b.dataset.page === state.page);
+      });
+    }
+
+    // ====== Categories (subcats) ======
     function buildCategories(){
-      const set = new Set(["Semua"]);
-      for(const a of allApps){
-        if (a.category) set.add(a.category);
+      const cats = new Set(["Semua"]);
+      for (const a of allApps){
+        if (typeOfApp(a) !== state.tab) continue;
+        if (a.category) cats.add(a.category);
       }
-      categories = Array.from(set);
-      renderChips();
+      // urutkan: Semuanya dulu, sisanya A-Z
+      const rest = Array.from(cats).filter(x=>x!=="Semua").sort((a,b)=>a.localeCompare(b));
+      return ["Semua", ...rest];
     }
 
-    function renderChips(){
-      chipsEl.innerHTML = "";
-      for(const c of categories){
-        const el = document.createElement("div");
-        el.className = "chip" + (c === activeCat ? " active" : "");
-        el.textContent = c;
-        el.onclick = () => {
-          activeCat = c;
-          renderChips();
-          renderList();
+    function renderSubcats(){
+      const cats = buildCategories();
+      subcatsEl.innerHTML = "";
+      for (const c of cats){
+        const btn = document.createElement("button");
+        btn.className = "chip" + (c === state.category ? " active" : "");
+        btn.textContent = c;
+        btn.onclick = ()=>{
+          state.category = c;
+          renderSubcats();
+          render();
         };
-        chipsEl.appendChild(el);
+        subcatsEl.appendChild(btn);
       }
     }
 
-    function matches(a){
-      const q = query.trim().toLowerCase();
-      const inCat = (activeCat === "Semua") || (a.category === activeCat);
-      if (!inCat) return false;
-      if (!q) return true;
+    // ====== Search ======
+    let t = null;
+    qEl.addEventListener("input", ()=>{
+      clearTimeout(t);
+      t = setTimeout(()=>{
+        state.query = qEl.value || "";
+        render();
+      }, 120);
+    });
 
+    function matchesQuery(a){
+      const q = state.query.trim().toLowerCase();
+      if (!q) return true;
       const hay = `${a.name} ${a.description} ${a.category} ${a.developer} ${a.version}`.toLowerCase();
       return hay.includes(q);
     }
-
-    function sortApps(arr){
-      const copy = arr.slice();
-      if (sortBy === "name"){
-        copy.sort((x,y)=> x.name.localeCompare(y.name));
-      } else if (sortBy === "popular"){
-        copy.sort((x,y)=> (y.downloads||0) - (x.downloads||0));
-      } else if (sortBy === "rating"){
-        copy.sort((x,y)=>{
-          const rx = computeReviewStats(x.reviews).avg;
-          const ry = computeReviewStats(y.reviews).avg;
-          return ry - rx;
-        });
-      } else {
-        copy.sort((x,y)=>{
-          const dx = parseDate(x.updatedAt)?.getTime() || 0;
-          const dy = parseDate(y.updatedAt)?.getTime() || 0;
-          return dy - dx;
-        });
-      }
-      return copy;
+    function matchesTabAndCat(a){
+      if (typeOfApp(a) !== state.tab) return false;
+      if (state.category === "Semua") return true;
+      return a.category === state.category;
     }
 
-    function createCard(a){
+    function filteredApps(){
+      return allApps.filter(a=>matchesTabAndCat(a) && matchesQuery(a));
+    }
+
+    // ====== UI components ======
+    function createTile(a){
+      const {avg} = computeReviewStats(a.reviews);
+      const div = document.createElement("div");
+      div.className = "tile";
+      div.onclick = ()=>openDetail(a.id);
+      div.innerHTML = `
+        <img class="ico" src="${a.icon || "icon/default.png"}" alt="${escapeHtml(a.name)}" onerror="this.src='icon/default.png'">
+        <div class="tileMain">
+          <p class="tileName">${escapeHtml(a.name)}</p>
+          <div class="tileMeta">
+            <span>${starsDisplay(avg)}</span>
+            <span class="ratingNum">${avg ? avg.toFixed(1) : "0.0"}</span>
+            <span>•</span>
+            <span>${escapeHtml(a.category || "Lainnya")}</span>
+          </div>
+        </div>
+      `;
+      return div;
+    }
+
+    function createRowCard(a){
       const {avg, count} = computeReviewStats(a.reviews);
-
       const card = document.createElement("div");
-      card.className = "card";
+      card.className = "rowCard";
+      card.onclick = ()=>openDetail(a.id);
 
-      const img = document.createElement("img");
-      img.className = "icon";
-      img.alt = a.name;
-      img.src = a.icon || "icon/default.png";
-      img.onerror = () => { img.src = "icon/default.png"; };
+      const badges = [];
+      if (isNew(a.updatedAt)) badges.push(`<span class="badge new">NEW</span>`);
+      if (a.mod) badges.push(`<span class="badge mod">MOD</span>`);
 
-      const meta = document.createElement("div");
-      meta.className = "meta";
-
-      const nameRow = document.createElement("div");
-      nameRow.className = "name-row";
-
-      const h = document.createElement("h3");
-      h.className = "name";
-      h.textContent = a.name;
-
-      const badges = document.createElement("div");
-      badges.className = "badges";
-      if (isNew(a.updatedAt)) {
-        const b = document.createElement("span");
-        b.className = "badge new";
-        b.textContent = "NEW";
-        badges.appendChild(b);
-      }
-      if (a.mod) {
-        const b = document.createElement("span");
-        b.className = "badge mod";
-        b.textContent = "MOD";
-        badges.appendChild(b);
-      }
-
-      nameRow.appendChild(h);
-      nameRow.appendChild(badges);
-
-      const desc = document.createElement("div");
-      desc.className = "desc";
-      desc.textContent = a.description || "-";
-
-      const sub = document.createElement("div");
-      sub.className = "subrow";
-      sub.innerHTML = `
-        <span>${starsDisplay(avg)}</span>
-        <span class="ratingNum">${avg ? avg.toFixed(1) : "0.0"}</span>
-        <span>(${count})</span>
-        <span class="dot">•</span>
-        <span>${a.version ? "v"+a.version : "-"}</span>
-        <span class="dot">•</span>
-        <span>Updated ${fmtDate(a.updatedAt)}</span>
-        <span class="dot">•</span>
-        <span>${fmtNum(a.downloads)} downloads</span>
+      card.innerHTML = `
+        <img class="ico" src="${a.icon || "icon/default.png"}" alt="${escapeHtml(a.name)}" onerror="this.src='icon/default.png'">
+        <div class="rowMain">
+          <div class="rowTitle">
+            <h3 class="rowName">${escapeHtml(a.name)}</h3>
+            <div style="display:flex;gap:6px;align-items:center">${badges.join("")}</div>
+          </div>
+          <div class="rowDesc">${escapeHtml(a.description || "-")}</div>
+          <div class="rowMeta">
+            <span>${starsDisplay(avg)}</span>
+            <span class="ratingNum">${avg ? avg.toFixed(1) : "0.0"}</span>
+            <span>(${count})</span>
+            <span>•</span>
+            <span>${fmtNum(a.downloads)} download</span>
+            <span>•</span>
+            <span>Update ${fmtDate(a.updatedAt)}</span>
+          </div>
+        </div>
+        <button class="btnInstall" type="button">Install</button>
       `;
 
-      meta.appendChild(nameRow);
-      meta.appendChild(desc);
-      meta.appendChild(sub);
-
-      const btn = document.createElement("a");
-      btn.className = "dl-btn";
-      btn.href = a.downloadUrl || "#";
-      btn.target = "_blank";
-      btn.rel = "noopener";
-      btn.textContent = "Download";
-      btn.onclick = (e) => {
-        if (!a.downloadUrl) {
-          e.preventDefault();
+      // tombol install jangan buka modal
+      const btn = card.querySelector(".btnInstall");
+      btn.onclick = (e)=>{
+        e.stopPropagation();
+        if (!a.downloadUrl){
           toast("Link download belum diisi.");
           return;
         }
-        e.stopPropagation(); // supaya klik tombol tidak buka modal
+        window.open(a.downloadUrl, "_blank", "noopener");
       };
-
-      card.appendChild(img);
-      card.appendChild(meta);
-      card.appendChild(btn);
-
-      card.onclick = () => openDetail(a.id);
 
       return card;
     }
 
-    function renderList(){
-      const filtered = allApps.filter(matches);
-      const sorted = sortApps(filtered);
+    function sectionBlock(title, items, onSeeAll){
+      const section = document.createElement("section");
+      section.className = "section";
+      const head = document.createElement("div");
+      head.className = "sectionHead";
+      head.innerHTML = `
+        <div class="sectionTitle">${title}</div>
+        ${onSeeAll ? `<button class="linkBtn" type="button">Lihat semua</button>` : ``}
+      `;
+      if (onSeeAll){
+        head.querySelector("button").onclick = onSeeAll;
+      }
 
-      countPill.textContent = `${sorted.length} Apps`;
-      listEl.innerHTML = "";
+      const row = document.createElement("div");
+      row.className = "hscroll";
+      for(const a of items){
+        row.appendChild(createTile(a));
+      }
 
-      if (sorted.length === 0){
-        const empty = document.createElement("div");
-        empty.className = "state";
-        empty.textContent = "Tidak ada hasil. Coba kata kunci lain atau pilih kategori 'Semua'.";
-        listEl.appendChild(empty);
+      section.appendChild(head);
+      section.appendChild(row);
+      return section;
+    }
+
+    // ====== Pages ======
+    function renderHome(){
+      const apps = filteredApps();
+
+      countPill.textContent = `${apps.length}`;
+      contentEl.innerHTML = "";
+
+      // kalau user sedang search, langsung tampilkan hasil list vertikal (lebih “Play Store”)
+      if (state.query.trim()){
+        const box = document.createElement("div");
+        box.className = "section";
+        box.innerHTML = `<div class="sectionHead"><div class="sectionTitle">Hasil pencarian</div></div>`;
+        const vlist = document.createElement("div");
+        vlist.className = "vlist";
+        if (apps.length === 0){
+          vlist.innerHTML = `<div class="state">Tidak ada hasil. Coba kata kunci lain.</div>`;
+        } else {
+          apps
+            .slice()
+            .sort((x,y)=>(Number(y.downloads||0)-Number(x.downloads||0)))
+            .slice(0, 60)
+            .forEach(a=>vlist.appendChild(createRowCard(a)));
+        }
+        box.appendChild(vlist);
+        contentEl.appendChild(box);
         return;
       }
 
-      for(const a of sorted){
-        listEl.appendChild(createCard(a));
+      if (apps.length === 0){
+        contentEl.innerHTML = `<div class="state">Belum ada data di tab ini. Tambahkan data di RTDB: <b>apps/{appId}</b></div>`;
+        return;
+      }
+
+      const byLatest = apps.slice().sort((x,y)=>{
+        const dx = parseDate(x.updatedAt)?.getTime() || 0;
+        const dy = parseDate(y.updatedAt)?.getTime() || 0;
+        return dy - dx;
+      });
+
+      const byPopular = apps.slice().sort((x,y)=>(Number(y.downloads||0)-Number(x.downloads||0)));
+
+      const byRating = apps.slice().sort((x,y)=>{
+        const rx = computeReviewStats(x.reviews).avg;
+        const ry = computeReviewStats(y.reviews).avg;
+        return ry - rx;
+      });
+
+      const modOnly = apps.filter(a=>a.mod);
+
+      // “Rasa Play Store”: beberapa row horizontal
+      contentEl.appendChild(sectionBlock("Rekomendasi", byLatest.slice(0, 12), ()=>{
+        state.page = "charts"; setActiveNav(); render();
+      }));
+      contentEl.appendChild(sectionBlock("Paling Populer", byPopular.slice(0, 12), ()=>{
+        state.page = "charts"; setActiveNav(); render();
+      }));
+      contentEl.appendChild(sectionBlock("Rating Tertinggi", byRating.slice(0, 12), ()=>{
+        state.page = "charts"; setActiveNav(); render();
+      }));
+      if (modOnly.length){
+        contentEl.appendChild(sectionBlock("MOD & Premium", modOnly.slice(0, 12), ()=>{
+          state.page = "charts"; setActiveNav(); render();
+        }));
       }
     }
 
-    // ===== Detail + Review (rating + comment) =====
-    let currentAppId = null;
+    function renderCharts(){
+      const apps = filteredApps()
+        .slice()
+        .sort((x,y)=>(Number(y.downloads||0)-Number(x.downloads||0)));
 
+      countPill.textContent = `${apps.length}`;
+      contentEl.innerHTML = "";
+
+      const head = document.createElement("div");
+      head.className = "sectionHead";
+      head.innerHTML = `<div class="sectionTitle">Top charts</div><div class="pill">Sort: populer</div>`;
+      contentEl.appendChild(head);
+
+      const vlist = document.createElement("div");
+      vlist.className = "vlist";
+      if (apps.length === 0){
+        vlist.innerHTML = `<div class="state">Tidak ada data.</div>`;
+      } else {
+        apps.slice(0, 100).forEach(a=>vlist.appendChild(createRowCard(a)));
+      }
+      contentEl.appendChild(vlist);
+    }
+
+    function renderCategories(){
+      const cats = buildCategories();
+      countPill.textContent = `${cats.length - 1}`;
+      contentEl.innerHTML = `<div class="sectionHead"><div class="sectionTitle">Kategori</div></div>`;
+
+      const grid = document.createElement("div");
+      grid.style.display = "grid";
+      grid.style.gridTemplateColumns = "repeat(2, minmax(0, 1fr))";
+      grid.style.gap = "10px";
+
+      for (const c of cats){
+        if (c === "Semua") continue;
+        const card = document.createElement("div");
+        card.className = "rowCard";
+        card.style.alignItems = "center";
+        card.innerHTML = `
+          <div style="width:44px;height:44px;border-radius:16px;background:rgba(26,115,232,.10);display:grid;place-items:center;color:var(--brand2);flex:0 0 auto">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M4 7a3 3 0 0 1 3-3h3v6H7a3 3 0 0 1-3-3Zm10-3h3a3 3 0 0 1 3 3 3 3 0 0 1-3 3h-3V4Zm-10 13a3 3 0 0 1 3-3h3v6H7a3 3 0 0 1-3-3Zm10-3h3a3 3 0 0 1 3 3 3 3 0 0 1-3 3h-3v-6Z" stroke="currentColor" stroke-width="2"/></svg>
+          </div>
+          <div class="rowMain">
+            <div class="rowTitle">
+              <h3 class="rowName">${escapeHtml(c)}</h3>
+              <span class="badge">${fmtNum(allApps.filter(a=>typeOfApp(a)===state.tab && a.category===c).length)} item</span>
+            </div>
+            <div class="rowDesc">Tap untuk lihat ${state.tab === "games" ? "game" : "aplikasi"} kategori ini.</div>
+          </div>
+        `;
+        card.onclick = ()=>{
+          state.category = c;
+          state.page = "home";
+          setActiveNav();
+          renderSubcats();
+          render();
+          window.scrollTo({top:0, behavior:"smooth"});
+        };
+        grid.appendChild(card);
+      }
+      contentEl.appendChild(grid);
+    }
+
+    function renderAccount(){
+      contentEl.innerHTML = "";
+      countPill.textContent = "";
+
+      const panel = document.createElement("div");
+      panel.className = "panel";
+      panel.innerHTML = `
+        <div class="panelHead">
+          <h3>Akun</h3>
+          <span class="badge">${state.tab === "games" ? "Game" : "Aplikasi"}</span>
+        </div>
+        <p>
+          ${currentUser ? `
+            Login sebagai: <b>${escapeHtml(currentUser.displayName || "User")}</b>\\n
+            Email: <b>${escapeHtml(currentUser.email || "-")}</b>\\n
+            Kamu bisa memberi <b>1 ulasan per item</b> (bisa diperbarui).
+          ` : `
+            Kamu belum login.\\n
+            Login Google untuk bisa kasih rating & komentar (1 user = 1 ulasan).
+          `}
+        </p>
+        <div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap">
+          ${currentUser ? `<button class="btn primary" id="accLogout">Logout</button>` : `<button class="btn primary" id="accLogin">Login Google</button>`}
+          <button class="btn" id="accHow">Cara isi data</button>
+        </div>
+      `;
+      contentEl.appendChild(panel);
+
+      if (currentUser){
+        panel.querySelector("#accLogout").onclick = ()=>logoutBtn.click();
+      } else {
+        panel.querySelector("#accLogin").onclick = ()=>loginBtn.click();
+      }
+      panel.querySelector("#accHow").onclick = ()=>{
+        toast("Data di RTDB: apps/{appId} (name, icon, category, type, downloadUrl, ...)");
+      };
+    }
+
+    function render(){
+      renderSubcats();
+
+      // URL params: ?id=...
+      const url = new URL(location.href);
+      const idParam = url.searchParams.get("id");
+      if (idParam && !currentAppId){
+        openDetail(idParam);
+      }
+
+      if (state.page === "charts") return renderCharts();
+      if (state.page === "categories") return renderCategories();
+      if (state.page === "account") return renderAccount();
+      return renderHome();
+    }
+
+    // ====== Detail + Reviews (1 user 1 ulasan) ======
     async function getMyReview(appId){
       if (!currentUser) return null;
       const uid = currentUser.uid;
@@ -1077,7 +1482,6 @@
       }
       const uid = currentUser.uid;
       const reviewRef = ref(db, `apps/${appId}/reviews/${uid}`);
-
       const payload = {
         stars: Number(stars),
         comment: String(comment || ""),
@@ -1085,125 +1489,156 @@
         userPhoto: currentUser.photoURL || "",
         updatedAt: Date.now()
       };
-
       await set(reviewRef, payload);
       toast("Ulasan tersimpan!");
     }
 
-    function openDetail(id){
-      const a = allApps.find(x => x.id === id);
-      if (!a) return;
+    function lockBodyScroll(lock){
+      document.body.style.overflow = lock ? "hidden" : "";
+    }
 
+    function openDetail(id){
+      const a = allApps.find(x=>x.id===id);
+      if (!a){
+        toast("Item tidak ditemukan.");
+        return;
+      }
       currentAppId = id;
 
       const url = new URL(location.href);
       url.searchParams.set("id", id);
       history.replaceState({}, "", url);
 
-      const {avg, count} = computeReviewStats(a.reviews);
+      const stats = computeReviewStats(a.reviews);
+      modalTitle.textContent = a.name;
+
+      const badges = [
+        isNew(a.updatedAt) ? `<span class="badge new">NEW</span>` : ``,
+        a.mod ? `<span class="badge mod">MOD</span>` : ``
+      ].filter(Boolean).join("");
 
       const shotsHtml = (a.screenshots && a.screenshots.length)
-        ? `<div class="section">
-             <h3>Screenshots</h3>
-             <div style="display:flex;gap:10px;overflow:auto;padding-bottom:4px">
-               ${a.screenshots.map(s => `<img style="width:180px;height:110px;border-radius:14px;object-fit:cover;border:1px solid var(--line);background:#fff" src="${s}" alt="screenshot" onerror="this.style.display='none'">`).join("")}
-             </div>
-           </div>`
+        ? `<div class="panel">
+            <div class="panelHead"><h3>Screenshots</h3></div>
+            <div class="shots">
+              ${a.screenshots.map(s => `
+                <img class="shot" src="${s}" alt="screenshot" onerror="this.style.display='none'">
+              `).join("")}
+            </div>
+          </div>`
         : "";
+
+      const dist = stats.dist;
+      const total = Math.max(1, stats.count);
 
       modalBody.innerHTML = `
         <div class="hero">
-          <img class="icon" src="${a.icon || "icon/default.png"}" alt="${a.name}" onerror="this.src='icon/default.png'">
+          <img class="ico" src="${a.icon || "icon/default.png"}" alt="${escapeHtml(a.name)}" onerror="this.src='icon/default.png'">
           <div style="min-width:0">
-            <h2>${a.name}</h2>
-            <div class="small">
-              <span>${starsDisplay(avg)}</span>
-              <span class="ratingNum">${avg ? avg.toFixed(1) : "0.0"}</span>
-              <span>(${count} ulasan)</span>
+            <h2>${escapeHtml(a.name)}</h2>
+            <div class="heroSmall">
+              <span>${starsDisplay(stats.avg)}</span>
+              <span class="ratingNum">${stats.avg ? stats.avg.toFixed(1) : "0.0"}</span>
+              <span>(${stats.count} ulasan)</span>
               <span style="opacity:.6">•</span>
-              <span>${a.category || "Lainnya"}</span>
+              <span>${escapeHtml(a.category || "Lainnya")}</span>
               <span style="opacity:.6">•</span>
-              <span>Updated ${fmtDate(a.updatedAt)}</span>
-              ${a.mod ? `<span class="badge mod">MOD</span>` : ``}
-              ${isNew(a.updatedAt) ? `<span class="badge new">NEW</span>` : ``}
+              <span>Update ${fmtDate(a.updatedAt)}</span>
+              ${badges}
             </div>
 
             <div class="actions">
               <a class="btn primary" href="${a.downloadUrl || "#"}" target="_blank" rel="noopener" ${a.downloadUrl ? "" : "onclick='return false;'"}>
-                ⬇ Download APK
+                ⬇ Install
               </a>
-              <div style="display:flex; gap:8px; flex-wrap:wrap">
-                <button class="btn" id="copyLinkBtn">Copy Link</button>
-                <button class="btn" id="shareBtn">Share</button>
-              </div>
+              <button class="btn" id="copyLinkBtn" type="button">Copy Link</button>
+              <button class="btn" id="shareBtn" type="button">Share</button>
             </div>
           </div>
         </div>
 
         <div class="kv">
-          <div class="box"><div class="k">Version</div><div class="v">${a.version || "-"}</div></div>
-          <div class="box"><div class="k">Size</div><div class="v">${a.size || "-"}</div></div>
-          <div class="box"><div class="k">Min Android</div><div class="v">${a.minAndroid || "-"}</div></div>
+          <div class="box"><div class="k">Type</div><div class="v">${typeOfApp(a)==="games" ? "Game" : "Aplikasi"}</div></div>
+          <div class="box"><div class="k">Version</div><div class="v">${escapeHtml(a.version || "-")}</div></div>
+          <div class="box"><div class="k">Size</div><div class="v">${escapeHtml(a.size || "-")}</div></div>
           <div class="box"><div class="k">Downloads</div><div class="v">${fmtNum(a.downloads)}</div></div>
         </div>
 
-        <div class="section" id="reviewSection">
-          <div class="reviewHeader">
-            <h3 style="margin:0">Ratings & reviews</h3>
-            <div class="reviewSummary" id="reviewSummary">
-              <span>${starsDisplay(avg)}</span>
-              <span class="ratingNum" id="avgNum">${avg ? avg.toFixed(1) : "0.0"}</span>
-              <span id="reviewCount">(${count})</span>
+        <div class="panel" id="reviewPanel">
+          <div class="panelHead">
+            <h3>Ratings & reviews</h3>
+            <div class="reviewSummary">
+              <span>${starsDisplay(stats.avg)}</span>
+              <span class="ratingNum" id="avgNum">${stats.avg ? stats.avg.toFixed(1) : "0.0"}</span>
+              <span id="reviewCount">(${stats.count})</span>
             </div>
           </div>
 
-          <div class="reviewForm">
-            <div class="rateStars" id="rateStars"></div>
-<div class="hint" id="selectedLabel">Belum memilih rating</div>
+          <div class="reviewGrid">
+            <div class="reviewStats">
+              <div class="bigRating">
+                <div class="num">${stats.avg ? stats.avg.toFixed(1) : "0.0"}</div>
+                <div>${starsDisplay(stats.avg)}</div>
+                <div class="hint">${stats.count} ulasan</div>
+              </div>
 
-            <textarea id="commentBox" placeholder="Tulis ulasan kamu (opsional)..."></textarea>
-
-            <div class="formRow">
-              <div class="hint" id="reviewHint">Pilih bintang, tulis ulasan, lalu klik Kirim.</div>
-              <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
-                <button class="btn" id="reviewLoginBtn" style="display:none;">Login untuk Ulasan</button>
-                <button class="btn primary" id="submitReviewBtn">Kirim</button>
+              <div class="bars">
+                ${[5,4,3,2,1].map(s=>{
+                  const c = dist[s-1] || 0;
+                  const pct = Math.round((c/total)*100);
+                  return `
+                    <div class="barRow">
+                      <div>${s}</div>
+                      <div class="bar"><span style="width:${pct}%"></span></div>
+                      <div>${pct}%</div>
+                    </div>
+                  `;
+                }).join("")}
               </div>
             </div>
 
-            <div class="hint">
-              1 akun Google = 1 ulasan. Kamu bisa <b>Perbarui</b> ulasan kapan saja.
-              <span id="charInfo" class="hint"></span>
+            <div>
+              <div class="rateStars" id="rateStars"></div>
+              <div class="hint" id="selectedLabel" style="margin-top:2px">Belum memilih rating</div>
+
+              <textarea id="commentBox" placeholder="Tulis ulasan kamu (opsional)..."></textarea>
+
+              <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between;margin-top:10px">
+                <div class="hint" id="reviewHint">Pilih bintang, tulis ulasan, lalu klik Kirim.</div>
+                <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+                  <button class="btn" id="reviewLoginBtn" style="display:none" type="button">Login untuk Ulasan</button>
+                  <button class="btn primary" id="submitReviewBtn" type="button">Kirim</button>
+                </div>
+              </div>
+
+              <div class="hint" style="margin-top:8px">
+                1 akun Google = 1 ulasan. Bisa <b>Perbarui</b> kapan saja.
+                <span id="charInfo" class="hint"></span>
+              </div>
             </div>
           </div>
 
           <div class="reviewsList" id="reviewsList"></div>
         </div>
 
-        <div class="section">
-          <h3>Deskripsi</h3>
-          <p>${(a.description || "-")}</p>
+        <div class="panel">
+          <div class="panelHead"><h3>Deskripsi</h3></div>
+          <p>${escapeHtml(a.description || "-")}</p>
         </div>
 
         ${a.changelog ? `
-          <div class="section">
-            <h3>Changelog</h3>
-            <p>${a.changelog}</p>
+          <div class="panel">
+            <div class="panelHead"><h3>Changelog</h3></div>
+            <p>${escapeHtml(a.changelog)}</p>
           </div>
         ` : ""}
 
         ${shotsHtml}
       `;
 
-      overlay.classList.add("show");
-      overlay.setAttribute("aria-hidden", "false");
-
-      // share/copy
-      const copyBtn = document.getElementById("copyLinkBtn");
-      const shareBtn = document.getElementById("shareBtn");
+      // copy/share
       const shareUrl = location.href;
-
-      copyBtn.onclick = async () => {
+      document.getElementById("copyLinkBtn").onclick = async ()=>{
         try{
           await navigator.clipboard.writeText(shareUrl);
           toast("Link berhasil di-copy!");
@@ -1211,18 +1646,18 @@
           toast("Gagal copy. Coba manual.");
         }
       };
-
-      shareBtn.onclick = async () => {
+      document.getElementById("shareBtn").onclick = async ()=>{
         if (navigator.share){
           try{
-            await navigator.share({ title: a.name, text: "Download APK", url: shareUrl });
+            await navigator.share({ title: a.name, text: "Install dari APK Store", url: shareUrl });
           } catch {}
-        } else {
-          toast("Browser belum support Share. Pakai Copy Link.");
-        }
+        } else toast("Browser belum support Share. Pakai Copy Link.");
       };
 
-      // review logic
+      overlay.classList.add("show");
+      overlay.setAttribute("aria-hidden","false");
+      lockBodyScroll(true);
+
       setupReviewUI(id);
       renderReviewsList(id);
     }
@@ -1230,187 +1665,149 @@
     function closeDetail(){
       overlay.classList.remove("show");
       overlay.setAttribute("aria-hidden","true");
+      lockBodyScroll(false);
       const url = new URL(location.href);
       url.searchParams.delete("id");
       history.replaceState({}, "", url);
       currentAppId = null;
     }
-
     closeBtn.onclick = closeDetail;
-    overlay.addEventListener("click", (e)=>{
-      if (e.target === overlay) closeDetail();
-    });
-    window.addEventListener("keydown",(e)=>{
-      if (e.key === "Escape") closeDetail();
-    });
+    overlay.addEventListener("click",(e)=>{ if (e.target===overlay) closeDetail(); });
+    window.addEventListener("keydown",(e)=>{ if (e.key==="Escape") closeDetail(); });
 
-    // Search debounce
-    let t = null;
-    qEl.addEventListener("input", ()=>{
-      clearTimeout(t);
-      t = setTimeout(()=>{
-        query = qEl.value || "";
-        renderList();
-      }, 120);
-    });
+    // ===== Review UI (interactive) =====
+    let _reviewFormCache = null;
 
-    sortEl.addEventListener("change", ()=>{
-      sortBy = sortEl.value;
-      renderList();
-    });
-
-    // ===== Review UI =====
     function setupReviewUI(appId){
-  const rateStarsEl = document.getElementById("rateStars");
-  const commentBox = document.getElementById("commentBox");
-  const submitBtn = document.getElementById("submitReviewBtn");
-  const loginReviewBtn = document.getElementById("reviewLoginBtn");
-  const hintEl = document.getElementById("reviewHint");
-  const charInfo = document.getElementById("charInfo");
-  const selectedLabel = document.getElementById("selectedLabel");
+      const rateStarsEl = document.getElementById("rateStars");
+      const commentBox = document.getElementById("commentBox");
+      const submitBtn = document.getElementById("submitReviewBtn");
+      const loginReviewBtn = document.getElementById("reviewLoginBtn");
+      const hintEl = document.getElementById("reviewHint");
+      const charInfo = document.getElementById("charInfo");
+      const selectedLabel = document.getElementById("selectedLabel");
 
-  let selectedStars = 0;     // ✅ hanya berubah saat klik/tap
-  const MAX_LEN = 500;
+      let selectedStars = 0;
+      const MAX_LEN = 500;
 
-  function updateSelectedLabel(){
-    if (!selectedLabel) return;
-    selectedLabel.textContent = selectedStars
-      ? `Rating dipilih: ${selectedStars}/5`
-      : "Belum memilih rating";
-  }
+      function updateSelectedLabel(){
+        selectedLabel.textContent = selectedStars ? `Rating dipilih: ${selectedStars}/5` : "Belum memilih rating";
+      }
+      function updateCharInfo(){
+        const len = (commentBox.value || "").length;
+        charInfo.textContent = ` • ${len}/${MAX_LEN}`;
+        if (len > MAX_LEN){
+          charInfo.classList.add("danger");
+          charInfo.textContent = ` • ${len}/${MAX_LEN} (kepanjangan)`;
+        } else charInfo.classList.remove("danger");
+      }
+      function renderStars(){
+        rateStarsEl.innerHTML = "";
+        for (let i=1;i<=5;i++){
+          const btn = document.createElement("button");
+          btn.type = "button";
+          btn.className = "starBtn";
+          btn.innerHTML = starSvg(i <= selectedStars);
+          btn.onpointerdown = (e)=>{
+            e.preventDefault();
+            selectedStars = i;
+            renderStars();
+            updateSelectedLabel();
+          };
+          rateStarsEl.appendChild(btn);
+        }
+      }
 
-  function updateCharInfo(){
-    const len = (commentBox.value || "").length;
-    if (!charInfo) return;
-    charInfo.textContent = ` • ${len}/${MAX_LEN}`;
-    if (len > MAX_LEN){
-      charInfo.classList.add("danger");
-      charInfo.textContent = ` • ${len}/${MAX_LEN} (kepanjangan)`;
-    } else {
-      charInfo.classList.remove("danger");
-    }
-  }
+      async function loadMyExistingReview(){
+        if (!currentUser){
+          selectedStars = 0;
+          commentBox.value = "";
+          submitBtn.textContent = "Kirim";
+          hintEl.textContent = "Login untuk memberi ulasan.";
+          loginReviewBtn.style.display = "inline-flex";
+          renderStars(); updateSelectedLabel(); updateCharInfo();
+          return;
+        }
+        loginReviewBtn.style.display = "none";
+        hintEl.textContent = "Pilih bintang, tulis ulasan, lalu klik Kirim.";
 
-  function renderStars(){
-    rateStarsEl.innerHTML = "";
-    for (let i=1;i<=5;i++){
-      const btn = document.createElement("button");
-      btn.type = "button";
-      btn.className = "starBtn";
-      btn.innerHTML = starSvg(i <= selectedStars);
+        const mine = await getMyReview(appId);
+        if (mine){
+          selectedStars = Number(mine.stars || 0);
+          commentBox.value = String(mine.comment || "");
+          submitBtn.textContent = "Perbarui";
+          hintEl.textContent = `Ulasan kamu terakhir diupdate: ${timeAgo(mine.updatedAt)}`;
+        } else {
+          selectedStars = 0;
+          commentBox.value = "";
+          submitBtn.textContent = "Kirim";
+        }
+        renderStars(); updateSelectedLabel(); updateCharInfo();
+      }
 
-      // ✅ pointerdown biar di HP sekali tap langsung kepilih
-      btn.onpointerdown = (e) => {
-        e.preventDefault();
-        selectedStars = i;
-        renderStars();
-        updateSelectedLabel();
+      loginReviewBtn.onclick = async ()=>{
+        try{
+          await signInWithPopup(auth, provider);
+          toast("Login berhasil!");
+          await loadMyExistingReview();
+        } catch (e){
+          toast("Login gagal. Cek Authorized domains.");
+          console.error(e);
+        }
+      };
+      commentBox.addEventListener("input", updateCharInfo);
+
+      submitBtn.onclick = async ()=>{
+        if (!currentUser){
+          toast("Login dulu untuk ulasan.");
+          loginReviewBtn.style.display = "inline-flex";
+          return;
+        }
+        if (selectedStars < 1 || selectedStars > 5){
+          toast("Pilih rating 1–5 bintang dulu (klik bintangnya).");
+          return;
+        }
+        const comment = (commentBox.value || "").trim();
+        if (comment.length > MAX_LEN){
+          toast("Komentar terlalu panjang (max 500).");
+          return;
+        }
+
+        try{
+          await submitReview(appId, selectedStars, comment);
+          submitBtn.textContent = "Perbarui";
+          hintEl.textContent = "Ulasan tersimpan. Kamu bisa perbarui kapan saja.";
+          renderReviewsList(appId);
+        } catch (e){
+          toast("Gagal menyimpan ulasan.");
+          console.error(e);
+        }
       };
 
-      rateStarsEl.appendChild(btn);
-    }
-  }
+      renderStars(); updateSelectedLabel(); updateCharInfo();
+      loadMyExistingReview();
 
-  async function loadMyExistingReview(){
-    if (!currentUser){
-      selectedStars = 0;
-      commentBox.value = "";
-      submitBtn.textContent = "Kirim";
-      hintEl.textContent = "Login untuk memberi ulasan.";
-      loginReviewBtn.style.display = "inline-flex";
-      renderStars();
-      updateSelectedLabel();
-      updateCharInfo();
-      return;
+      _reviewFormCache = { appId, reload: loadMyExistingReview };
     }
 
-    loginReviewBtn.style.display = "none";
-    hintEl.textContent = "Pilih bintang, tulis ulasan, lalu klik Kirim.";
-
-    const mine = await getMyReview(appId);
-    if (mine){
-      selectedStars = Number(mine.stars || 0);
-      commentBox.value = String(mine.comment || "");
-      submitBtn.textContent = "Perbarui";
-      hintEl.textContent = `Ulasan kamu terakhir diupdate: ${timeAgo(mine.updatedAt)}`;
-    } else {
-      selectedStars = 0;
-      commentBox.value = "";
-      submitBtn.textContent = "Kirim";
+    async function refreshReviewForm(appId){
+      if (_reviewFormCache && _reviewFormCache.appId === appId){
+        await _reviewFormCache.reload();
+      }
     }
-
-    renderStars();
-    updateSelectedLabel();
-    updateCharInfo();
-  }
-
-  loginReviewBtn.onclick = async () => {
-    try{
-      await signInWithPopup(auth, provider);
-      toast("Login berhasil!");
-      await loadMyExistingReview();
-    } catch (e){
-      toast("Login gagal. Cek Authorized domains.");
-      console.error(e);
-    }
-  };
-
-  commentBox.addEventListener("input", updateCharInfo);
-
-  submitBtn.onclick = async () => {
-    if (!currentUser){
-      toast("Login dulu untuk ulasan.");
-      loginReviewBtn.style.display = "inline-flex";
-      return;
-    }
-    if (selectedStars < 1 || selectedStars > 5){
-      toast("Pilih rating 1–5 bintang dulu (klik bintangnya).");
-      return;
-    }
-    const comment = (commentBox.value || "").trim();
-    if (comment.length > MAX_LEN){
-      toast("Komentar terlalu panjang (max 500).");
-      return;
-    }
-
-    try{
-      await submitReview(appId, selectedStars, comment);
-      submitBtn.textContent = "Perbarui";
-      hintEl.textContent = "Ulasan tersimpan. Kamu bisa perbarui kapan saja.";
-      renderReviewsList(appId);
-    } catch (e){
-      toast("Gagal menyimpan ulasan.");
-      console.error(e);
-    }
-  };
-
-  renderStars();
-  updateSelectedLabel();
-  updateCharInfo();
-  loadMyExistingReview();
-
-  // kalau login/logout saat modal terbuka, refresh form
-  onAuthStateChanged(auth, async () => {
-    if (currentAppId === appId){
-      await loadMyExistingReview();
-    }
-  });
-}
-
 
     function renderReviewsList(appId){
-      const a = allApps.find(x => x.id === appId);
+      const a = allApps.find(x=>x.id===appId);
       if (!a) return;
 
       const list = document.getElementById("reviewsList");
       const avgNum = document.getElementById("avgNum");
       const reviewCount = document.getElementById("reviewCount");
-
       if (!list || !avgNum || !reviewCount) return;
 
       const reviewsObj = a.reviews || {};
       const entries = Object.entries(reviewsObj)
-        .map(([uid, v]) => ({
+        .map(([uid,v])=>({
           uid,
           stars: Number(v?.stars || 0),
           comment: String(v?.comment || ""),
@@ -1418,24 +1815,20 @@
           userPhoto: String(v?.userPhoto || ""),
           updatedAt: Number(v?.updatedAt || 0)
         }))
-        .filter(r => r.stars >= 1 && r.stars <= 5)
-        .sort((x,y) => (y.updatedAt||0) - (x.updatedAt||0));
+        .filter(r=>r.stars>=1 && r.stars<=5)
+        .sort((x,y)=>(y.updatedAt||0)-(x.updatedAt||0));
 
       const stats = computeReviewStats(reviewsObj);
       avgNum.textContent = stats.avg ? stats.avg.toFixed(1) : "0.0";
       reviewCount.textContent = `(${stats.count})`;
 
       list.innerHTML = "";
-
       if (entries.length === 0){
         list.innerHTML = `<div class="hint">Belum ada ulasan. Jadilah yang pertama!</div>`;
         return;
       }
 
-      // Tampilkan maksimal 20 ulasan terbaru
-      const shown = entries.slice(0, 20);
-
-      for (const r of shown){
+      entries.slice(0, 30).forEach(r=>{
         const div = document.createElement("div");
         div.className = "reviewItem";
         div.innerHTML = `
@@ -1443,46 +1836,32 @@
           <div class="rMain">
             <div class="rTop">
               <div style="display:flex;gap:8px;align-items:center;min-width:0;flex-wrap:wrap">
-                <div class="rName" title="${r.userName}">${r.userName}</div>
+                <div class="rName" title="${escapeHtml(r.userName)}">${escapeHtml(r.userName)}</div>
                 <div>${starsDisplay(r.stars)}</div>
               </div>
               <div class="rTime">${r.updatedAt ? timeAgo(r.updatedAt) : ""}</div>
             </div>
-            ${r.comment ? `<div class="rComment">${escapeHtml(r.comment)}</div>` : `<div class="hint" style="margin-top:6px;">(Tanpa komentar)</div>`}
+            ${r.comment ? `<div class="rComment">${escapeHtml(r.comment)}</div>` : `<div class="hint" style="margin-top:6px">(Tanpa komentar)</div>`}
           </div>
         `;
         list.appendChild(div);
-      }
+      });
     }
 
-    function escapeHtml(s){
-      return String(s)
-        .replaceAll("&","&amp;")
-        .replaceAll("<","&lt;")
-        .replaceAll(">","&gt;")
-        .replaceAll('"',"&quot;")
-        .replaceAll("'","&#039;");
-    }
-
-    // Load apps realtime
+    // ====== Realtime load ======
     const appsRef = ref(db, "apps");
     onValue(appsRef, (snapshot)=>{
-      const raw = snapshot.val();
-      allApps = normalizeApps(raw);
-      buildCategories();
-      renderList();
+      allApps = normalizeApps(snapshot.val());
+      // count pill (home updates later)
+      renderSubcats();
+      render();
 
-      // update modal review list live if open
+      // live update modal review list if open
       if (currentAppId){
         renderReviewsList(currentAppId);
       }
-
-      // auto open detail if ?id=...
-      const url = new URL(location.href);
-      const id = url.searchParams.get("id");
-      if (id && !currentAppId) openDetail(id);
     }, (err)=>{
-      listEl.innerHTML = `<div class="state">Gagal load data. Cek Rules / koneksi internet.<br><br><b>${safeText(err?.message,"")}</b></div>`;
+      contentEl.innerHTML = `<div class="state">Gagal load data. Cek Rules / koneksi internet.<br><br><b>${escapeHtml(safeText(err?.message,""))}</b></div>`;
       console.error(err);
     });
   </script>
