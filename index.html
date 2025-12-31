@@ -4,7 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>APK Store</title>
-  <meta name="description" content="APK Store — UI ala Play Store: Apps & Games, kategori scroll, detail + rating & komentar (1 user 1 ulasan)." />
+  <meta name="description" content="APK Store — UI ala Play Store: Apps & Games, banner, kategori per-row, detail + rating & ulasan realtime (1 user 1 ulasan)." />
+
   <style>
     :root{
       --bg:#f6f7fb;
@@ -20,6 +21,7 @@
       --star:#fbbf24;
       --starOff:#cbd5e1;
       --shadow: 0 10px 25px rgba(15, 23, 42, .07);
+      --shadow2: 0 18px 60px rgba(2,6,23,.14);
       --safeT: env(safe-area-inset-top);
       --safeB: env(safe-area-inset-bottom);
       --safeL: env(safe-area-inset-left);
@@ -36,6 +38,7 @@
     }
     a{color:inherit;text-decoration:none}
     button, input, textarea, select{font:inherit}
+
     .wrap{
       max-width: 1120px;
       margin: 0 auto;
@@ -49,7 +52,7 @@
       position: sticky;
       top: 0;
       z-index: 50;
-      background: rgba(246,247,251,.84);
+      background: rgba(246,247,251,.86);
       backdrop-filter: blur(12px);
       border-bottom: 1px solid rgba(229,231,235,.7);
     }
@@ -92,301 +95,236 @@
       overflow:hidden;
       text-overflow:ellipsis;
     }
-    .auth{
-      display:flex;
-      align-items:center;
-      gap:8px;
-      flex:0 0 auto;
-    }
+
+    .auth{display:flex;align-items:center;gap:8px;flex:0 0 auto;}
     .btnAuth{
-      height:38px;
-      border-radius:999px;
-      padding:0 12px;
-      border:1px solid var(--line);
-      background: var(--card);
-      color: var(--text);
-      font-size:13px;
-      font-weight:900;
-      cursor:pointer;
-      min-height:44px;
+      height:38px;border-radius:999px;padding:0 12px;
+      border:1px solid var(--line);background:var(--card);
+      color:var(--text);font-size:13px;font-weight:900;
+      cursor:pointer;min-height:44px;
     }
     .btnAuth.primary{
-      background: var(--brand);
-      border-color: transparent;
-      color:#fff;
+      background:var(--brand);border-color:transparent;color:#fff;
       box-shadow: 0 10px 18px rgba(26,115,232,.18);
     }
     .btnAuth:active{transform:scale(.99)}
 
     /* avatar-only in header */
     .avatarBtn{
-      width:40px;height:40px;
-      border-radius:999px;
-      border:1px solid var(--line);
-      background:#fff;
-      display:none;
-      place-items:center;
-      cursor:pointer;
-      padding:0;
+      width:40px;height:40px;border-radius:999px;
+      border:1px solid var(--line);background:#fff;
+      display:none;place-items:center;cursor:pointer;padding:0;
       box-shadow: 0 10px 18px rgba(15,23,42,.06);
       overflow:hidden;
     }
-    .avatarBtn img{
-      width:100%;height:100%;
-      object-fit:cover;
-      display:block;
-    }
+    .avatarBtn img{width:100%;height:100%;object-fit:cover;display:block;}
     .avatarBtn:active{transform:scale(.99)}
 
+    /* Search + tabs (hidden on profile) */
+    .headerExtras{display:grid;gap:10px;}
+    .headerExtras.hidden{display:none;}
+
     .searchBar{
-      display:flex;
-      align-items:center;
-      gap:10px;
-      padding: 10px 12px;
-      border-radius: 999px;
-      border: 1px solid var(--line);
-      background: var(--card);
+      display:flex;align-items:center;gap:10px;
+      padding:10px 12px;border-radius:999px;
+      border:1px solid var(--line);
+      background:var(--card);
       box-shadow: 0 10px 22px rgba(15,23,42,.06);
     }
     .searchBar svg{flex:0 0 auto;opacity:.75}
     .searchBar input{
       width:100%;
-      border:none;
-      outline:none;
-      background:transparent;
+      border:none;outline:none;background:transparent;
       font-size:16px; /* iOS anti-zoom */
     }
-    .pill{
-      font-size:12px;
-      font-weight:900;
-      color: var(--muted);
-      white-space:nowrap;
-    }
+    .pill{font-size:12px;font-weight:900;color:var(--muted);white-space:nowrap;}
 
     .tabs{
-      display:flex;
-      gap:14px;
-      align-items:flex-end;
-      overflow:auto;
-      scrollbar-width:none;
+      display:flex;gap:14px;align-items:flex-end;overflow:auto;scrollbar-width:none;
     }
     .tabs::-webkit-scrollbar{display:none}
     .tab{
-      position:relative;
-      padding: 8px 2px;
-      font-weight:1000;
-      color: var(--muted);
-      cursor:pointer;
-      user-select:none;
-      white-space:nowrap;
+      position:relative;padding:8px 2px;
+      font-weight:1000;color:var(--muted);
+      cursor:pointer;user-select:none;white-space:nowrap;
     }
-    .tab.active{color: var(--text)}
+    .tab.active{color:var(--text)}
     .tab.active:after{
-      content:"";
-      position:absolute;
-      left:0; right:0; bottom:0;
-      height:3px;
-      border-radius:999px;
-      background: var(--brand);
-    }
-
-    .subcatsRow{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap: 10px;
-    }
-    .subcats{
-      display:flex;
-      gap:8px;
-      overflow:auto;
-      padding-bottom: 2px;
-      scrollbar-width:thin;
-      -webkit-overflow-scrolling: touch;
-      flex: 1;
-      min-width:0;
-    }
-    .chip{
-      height:36px;
-      border-radius: 999px;
-      padding: 0 12px;
-      border: 1px solid var(--line);
-      background: var(--card);
-      color: var(--text);
-      font-size:13px;
-      font-weight:900;
-      cursor:pointer;
-      white-space:nowrap;
-      min-height:44px;
-    }
-    .chip.active{
-      border-color: rgba(26,115,232,.45);
-      box-shadow: 0 0 0 4px rgba(26,115,232,.12);
-    }
-
-    .sortPill{
-      height:36px;
-      border-radius: 999px;
-      border: 1px solid var(--line);
-      background: var(--card);
-      padding: 0 10px;
-      font-weight:1000;
-      color: var(--text);
-      display:flex;
-      align-items:center;
-      gap: 8px;
-      flex:0 0 auto;
-      box-shadow: 0 10px 18px rgba(15,23,42,.04);
-      min-height:44px;
-    }
-    .sortPill select{
-      border:none;
-      outline:none;
-      background:transparent;
-      font-weight:1000;
-      cursor:pointer;
-      padding: 0 2px;
-      font-size:13px;
+      content:"";position:absolute;left:0;right:0;bottom:0;
+      height:3px;border-radius:999px;background:var(--brand);
     }
 
     /* ===== Bottom nav ===== */
     .bottomNav{
-      position: sticky;
-      bottom: 0;
-      z-index: 40;
+      position: sticky;bottom: 0;z-index: 40;
       background: rgba(246,247,251,.90);
       backdrop-filter: blur(10px);
       border-top: 1px solid rgba(229,231,235,.75);
       padding-bottom: var(--safeB);
     }
     .bottomNav-inner{
-      max-width: 1120px;
-      margin: 0 auto;
+      max-width: 1120px;margin: 0 auto;
       padding: 8px 14px;
       padding-left: calc(14px + var(--safeL));
       padding-right: calc(14px + var(--safeR));
-      display:grid;
-      grid-template-columns: repeat(3, 1fr);
+      display:grid;grid-template-columns: repeat(3, 1fr);
       gap: 6px;
     }
     .navBtn{
-      border:none;
-      background:transparent;
-      border-radius: 14px;
-      padding: 8px 6px;
-      cursor:pointer;
-      display:flex;
-      flex-direction:column;
-      gap:4px;
-      align-items:center;
-      justify-content:center;
+      border:none;background:transparent;border-radius: 14px;
+      padding: 8px 6px;cursor:pointer;
+      display:flex;flex-direction:column;gap:4px;
+      align-items:center;justify-content:center;
       color: var(--muted);
-      font-weight:900;
-      font-size:11px;
+      font-weight:900;font-size:11px;
       min-height: 44px;
     }
-    .navBtn.active{
-      color: var(--brand2);
-      background: rgba(26,115,232,.10);
-    }
+    .navBtn.active{color: var(--brand2);background: rgba(26,115,232,.10);}
     .navBtn:active{transform:scale(.99)}
     .navBtn svg{width:20px;height:20px}
 
     /* ===== Content ===== */
-    .content{
-      min-height: calc(100vh - 210px);
-      padding-bottom: 14px;
-    }
+    .content{min-height: calc(100vh - 210px);padding-bottom: 14px;}
     .state{
-      padding: 14px;
-      border: 1px dashed rgba(100,116,139,.35);
-      border-radius: 16px;
-      color: var(--muted);
-      background: rgba(255,255,255,.6);
-      text-align:center;
+      padding: 14px;border: 1px dashed rgba(100,116,139,.35);
+      border-radius: 16px;color: var(--muted);
+      background: rgba(255,255,255,.6);text-align:center;
     }
 
     .section{ margin-top: 14px; }
     .sectionHead{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:10px;
-      margin-bottom: 10px;
+      display:flex;align-items:center;justify-content:space-between;
+      gap:10px;margin-bottom: 10px;
     }
-    .sectionTitle{ font-weight:1000; font-size:15px; }
+    .sectionTitle{ font-weight:1000;font-size:15px; }
     .linkBtn{
-      border:none;
-      background:transparent;
-      cursor:pointer;
-      font-weight:1000;
-      font-size:13px;
-      color: var(--brand2);
-      padding: 6px 10px;
-      border-radius: 999px;
-      min-height:44px;
+      border:none;background:transparent;cursor:pointer;
+      font-weight:1000;font-size:13px;color:var(--brand2);
+      padding: 6px 10px;border-radius: 999px;min-height:44px;
     }
     .linkBtn:hover{background: rgba(26,115,232,.08)}
     .linkBtn:active{transform:scale(.99)}
 
-    .hscroll{
+    /* Banner carousel (Play Store-ish) */
+    .bannerRow{
+      display:flex;gap:12px;overflow:auto;
+      -webkit-overflow-scrolling: touch;
+      padding-bottom: 8px;
+      scroll-snap-type: x proximity;
+    }
+    .banner{
+      scroll-snap-align:start;
+      flex:0 0 auto;
+      width: min(560px, calc(100vw - 28px - var(--safeL) - var(--safeR)));
+      border-radius: 22px;
+      border: 1px solid rgba(229,231,235,.8);
+      background: #fff;
+      box-shadow: var(--shadow2);
+      overflow:hidden;
+      cursor:pointer;
+      position:relative;
+      min-height: 168px;
+    }
+    .banner:active{transform:scale(.995)}
+    .bannerBg{
+      position:absolute;inset:0;
+      background: linear-gradient(135deg, rgba(26,115,232,.14), rgba(11,87,208,.06));
+    }
+    .bannerImg{
+      position:absolute;inset:0;
+      width:100%;height:100%;
+      object-fit:cover;
+      opacity:.18;
+      filter: blur(1px);
+      transform: scale(1.05);
+    }
+    .bannerInner{
+      position:relative;
+      padding: 14px;
       display:flex;
-      gap: 10px;
-      overflow:auto;
+      gap: 12px;
+      align-items:center;
+    }
+    .bannerIco{
+      width:64px;height:64px;border-radius: 18px;
+      border:1px solid rgba(229,231,235,.9);
+      background:#fff;
+      object-fit:cover;
+      flex:0 0 auto;
+      box-shadow: 0 12px 22px rgba(2,6,23,.12);
+    }
+    .bannerMain{min-width:0;flex:1}
+    .bannerTitle{
+      margin:0;
+      font-weight:1000;
+      font-size: 18px;
+      line-height:1.15;
+      letter-spacing:.1px;
+      overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+    }
+    .bannerDesc{
+      margin-top:6px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height:1.35;
+      display:-webkit-box;
+      -webkit-line-clamp:2;
+      -webkit-box-orient:vertical;
+      overflow:hidden;
+    }
+    .bannerMeta{
+      margin-top:10px;
+      display:flex;gap:10px;align-items:center;flex-wrap:wrap;
+      color: var(--muted);
+      font-size:12px;
+    }
+    .bannerCta{
+      height:40px;border-radius:999px;
+      padding:0 14px;border:1px solid rgba(229,231,235,.9);
+      background: rgba(255,255,255,.92);
+      font-weight:1000;
+      cursor:pointer;
+      min-height:44px;
+    }
+    .bannerCta:active{transform:scale(.99)}
+
+    .hscroll{
+      display:flex;gap: 10px;overflow:auto;
       padding-bottom: 6px;
       -webkit-overflow-scrolling: touch;
       scroll-snap-type: x proximity;
     }
     .tile{
       scroll-snap-align: start;
-      min-width: 220px;
-      max-width: 220px;
+      min-width: 220px;max-width: 220px;
       background: var(--card);
       border: 1px solid var(--line);
       border-radius: 18px;
       box-shadow: var(--shadow);
       padding: 12px;
       cursor:pointer;
-      display:flex;
-      gap: 10px;
-      align-items:flex-start;
+      display:flex;gap: 10px;align-items:flex-start;
     }
     .tile:active{transform:scale(.995)}
     .ico{
-      width: 56px; height:56px;
-      border-radius: 16px;
+      width: 56px; height:56px;border-radius: 16px;
       border: 1px solid var(--line);
-      object-fit:cover;
-      background:#fff;
-      flex:0 0 auto;
+      object-fit:cover;background:#fff;flex:0 0 auto;
     }
     .tileMain{min-width:0; flex:1}
     .tileName{
-      font-weight:1000;
-      font-size:14px;
-      line-height:1.25;
-      display:-webkit-box;
-      -webkit-line-clamp:2;
-      -webkit-box-orient:vertical;
-      overflow:hidden;
-      margin:0;
+      font-weight:1000;font-size:14px;line-height:1.25;
+      display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;
+      overflow:hidden;margin:0;
     }
     .tileMeta{
-      margin-top:6px;
-      display:flex;
-      flex-wrap:wrap;
-      gap: 8px;
-      align-items:center;
-      color: var(--muted);
-      font-size:12px;
+      margin-top:6px;display:flex;flex-wrap:wrap;
+      gap: 8px;align-items:center;
+      color: var(--muted);font-size:12px;
     }
 
     /* Vertical list (Top/search) */
-    .vlist{
-      display:grid;
-      grid-template-columns: 1fr;
-      gap: 10px;
-    }
+    .vlist{display:grid;grid-template-columns: 1fr;gap: 10px;}
     .rowCard{
       background: var(--card);
       border: 1px solid var(--line);
@@ -394,68 +332,43 @@
       box-shadow: var(--shadow);
       padding: 12px;
       cursor:pointer;
-      display:flex;
-      gap: 12px;
-      align-items:center;
+      display:flex;gap: 12px;align-items:center;
     }
     .rowMain{min-width:0; flex:1}
     .rowTitle{
-      display:flex;
-      justify-content:space-between;
-      gap:10px;
-      align-items:flex-start;
+      display:flex;justify-content:space-between;
+      gap:10px;align-items:flex-start;
     }
     .rowName{
-      font-weight:1000;
-      font-size:15px;
-      margin:0;
-      overflow:hidden;
-      text-overflow:ellipsis;
-      white-space:nowrap;
+      font-weight:1000;font-size:15px;margin:0;
+      overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
     }
     .badge{
-      font-size:11px;
-      padding:4px 8px;
-      border-radius: 999px;
+      font-size:11px;padding:4px 8px;border-radius: 999px;
       border: 1px solid var(--line);
-      background:#fff;
-      color: var(--muted);
-      font-weight:1000;
-      white-space:nowrap;
+      background:#fff;color: var(--muted);
+      font-weight:1000;white-space:nowrap;
     }
     .badge.new{border-color:rgba(16,185,129,.4); background:rgba(16,185,129,.08); color:var(--good);}
     .badge.mod{border-color:rgba(245,158,11,.45); background:rgba(245,158,11,.10); color:var(--warn);}
     .rowDesc{
-      margin-top:6px;
-      color: var(--muted);
-      font-size:13px;
-      line-height:1.4;
-      display:-webkit-box;
-      -webkit-line-clamp:2;
-      -webkit-box-orient:vertical;
+      margin-top:6px;color: var(--muted);
+      font-size:13px;line-height:1.4;
+      display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;
       overflow:hidden;
     }
     .rowMeta{
-      margin-top:8px;
-      display:flex;
-      flex-wrap:wrap;
-      gap: 10px 12px;
-      align-items:center;
-      color: var(--muted);
-      font-size:12px;
+      margin-top:8px;display:flex;flex-wrap:wrap;
+      gap: 10px 12px;align-items:center;
+      color: var(--muted);font-size:12px;
     }
     .btnInstall{
-      height: 40px;
-      border-radius: 999px;
-      padding: 0 14px;
+      height: 40px;border-radius: 999px;padding: 0 14px;
       border: 1px solid var(--line);
-      background: var(--brand);
-      color:#fff;
-      font-weight:1000;
-      cursor:pointer;
+      background: var(--brand);color:#fff;
+      font-weight:1000;cursor:pointer;
       box-shadow: 0 10px 18px rgba(26,115,232,.16);
-      white-space:nowrap;
-      flex:0 0 auto;
+      white-space:nowrap;flex:0 0 auto;
       min-height: 44px;
     }
     .btnInstall:active{transform:scale(.99)}
@@ -471,14 +384,12 @@
     .overlay{
       position:fixed; inset:0;
       background: rgba(2,6,23,.56);
-      display:none;
-      z-index: 80;
+      display:none;z-index: 80;
       padding: 14px;
       padding-bottom: calc(14px + var(--safeB));
       padding-left: calc(14px + var(--safeL));
       padding-right: calc(14px + var(--safeR));
-      overflow:auto;
-      -webkit-overflow-scrolling: touch;
+      overflow:auto;-webkit-overflow-scrolling: touch;
     }
     .overlay.show{display:block}
     .modal{
@@ -491,40 +402,27 @@
       overflow:hidden;
     }
     .modalTop{
-      padding: 12px 14px;
-      border-bottom: 1px solid var(--line);
-      display:flex;
-      justify-content:space-between;
-      align-items:center;
+      padding: 12px 14px;border-bottom: 1px solid var(--line);
+      display:flex;justify-content:space-between;align-items:center;
       gap:10px;
     }
     .modalTitle{
-      font-weight:1000;
-      font-size:14px;
-      color: var(--muted);
-      overflow:hidden;
-      text-overflow:ellipsis;
-      white-space:nowrap;
+      font-weight:1000;font-size:14px;color: var(--muted);
+      overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
       min-width:0;
     }
     .xbtn{
-      width: 42px; height: 42px;
-      border-radius: 14px;
-      border: 1px solid var(--line);
-      background:#fff;
-      cursor:pointer;
-      display:grid; place-items:center;
+      width: 42px; height: 42px;border-radius: 14px;
+      border: 1px solid var(--line);background:#fff;
+      cursor:pointer;display:grid;place-items:center;
       box-shadow: 0 10px 20px rgba(15,23,42,.06);
       min-height:44px;
     }
     .xbtn:active{transform:scale(.99)}
     .modalBody{
-      padding: 14px;
-      display:grid;
-      gap: 14px;
+      padding: 14px;display:grid;gap: 14px;
       max-height: calc(100dvh - 140px);
-      overflow:auto;
-      -webkit-overflow-scrolling: touch;
+      overflow:auto;-webkit-overflow-scrolling: touch;
     }
     @supports not (height: 100dvh){
       .modalBody{max-height: calc(100vh - 140px)}
@@ -534,53 +432,34 @@
     .hero .ico{ width: 86px; height: 86px; border-radius: 22px; }
     .hero h2{ margin:0; font-size: 20px; line-height:1.15; font-weight: 1000; }
     .heroSmall{
-      margin-top: 8px;
-      color: var(--muted);
-      display:flex;
-      flex-wrap:wrap;
-      gap: 10px;
-      align-items:center;
+      margin-top: 8px;color: var(--muted);
+      display:flex;flex-wrap:wrap;gap: 10px;align-items:center;
       font-size: 13px;
     }
     .actions{
-      display:flex;
-      gap: 10px;
-      flex-wrap:wrap;
-      align-items:center;
+      display:flex;gap: 10px;flex-wrap:wrap;align-items:center;
       margin-top: 12px;
     }
     .btn{
-      height: 42px;
-      padding: 0 14px;
-      border-radius: 999px;
-      border: 1px solid var(--line);
-      background:#fff;
-      cursor:pointer;
-      font-weight: 1000;
-      font-size: 13px;
+      height: 42px;padding: 0 14px;border-radius: 999px;
+      border: 1px solid var(--line);background:#fff;
+      cursor:pointer;font-weight: 1000;font-size: 13px;
       min-height:44px;
     }
     .btn.primary{
-      background: var(--brand);
-      border-color: transparent;
-      color:#fff;
+      background: var(--brand);border-color: transparent;color:#fff;
       box-shadow: 0 10px 18px rgba(26,115,232,.18);
-      text-decoration:none;
-      display:inline-flex;
-      align-items:center;
-      gap:8px;
+      text-decoration:none;display:inline-flex;align-items:center;gap:8px;
     }
     .btn:active{transform:scale(.99)}
 
     .kv{
-      display:grid;
-      grid-template-columns: repeat(2, minmax(0,1fr));
+      display:grid;grid-template-columns: repeat(2, minmax(0,1fr));
       gap: 10px;
     }
     .kv .box{
       border: 1px solid var(--line);
-      border-radius: 16px;
-      padding: 10px 12px;
+      border-radius: 16px;padding: 10px 12px;
       background: rgba(255,255,255,.8);
     }
     .kv .k{color:var(--muted); font-size:12px}
@@ -593,85 +472,58 @@
       background: rgba(255,255,255,.8);
     }
     .panelHead{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap: 10px;
-      margin-bottom: 10px;
+      display:flex;align-items:center;justify-content:space-between;
+      gap: 10px;margin-bottom: 10px;
     }
-    .panelHead h3{ margin:0; font-size: 14px; font-weight: 1000; }
+    .panelHead h3{ margin:0;font-size: 14px;font-weight: 1000; }
     .panel p{
-      margin:0;
-      color: var(--muted);
-      font-size: 13px;
-      line-height: 1.55;
+      margin:0;color: var(--muted);
+      font-size: 13px;line-height: 1.55;
       white-space: pre-wrap;
     }
 
     .shots{
-      display:flex;
-      gap: 10px;
-      overflow:auto;
-      padding-bottom: 6px;
+      display:flex;gap: 10px;overflow:auto;padding-bottom: 6px;
       -webkit-overflow-scrolling: touch;
       scroll-snap-type: x proximity;
     }
     .shot{
-      width: 190px; height: 118px;
-      border-radius: 16px;
+      width: 190px; height: 118px;border-radius: 16px;
       border: 1px solid var(--line);
-      object-fit: cover;
-      background:#fff;
-      scroll-snap-align: start;
-      flex:0 0 auto;
+      object-fit: cover;background:#fff;
+      scroll-snap-align: start;flex:0 0 auto;
     }
 
     /* Reviews */
     .reviewSummary{
-      display:flex;
-      align-items:center;
-      gap:8px;
-      flex-wrap:wrap;
-      color: var(--muted);
-      font-size: 13px;
+      display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+      color: var(--muted);font-size: 13px;
     }
     .reviewGrid{
-      display:grid;
-      grid-template-columns: 1fr;
-      gap: 12px;
-      margin-top: 10px;
+      display:grid;grid-template-columns: 1fr;
+      gap: 12px;margin-top: 10px;
     }
     .reviewStats{
-      display:grid;
-      grid-template-columns: 120px 1fr;
-      gap: 12px;
-      align-items:center;
+      display:grid;grid-template-columns: 120px 1fr;
+      gap: 12px;align-items:center;
     }
     .bigRating{
-      display:flex;
-      flex-direction:column;
-      gap: 6px;
-      align-items:flex-start;
+      display:flex;flex-direction:column;gap: 6px;align-items:flex-start;
     }
     .bigRating .num{font-size:36px;font-weight:1000;line-height:1}
-    .bars{ display:grid; gap: 6px; }
+    .bars{display:grid;gap: 6px;}
     .barRow{
-      display:grid;
-      grid-template-columns: 20px 1fr 34px;
-      gap: 8px;
-      align-items:center;
-      color: var(--muted);
-      font-size: 12px;
+      display:grid;grid-template-columns: 20px 1fr 34px;
+      gap: 8px;align-items:center;
+      color: var(--muted);font-size: 12px;
     }
     .bar{
-      height: 8px;
-      border-radius: 999px;
+      height: 8px;border-radius: 999px;
       background: rgba(100,116,139,.18);
-      overflow:hidden;
-      position:relative;
+      overflow:hidden;position:relative;
     }
     .bar > span{
-      position:absolute; left:0; top:0; bottom:0;
+      position:absolute;left:0;top:0;bottom:0;
       width: 0%;
       background: var(--brand);
       border-radius: 999px;
@@ -679,33 +531,19 @@
     }
 
     .rateStars{
-      display:flex;
-      gap: 6px;
-      flex-wrap:wrap;
-      align-items:center;
+      display:flex;gap: 6px;flex-wrap:wrap;align-items:center;
     }
     .starBtn{
-      border:none;
-      background:transparent;
-      padding: 6px;
-      border-radius: 14px;
-      cursor:pointer;
-      touch-action: manipulation;
-      min-height:44px;
+      border:none;background:transparent;padding: 6px;border-radius: 14px;
+      cursor:pointer;touch-action: manipulation;min-height:44px;
     }
     .starBtn:hover{background: rgba(26,115,232,.08)}
     .starBtn svg{width: 30px; height: 30px}
     .hint{color: var(--muted); font-size: 12px}
     textarea{
-      width:100%;
-      min-height: 92px;
-      resize: vertical;
-      border-radius: 16px;
-      border: 1px solid var(--line);
-      padding: 10px 12px;
-      outline:none;
-      font-size: 14px;
-      background:#fff;
+      width:100%;min-height: 92px;resize: vertical;
+      border-radius: 16px;border: 1px solid var(--line);
+      padding: 10px 12px;outline:none;font-size: 14px;background:#fff;
     }
     textarea:focus{
       border-color: rgba(26,115,232,.35);
@@ -714,109 +552,166 @@
     .danger{color: var(--danger); font-weight:1000}
 
     .reviewsList{
-      display:grid;
-      gap: 10px;
-      margin-top: 10px;
+      display:grid;gap: 10px;margin-top: 10px;
     }
     .reviewItem{
-      background:#fff;
-      border: 1px solid var(--line);
-      border-radius: 16px;
-      padding: 10px 12px;
-      display:flex;
-      gap: 10px;
-      align-items:flex-start;
+      background:#fff;border: 1px solid var(--line);
+      border-radius: 16px;padding: 10px 12px;
+      display:flex;gap: 10px;align-items:flex-start;
     }
     .rAvatar{
-      width: 36px; height: 36px;
-      border-radius: 999px;
+      width: 36px; height: 36px;border-radius: 999px;
       border: 1px solid var(--line);
-      object-fit: cover;
-      background:#fff;
-      flex:0 0 auto;
+      object-fit: cover;background:#fff;flex:0 0 auto;
     }
     .rMain{min-width:0; flex:1}
     .rTop{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap: 8px;
-      flex-wrap:wrap;
+      display:flex;align-items:center;justify-content:space-between;
+      gap: 8px;flex-wrap:wrap;
     }
     .rName{
-      font-weight:1000;
-      font-size: 13px;
-      max-width: 260px;
-      overflow:hidden;
-      text-overflow:ellipsis;
-      white-space:nowrap;
+      font-weight:1000;font-size: 13px;
+      max-width: 260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
     }
-    .rTime{
-      color: var(--muted);
-      font-size: 12px;
-      white-space:nowrap;
-    }
+    .rTime{color: var(--muted);font-size: 12px;white-space:nowrap;}
     .rComment{
-      margin-top: 6px;
-      font-size: 13px;
-      line-height: 1.45;
-      color: var(--text);
-      white-space: pre-wrap;
-      word-break: break-word;
+      margin-top: 6px;font-size: 13px;line-height: 1.45;
+      color: var(--text);white-space: pre-wrap;word-break: break-word;
     }
 
-    /* Profile */
-    .profileCard{
-      display:flex;
-      gap: 12px;
-      align-items:center;
+    /* ===== Profile modern ===== */
+    .profileShell{display:grid;gap:14px;}
+    .profileHero{
+      border-radius: 22px;
+      overflow:hidden;
+      border: 1px solid rgba(229,231,235,.85);
+      box-shadow: var(--shadow2);
+      background:#fff;
     }
-    .pAvatar{
-      width:54px;height:54px;border-radius:999px;
-      border:1px solid var(--line);
-      object-fit:cover;background:#fff;
+    .profileCover{
+      height: 120px;
+      background: radial-gradient(1200px 240px at 20% 0%, rgba(26,115,232,.45), rgba(11,87,208,.12) 55%, rgba(15,23,42,.02) 100%),
+                  linear-gradient(135deg, rgba(26,115,232,.20), rgba(16,185,129,.08));
+      position:relative;
+    }
+    .profileBody{
+      padding: 14px;
+      padding-top: 0;
+      position:relative;
+    }
+    .profileAvatar{
+      width: 92px;height:92px;border-radius: 999px;
+      border: 4px solid #fff;
+      background:#fff;
+      box-shadow: 0 14px 30px rgba(2,6,23,.18);
+      object-fit:cover;
+      position:absolute;
+      top:-46px;left: 14px;
+    }
+    .profileHeaderRow{
+      padding-left: 110px;
+      padding-top: 10px;
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:10px;
+      min-width:0;
+    }
+    .pName{margin:0;font-size:18px;font-weight:1000;letter-spacing:.1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+    .pEmail{margin-top:4px;color:var(--muted);font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+    .profileActions{
+      display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end;
+      padding-top: 4px;
+    }
+    .ghostBtn{
+      height: 40px;border-radius: 999px;
+      padding: 0 14px;border: 1px solid rgba(229,231,235,.95);
+      background: rgba(255,255,255,.92);
+      font-weight: 1000;
+      cursor:pointer;
+      min-height:44px;
+    }
+    .ghostBtn:active{transform:scale(.99)}
+    .dangerBtn{
+      height: 40px;border-radius: 999px;
+      padding: 0 14px;border: 1px solid rgba(239,68,68,.22);
+      background: rgba(239,68,68,.08);
+      color: #b91c1c;
+      font-weight: 1000;
+      cursor:pointer;
+      min-height:44px;
+    }
+    .dangerBtn:active{transform:scale(.99)}
+
+    .profileStats{
+      margin-top: 14px;
+      display:grid;
+      grid-template-columns: repeat(3, minmax(0,1fr));
+      gap: 10px;
+    }
+    .stat{
+      border: 1px solid rgba(229,231,235,.9);
+      border-radius: 16px;
+      padding: 10px 12px;
+      background: rgba(255,255,255,.9);
+    }
+    .stat .k{color:var(--muted);font-size:12px;}
+    .stat .v{margin-top:4px;font-weight:1000;font-size:16px;}
+
+    .cardList{
+      border: 1px solid rgba(229,231,235,.85);
+      border-radius: 22px;
+      background:#fff;
+      box-shadow: var(--shadow2);
+      overflow:hidden;
+    }
+    .cardListHead{
+      padding: 12px 14px;
+      border-bottom: 1px solid rgba(229,231,235,.8);
+      display:flex;align-items:center;justify-content:space-between;gap:10px;
+    }
+    .cardListHead h3{margin:0;font-size:14px;font-weight:1000;color:var(--text);}
+    .cardListBody{padding: 12px 14px;}
+    .settingRow{
+      display:flex;align-items:center;justify-content:space-between;gap:12px;
+      padding: 12px 6px;
+      border-radius: 16px;
+      cursor:pointer;
+    }
+    .settingRow:hover{background: rgba(2,6,23,.03)}
+    .settingLeft{display:flex;align-items:center;gap:10px;min-width:0;}
+    .settingIcon{
+      width:40px;height:40px;border-radius: 14px;
+      border: 1px solid rgba(229,231,235,.9);
+      display:grid;place-items:center;
+      background: rgba(255,255,255,.92);
+      box-shadow: 0 10px 20px rgba(2,6,23,.06);
       flex:0 0 auto;
     }
-    .pMain{min-width:0;flex:1}
-    .pName{
-      font-weight:1000;
-      font-size:16px;
-      margin:0;
-      overflow:hidden;
-      text-overflow:ellipsis;
-      white-space:nowrap;
-    }
-    .pEmail{
-      margin-top:4px;
-      color: var(--muted);
-      font-size:13px;
-      overflow:hidden;
-      text-overflow:ellipsis;
-      white-space:nowrap;
-    }
+    .settingText{min-width:0;}
+    .settingTitle{font-weight:1000;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+    .settingDesc{margin-top:2px;color:var(--muted);font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+    .chev{opacity:.6;flex:0 0 auto;}
 
     /* Desktop tweaks */
     @media (min-width: 860px){
       .kv{grid-template-columns: repeat(4, minmax(0,1fr));}
       .reviewGrid{grid-template-columns: 1fr 1fr;}
+      .banner{width: 560px;}
     }
 
     /* Bottom sheet on small screens */
     @media (max-width: 560px){
       .overlay{display:none}
-      .overlay.show{
-        display:flex;
-        align-items:flex-end;
-      }
-      .modal{
-        margin: 0;
-        width: 100%;
-        border-radius: 22px 22px 0 0;
-      }
-      .modalBody{ max-height: calc(100dvh - 90px); }
+      .overlay.show{display:flex;align-items:flex-end;}
+      .modal{margin:0;width:100%;border-radius: 22px 22px 0 0;}
+      .modalBody{max-height: calc(100dvh - 90px);}
       .tile{min-width: 200px; max-width: 200px;}
       .hero{flex-direction: column;}
       .hero .ico{width: 74px; height: 74px; border-radius: 18px;}
+      .profileStats{grid-template-columns: repeat(2, minmax(0,1fr));}
+      .profileHeaderRow{padding-left: 0; padding-top: 56px;}
+      .profileAvatar{left: 14px;}
     }
   </style>
 </head>
@@ -845,29 +740,19 @@
         </div>
       </div>
 
-      <div class="searchBar" role="search">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-          <path d="M21 21l-4.3-4.3" stroke="#0f172a" stroke-width="2" stroke-linecap="round" opacity=".85"/>
-          <path d="M10.5 18a7.5 7.5 0 1 1 0-15 7.5 7.5 0 0 1 0 15Z" stroke="#0f172a" stroke-width="2" opacity=".85"/>
-        </svg>
-        <input id="q" type="text" placeholder="Cari aplikasi atau game..." inputmode="search" enterkeyhint="search" autocapitalize="off" autocomplete="off" />
-        <div id="countPill" class="pill">0</div>
-      </div>
+      <div class="headerExtras" id="headerExtras">
+        <div class="searchBar" role="search">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M21 21l-4.3-4.3" stroke="#0f172a" stroke-width="2" stroke-linecap="round" opacity=".85"/>
+            <path d="M10.5 18a7.5 7.5 0 1 1 0-15 7.5 7.5 0 0 1 0 15Z" stroke="#0f172a" stroke-width="2" opacity=".85"/>
+          </svg>
+          <input id="q" type="text" placeholder="Cari aplikasi atau game..." inputmode="search" enterkeyhint="search" autocapitalize="off" autocomplete="off" />
+          <div id="countPill" class="pill">0</div>
+        </div>
 
-      <div class="tabs" id="mainTabs" aria-label="Tabs">
-        <div class="tab active" data-tab="apps">Aplikasi</div>
-        <div class="tab" data-tab="games">Game</div>
-      </div>
-
-      <div class="subcatsRow">
-        <div class="subcats" id="subcats" aria-label="Kategori"></div>
-        <div class="sortPill" title="Urutkan daftar">
-          <span style="font-size:12px;color:var(--muted);font-weight:1000">Sort</span>
-          <select id="sortSelect" aria-label="Sort">
-            <option value="popular">Populer</option>
-            <option value="rating">Rating</option>
-            <option value="latest">Terbaru</option>
-          </select>
+        <div class="tabs" id="mainTabs" aria-label="Tabs">
+          <div class="tab active" data-tab="apps">Aplikasi</div>
+          <div class="tab" data-tab="games">Game</div>
         </div>
       </div>
     </div>
@@ -951,13 +836,12 @@
     const contentEl = $("content");
     const qEl = $("q");
     const countPill = $("countPill");
-    const subcatsEl = $("subcats");
+    const headerExtras = $("headerExtras");
     const overlay = $("overlay");
     const modalBody = $("modalBody");
     const modalTitle = $("modalTitle");
     const closeBtn = $("closeBtn");
     const toastEl = $("toast");
-    const sortSelect = $("sortSelect");
     const loginBtn = $("loginBtn");
     const avatarBtn = $("avatarBtn");
     const headerAvatar = $("headerAvatar");
@@ -1015,6 +899,7 @@
       const diff = (Date.now() - d.getTime()) / (1000*60*60*24);
       return diff <= 30;
     }
+
     function starsDisplay(avg){
       const rating = Math.max(0, Math.min(5, Number(avg)||0));
       let html = `<span class="stars" title="Rating ${rating.toFixed(1)}">`;
@@ -1060,22 +945,28 @@
     let currentUser = null;
     let allApps = [];
     let currentAppId = null;
-    let unsubscribeReviews = null; // listener khusus reviews modal
+    let unsubscribeReviews = null;
 
     const state = {
-      tab: "apps",
-      category: "Semua",
-      page: "home",
+      tab: "apps",      // apps|games
+      page: "home",     // home|top|profile
       query: "",
-      sort: "popular" // popular|rating|latest
+      sort: "popular"   // popular|rating|latest (ONLY on Top page)
     };
+
+    function updateHeaderVisibility(){
+      // profile: sembunyikan search + tabs (biar "beneran profile")
+      headerExtras.classList.toggle("hidden", state.page === "profile");
+      // bersihin query kalau user masuk profile (biar ga ngerusak UX balik)
+      if (state.page === "profile") {
+        // jangan ngilangin isi input user kalau lagi ngetik di home
+      }
+    }
 
     function typeOfApp(a){
       const t = String(a.type || "").toLowerCase().trim();
       if (t === "game" || t === "games") return "games";
       if (t === "app" || t === "apps") return "apps";
-      const cat = String(a.category || "").toLowerCase();
-      if (cat.includes("game") || cat.includes("games")) return "games";
       return "apps";
     }
 
@@ -1131,9 +1022,11 @@
         console.error(e);
       }
     };
+
     avatarBtn.onclick = ()=>{
       state.page = "profile";
       setActiveNav();
+      updateHeaderVisibility();
       render();
       window.scrollTo({top:0, behavior:"smooth"});
     };
@@ -1143,20 +1036,24 @@
       const tab = e.target?.dataset?.tab;
       if (!tab) return;
       state.tab = tab;
-      state.category = "Semua";
       state.page = "home";
       setActiveTabs();
       setActiveNav();
+      updateHeaderVisibility();
       render();
+      window.scrollTo({top:0, behavior:"smooth"});
     });
+
     document.querySelectorAll(".navBtn").forEach(btn=>{
       btn.addEventListener("click", ()=>{
         state.page = btn.dataset.page;
         setActiveNav();
+        updateHeaderVisibility();
         render();
         window.scrollTo({top:0, behavior:"smooth"});
       });
     });
+
     function setActiveTabs(){
       document.querySelectorAll(".tab").forEach(t=>{
         t.classList.toggle("active", t.dataset.tab === state.tab);
@@ -1168,81 +1065,42 @@
       });
     }
 
-    // ===== Sort =====
-    sortSelect.value = state.sort;
-    sortSelect.addEventListener("change", ()=>{
-      state.sort = sortSelect.value;
-      render();
-      if (currentAppId) {
-        // kalau modal sedang terbuka, stats tidak bergantung sort, tapi list home/top akan berubah
-      }
-    });
-
-    // ====== Categories (chips) ======
-    function buildCategoriesForTab(){
-      const cats = new Map();
-      for (const a of allApps){
-        if (typeOfApp(a) !== state.tab) continue;
-        const c = a.category || "Lainnya";
-        cats.set(c, (cats.get(c)||0)+1);
-      }
-      const list = Array.from(cats.entries()).sort((x,y)=>y[1]-x[1]).map(([c])=>c);
-      return ["Semua", ...list];
-    }
-    function renderSubcats(){
-      const cats = buildCategoriesForTab();
-      subcatsEl.innerHTML = "";
-      for (const c of cats){
-        const btn = document.createElement("button");
-        btn.className = "chip" + (c === state.category ? " active" : "");
-        btn.textContent = c;
-        btn.onclick = ()=>{
-          state.category = c;
-          renderSubcats();
-          state.page = "home";
-          setActiveNav();
-          render();
-        };
-        subcatsEl.appendChild(btn);
-      }
-    }
-
     // ====== Search ======
-    let t = null;
+    let tmr = null;
     qEl.addEventListener("input", ()=>{
-      clearTimeout(t);
-      t = setTimeout(()=>{
+      clearTimeout(tmr);
+      tmr = setTimeout(()=>{
         state.query = qEl.value || "";
         state.page = "home";
         setActiveNav();
+        updateHeaderVisibility();
         render();
       }, 120);
     });
+
     function matchesQuery(a){
       const q = state.query.trim().toLowerCase();
       if (!q) return true;
       const hay = `${a.name} ${a.description} ${a.category} ${a.developer} ${a.version}`.toLowerCase();
       return hay.includes(q);
     }
-    function matchesTabAndCat(a){
-      if (typeOfApp(a) !== state.tab) return false;
-      if (state.category === "Semua") return true;
-      return a.category === state.category;
+    function filteredByTab(){
+      return allApps.filter(a => typeOfApp(a) === state.tab);
     }
     function filteredApps(){
-      return allApps.filter(a=>matchesTabAndCat(a) && matchesQuery(a));
+      return filteredByTab().filter(a => matchesQuery(a));
     }
 
-    function sortItems(items){
+    function sortItems(items, sortKey){
       const copy = items.slice();
-      if (state.sort === "latest"){
+      if (sortKey === "latest"){
         return copy.sort((x,y)=>{
           const dx = parseDate(x.updatedAt)?.getTime() || 0;
           const dy = parseDate(y.updatedAt)?.getTime() || 0;
           return dy - dx;
         });
       }
-      if (state.sort === "rating"){
+      if (sortKey === "rating"){
         return copy.sort((x,y)=>{
           const rx = computeReviewStats(x.reviews).avg;
           const ry = computeReviewStats(y.reviews).avg;
@@ -1250,12 +1108,24 @@
           return (Number(y.downloads||0)-Number(x.downloads||0));
         });
       }
+      // popular
       return copy.sort((x,y)=>(Number(y.downloads||0)-Number(x.downloads||0)));
     }
-    function labelSort(){
-      if (state.sort === "latest") return "Terbaru";
-      if (state.sort === "rating") return "Rating";
+
+    function labelSort(v){
+      if (v === "latest") return "Terbaru";
+      if (v === "rating") return "Rating";
       return "Populer";
+    }
+
+    // ====== Categories list (NO chips/menu, only sections) ======
+    function categoriesForTab(){
+      const cats = new Map();
+      for (const a of filteredByTab()){
+        const c = a.category || "Lainnya";
+        cats.set(c, (cats.get(c)||0)+1);
+      }
+      return Array.from(cats.entries()).sort((x,y)=>y[1]-x[1]).map(([c])=>c);
     }
 
     // ====== UI components ======
@@ -1271,8 +1141,6 @@
           <div class="tileMeta">
             <span>${starsDisplay(avg)}</span>
             <span class="ratingNum">${avg ? avg.toFixed(1) : "0.0"}</span>
-            <span>•</span>
-            <span>${escapeHtml(a.category || "Lainnya")}</span>
           </div>
         </div>
       `;
@@ -1288,7 +1156,6 @@
       const badges = [];
       if (isNew(a.updatedAt)) badges.push(`<span class="badge new">NEW</span>`);
       if (a.mod) badges.push(`<span class="badge mod">MOD</span>`);
-
       const rank = (idx !== null) ? `<span class="badge" style="margin-right:6px">#${idx+1}</span>` : ``;
 
       card.innerHTML = `
@@ -1334,15 +1201,50 @@
         <div class="sectionTitle">${escapeHtml(title)}</div>
         ${onSeeAll ? `<button class="linkBtn" type="button">Lihat semua</button>` : ``}
       `;
-      if (onSeeAll){
-        head.querySelector("button").onclick = onSeeAll;
-      }
+      if (onSeeAll) head.querySelector("button").onclick = onSeeAll;
+
       const row = document.createElement("div");
       row.className = "hscroll";
       for(const a of items){ row.appendChild(createTile(a)); }
+
       section.appendChild(head);
       section.appendChild(row);
       return section;
+    }
+
+    function bannerCard(a){
+      const {avg, count} = computeReviewStats(a.reviews);
+      const div = document.createElement("div");
+      div.className = "banner";
+      div.onclick = ()=>openDetail(a.id);
+
+      const bg = (a.screenshots && a.screenshots.length) ? a.screenshots[0] : (a.icon || "icon/default.png");
+
+      div.innerHTML = `
+        <div class="bannerBg"></div>
+        <img class="bannerImg" src="${bg}" alt="" onerror="this.style.display='none'">
+        <div class="bannerInner">
+          <img class="bannerIco" src="${a.icon || "icon/default.png"}" alt="${escapeHtml(a.name)}" onerror="this.src='icon/default.png'">
+          <div class="bannerMain">
+            <h3 class="bannerTitle">${escapeHtml(a.name)}</h3>
+            <div class="bannerDesc">${escapeHtml(a.description || "")}</div>
+            <div class="bannerMeta">
+              <span>${starsDisplay(avg)}</span>
+              <span class="ratingNum">${avg ? avg.toFixed(1) : "0.0"}</span>
+              <span>(${count})</span>
+              <span>•</span>
+              <span>${fmtNum(a.downloads)} download</span>
+            </div>
+          </div>
+          <button class="bannerCta" type="button">Lihat</button>
+        </div>
+      `;
+
+      div.querySelector(".bannerCta").onclick = (e)=>{
+        e.stopPropagation();
+        openDetail(a.id);
+      };
+      return div;
     }
 
     // ====== Pages ======
@@ -1351,72 +1253,64 @@
       countPill.textContent = `${apps.length}`;
       contentEl.innerHTML = "";
 
-      if (state.query.trim()){
-        const box = document.createElement("div");
-        box.className = "section";
-        box.innerHTML = `<div class="sectionHead"><div class="sectionTitle">Hasil pencarian</div><div class="pill">Sort: ${labelSort()}</div></div>`;
-        const vlist = document.createElement("div");
-        vlist.className = "vlist";
-        if (apps.length === 0){
-          vlist.innerHTML = `<div class="state">Tidak ada hasil. Coba kata kunci lain.</div>`;
-        } else {
-          sortItems(apps).slice(0, 80).forEach(a=>vlist.appendChild(createRowCard(a, null)));
-        }
-        box.appendChild(vlist);
-        contentEl.appendChild(box);
-        return;
-      }
-
       if (apps.length === 0){
         contentEl.innerHTML = `<div class="state">Belum ada data di tab ini. Tambahkan data di RTDB: <b>apps/{appId}</b></div>`;
         return;
       }
 
-      const catsAll = buildCategoriesForTab().filter(c=>c!=="Semua");
-      let catsToShow = catsAll;
+      // Search results (list)
+      if (state.query.trim()){
+        const head = document.createElement("div");
+        head.className = "sectionHead";
+        head.innerHTML = `<div class="sectionTitle">Hasil pencarian</div><div class="pill">${apps.length} hasil</div>`;
+        contentEl.appendChild(head);
 
-      if (state.category !== "Semua"){
-        catsToShow = [state.category].filter(Boolean);
-      } else {
-        catsToShow = catsAll.slice(0, 8);
+        const vlist = document.createElement("div");
+        vlist.className = "vlist";
+        sortItems(apps, "popular").slice(0, 120).forEach((a)=>vlist.appendChild(createRowCard(a, null)));
+        contentEl.appendChild(vlist);
+        return;
       }
 
-      const info = document.createElement("div");
-      info.className = "sectionHead";
-      info.style.marginTop = "6px";
-      info.innerHTML = `<div class="sectionTitle">Kategori</div><div class="pill">Sort: ${labelSort()}</div>`;
-      contentEl.appendChild(info);
+      // Banner "Populer sekarang" (Play Store style)
+      const topPopular = sortItems(apps, "popular").slice(0, 6);
+      const bannerSec = document.createElement("section");
+      bannerSec.className = "section";
+      bannerSec.innerHTML = `
+        <div class="sectionHead">
+          <div class="sectionTitle">${state.tab === "games" ? "Populer Game" : "Populer Aplikasi"}</div>
+          <button class="linkBtn" type="button" id="goTopBtn">Lihat ranking</button>
+        </div>
+      `;
+      const row = document.createElement("div");
+      row.className = "bannerRow";
+      topPopular.forEach(a => row.appendChild(bannerCard(a)));
+      bannerSec.appendChild(row);
+      contentEl.appendChild(bannerSec);
+      bannerSec.querySelector("#goTopBtn").onclick = ()=>{
+        state.page = "top";
+        setActiveNav();
+        updateHeaderVisibility();
+        render();
+      };
 
+      // Kategori sections (per kategori, scroll horizontal)
+      const cats = categoriesForTab();
+      const catsToShow = cats.slice(0, 12); // tampil banyak, tapi tetap smooth
       for (const c of catsToShow){
-        const items = allApps
-          .filter(a=>typeOfApp(a)===state.tab && a.category===c)
-          .filter(a=>matchesQuery(a));
-        const sorted = sortItems(items);
-        if (sorted.length === 0) continue;
-        contentEl.appendChild(sectionBlock(c, sorted.slice(0, 12), ()=>{
+        const items = sortItems(apps.filter(a => (a.category || "Lainnya") === c), "popular");
+        if (!items.length) continue;
+        contentEl.appendChild(sectionBlock(c, items.slice(0, 12), ()=>{
           state.page = "top";
-          state.category = c;
-          renderSubcats();
           setActiveNav();
+          updateHeaderVisibility();
           render();
         }));
-      }
-
-      if (state.category === "Semua" && catsAll.length > 8){
-        const more = document.createElement("div");
-        more.className = "section";
-        more.innerHTML = `
-          <div class="state">
-            Banyak kategori lainnya (${catsAll.length}).<br>
-            Buka tab <b>Top</b> untuk lihat daftar lengkap.
-          </div>
-        `;
-        contentEl.appendChild(more);
       }
     }
 
     function renderTop(){
-      const apps = sortItems(filteredApps());
+      const apps = filteredApps();
       countPill.textContent = `${apps.length}`;
       contentEl.innerHTML = "";
 
@@ -1424,16 +1318,31 @@
       head.className = "sectionHead";
       head.innerHTML = `
         <div class="sectionTitle">Top ${state.tab === "games" ? "Game" : "Aplikasi"}</div>
-        <div class="pill">${state.category === "Semua" ? "Semua kategori" : escapeHtml(state.category)} • Sort: ${labelSort()}</div>
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+          <div class="pill">Urutkan</div>
+          <select id="sortOnly" class="btn" style="height:40px;min-height:44px">
+            <option value="popular">Populer</option>
+            <option value="rating">Rating</option>
+            <option value="latest">Terbaru</option>
+          </select>
+        </div>
       `;
       contentEl.appendChild(head);
 
+      const sortOnly = head.querySelector("#sortOnly");
+      sortOnly.value = state.sort;
+      sortOnly.onchange = ()=>{
+        state.sort = sortOnly.value;
+        render();
+      };
+
       const vlist = document.createElement("div");
       vlist.className = "vlist";
-      if (apps.length === 0){
+      const sorted = sortItems(apps, state.sort);
+      if (sorted.length === 0){
         vlist.innerHTML = `<div class="state">Tidak ada data.</div>`;
       } else {
-        apps.slice(0, 120).forEach((a,i)=>vlist.appendChild(createRowCard(a, i)));
+        sorted.slice(0, 200).forEach((a,i)=>vlist.appendChild(createRowCard(a, i)));
       }
       contentEl.appendChild(vlist);
     }
@@ -1442,54 +1351,58 @@
       contentEl.innerHTML = "";
       countPill.textContent = "";
 
-      const panel = document.createElement("div");
-      panel.className = "panel";
+      const shell = document.createElement("div");
+      shell.className = "profileShell";
 
+      // Guest
       if (!currentUser){
-        panel.innerHTML = `
-          <div class="panelHead"><h3>Profil</h3><span class="badge">Guest</span></div>
-          <p>Kamu belum login. Login untuk bisa kasih rating & komentar (1 akun = 1 ulasan).</p>
-          <div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap">
-            <button class="btn primary" id="pLogin">Login Google</button>
+        shell.innerHTML = `
+          <div class="profileHero">
+            <div class="profileCover"></div>
+            <div class="profileBody">
+              <img class="profileAvatar" src="icon/default.png" alt="avatar" onerror="this.src='icon/default.png'">
+              <div class="profileHeaderRow">
+                <div style="min-width:0">
+                  <p class="pName">Guest</p>
+                  <div class="pEmail">Login untuk kasih rating & ulasan</div>
+                </div>
+                <div class="profileActions">
+                  <button class="ghostBtn" id="pLogin">Login Google</button>
+                </div>
+              </div>
+
+              <div class="profileStats">
+                <div class="stat"><div class="k">Ulasan</div><div class="v">0</div></div>
+                <div class="stat"><div class="k">Tab</div><div class="v">${state.tab === "games" ? "Game" : "Aplikasi"}</div></div>
+                <div class="stat"><div class="k">Status</div><div class="v">Guest</div></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="cardList">
+            <div class="cardListHead"><h3>Akun</h3><span class="pill">Masuk untuk fitur lengkap</span></div>
+            <div class="cardListBody">
+              <div class="settingRow" id="rLogin">
+                <div class="settingLeft">
+                  <div class="settingIcon">🔐</div>
+                  <div class="settingText">
+                    <div class="settingTitle">Login</div>
+                    <div class="settingDesc">Satu akun = satu ulasan per item</div>
+                  </div>
+                </div>
+                <div class="chev">›</div>
+              </div>
+            </div>
           </div>
         `;
-        contentEl.appendChild(panel);
-        panel.querySelector("#pLogin").onclick = ()=>loginBtn.click();
+        contentEl.appendChild(shell);
+
+        shell.querySelector("#pLogin").onclick = ()=>loginBtn.click();
+        shell.querySelector("#rLogin").onclick = ()=>loginBtn.click();
         return;
       }
 
-      panel.innerHTML = `
-        <div class="panelHead"><h3>Profil</h3><span class="badge">Login</span></div>
-        <div class="profileCard">
-          <img class="pAvatar" src="${currentUser.photoURL || "icon/default.png"}" alt="avatar" onerror="this.src='icon/default.png'">
-          <div class="pMain">
-            <p class="pName">${escapeHtml(currentUser.displayName || "User")}</p>
-            <div class="pEmail">${escapeHtml(currentUser.email || "-")}</div>
-          </div>
-        </div>
-        <div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap;align-items:center">
-          <button class="btn" id="pHow">Cara isi data</button>
-          <button class="btn primary" id="pLogout">Logout</button>
-        </div>
-        <div style="margin-top:12px" class="hint">
-          1 akun Google = 1 ulasan per item. Kamu bisa <b>perbarui</b> ulasan kapan saja.
-        </div>
-      `;
-      contentEl.appendChild(panel);
-
-      panel.querySelector("#pLogout").onclick = async ()=>{
-        try{
-          await signOut(auth);
-          toast("Logout berhasil.");
-        } catch (e){
-          toast("Logout gagal.");
-          console.error(e);
-        }
-      };
-      panel.querySelector("#pHow").onclick = ()=>{
-        toast("Data di RTDB: apps/{appId} (name, icon, category, type, downloadUrl, ...)");
-      };
-
+      // Logged-in
       const myUid = currentUser.uid;
       const mine = allApps
         .filter(a => a.reviews && a.reviews[myUid])
@@ -1504,22 +1417,94 @@
         })
         .sort((x,y)=>(y.updatedAt||0)-(x.updatedAt||0));
 
-      const panel2 = document.createElement("div");
-      panel2.className = "panel";
-      panel2.style.marginTop = "14px";
-      panel2.innerHTML = `
-        <div class="panelHead"><h3>Ulasan Saya</h3><span class="badge">${mine.length} item</span></div>
-        <div id="myReviews"></div>
-      `;
-      contentEl.appendChild(panel2);
+      // average stars from my reviews
+      const myAvg = mine.length ? (mine.reduce((s,x)=>s + (x.stars||0), 0) / mine.length) : 0;
 
-      const box = panel2.querySelector("#myReviews");
-      if (mine.length === 0){
-        box.innerHTML = `<div class="hint">Kamu belum kasih ulasan ke item mana pun.</div>`;
+      shell.innerHTML = `
+        <div class="profileHero">
+          <div class="profileCover"></div>
+          <div class="profileBody">
+            <img class="profileAvatar" src="${currentUser.photoURL || "icon/default.png"}" alt="avatar" onerror="this.src='icon/default.png'">
+            <div class="profileHeaderRow">
+              <div style="min-width:0">
+                <p class="pName">${escapeHtml(currentUser.displayName || "User")}</p>
+                <div class="pEmail">${escapeHtml(currentUser.email || "-")}</div>
+              </div>
+              <div class="profileActions">
+                <button class="ghostBtn" id="pMyReviews">Ulasan saya</button>
+                <button class="dangerBtn" id="pLogout">Logout</button>
+              </div>
+            </div>
+
+            <div class="profileStats">
+              <div class="stat"><div class="k">Ulasan</div><div class="v">${mine.length}</div></div>
+              <div class="stat"><div class="k">Rata-rata</div><div class="v">${myAvg ? myAvg.toFixed(1) : "0.0"}</div></div>
+              <div class="stat"><div class="k">Terakhir</div><div class="v">${mine[0]?.updatedAt ? timeAgo(mine[0].updatedAt) : "-"}</div></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="cardList" id="myReviewsCard">
+          <div class="cardListHead">
+            <h3>Ulasan Saya</h3>
+            <span class="pill">${mine.length ? "Klik item untuk edit" : "Belum ada ulasan"}</span>
+          </div>
+          <div class="cardListBody" id="myReviewsBody"></div>
+        </div>
+
+        <div class="cardList">
+          <div class="cardListHead"><h3>Tentang</h3><span class="pill">v1</span></div>
+          <div class="cardListBody">
+            <div class="settingRow" id="howData">
+              <div class="settingLeft">
+                <div class="settingIcon">🧩</div>
+                <div class="settingText">
+                  <div class="settingTitle">Struktur data</div>
+                  <div class="settingDesc">RTDB: apps/{appId} + reviews/{uid}</div>
+                </div>
+              </div>
+              <div class="chev">›</div>
+            </div>
+
+            <div class="settingRow" id="rulesTip">
+              <div class="settingLeft">
+                <div class="settingIcon">🛡️</div>
+                <div class="settingText">
+                  <div class="settingTitle">Keamanan ulasan</div>
+                  <div class="settingDesc">Pastikan Rules: auth.uid == $uid</div>
+                </div>
+              </div>
+              <div class="chev">›</div>
+            </div>
+          </div>
+        </div>
+      `;
+      contentEl.appendChild(shell);
+
+      shell.querySelector("#pLogout").onclick = async ()=>{
+        try{
+          await signOut(auth);
+          toast("Logout berhasil.");
+        } catch (e){
+          toast("Logout gagal.");
+          console.error(e);
+        }
+      };
+
+      shell.querySelector("#howData").onclick = ()=>{
+        toast("Data: apps/{appId} (name, icon, category, type, downloadUrl, ...) + reviews/{uid}");
+      };
+      shell.querySelector("#rulesTip").onclick = ()=>{
+        toast("Rules penting: hanya auth.uid boleh nulis review di path reviews/$uid");
+      };
+
+      const body = shell.querySelector("#myReviewsBody");
+      if (!mine.length){
+        body.innerHTML = `<div class="state" style="margin:0">Belum ada ulasan. Coba buka salah satu item lalu kasih bintang.</div>`;
       } else {
         const list = document.createElement("div");
         list.className = "vlist";
-        mine.slice(0, 30).forEach((x)=>{
+        mine.slice(0, 40).forEach((x)=>{
           const a = x.app;
           const card = document.createElement("div");
           card.className = "rowCard";
@@ -1534,26 +1519,28 @@
               <div class="rowMeta">
                 <span>${starsDisplay(x.stars)}</span>
                 <span class="ratingNum">${x.stars ? x.stars.toFixed(0) : "0"}</span>
-                <span>•</span>
-                <span>${escapeHtml(a.category || "Lainnya")}</span>
               </div>
               <div class="rowDesc">${escapeHtml(x.comment || "(Tanpa komentar)")}</div>
             </div>
           `;
           list.appendChild(card);
         });
-        box.appendChild(list);
+        body.appendChild(list);
       }
+
+      shell.querySelector("#pMyReviews").onclick = ()=>{
+        const el = shell.querySelector("#myReviewsCard");
+        el.scrollIntoView({behavior:"smooth", block:"start"});
+      };
     }
 
     function render(){
-      renderSubcats();
       if (state.page === "top") return renderTop();
       if (state.page === "profile") return renderProfile();
       return renderHome();
     }
 
-    // ====== Reviews LIVE (fix bar biru ga perlu tutup modal) ======
+    // ====== Reviews LIVE (bar biru auto update) ======
     function updateReviewStatsUI(reviews){
       const stats = computeReviewStats(reviews || {});
       const avg = stats.avg ? stats.avg.toFixed(1) : "0.0";
@@ -1596,7 +1583,6 @@
     }
 
     function attachReviewsListener(appId){
-      // stop listener lama
       if (typeof unsubscribeReviews === "function"){
         try{ unsubscribeReviews(); }catch{}
         unsubscribeReviews = null;
@@ -1604,7 +1590,6 @@
       const rRef = ref(db, `apps/${appId}/reviews`);
       unsubscribeReviews = onValue(rRef, (snap)=>{
         const reviews = snap.exists() ? snap.val() : {};
-        // update cache lokal agar tile/list lain ikut benar
         const idx = allApps.findIndex(x=>x.id===appId);
         if (idx !== -1) allApps[idx].reviews = reviews;
 
@@ -1632,7 +1617,7 @@
         updatedAt: Date.now()
       };
 
-      // optimistic UI (langsung update bar & list)
+      // optimistic UI
       const idx = allApps.findIndex(x=>x.id===appId);
       if (idx !== -1){
         if (!allApps[idx].reviews || typeof allApps[idx].reviews !== "object") allApps[idx].reviews = {};
@@ -1641,7 +1626,6 @@
         renderReviewsList(appId, allApps[idx].reviews);
       }
 
-      // commit ke DB
       await set(ref(db, `apps/${appId}/reviews/${uid}`), payload);
       return payload;
     }
@@ -1684,6 +1668,7 @@
       const dist = stats.dist;
       const total = Math.max(1, stats.count);
 
+      // NOTE: kategori di detail DIHAPUS (biar ga dobel)
       modalBody.innerHTML = `
         <div class="hero">
           <img class="ico" src="${a.icon || "icon/default.png"}" alt="${escapeHtml(a.name)}" onerror="this.src='icon/default.png'">
@@ -1693,8 +1678,6 @@
               <span id="heroStars">${starsDisplay(stats.avg)}</span>
               <span class="ratingNum" id="heroAvg">${stats.avg ? stats.avg.toFixed(1) : "0.0"}</span>
               <span id="heroCount">(${stats.count} ulasan)</span>
-              <span style="opacity:.6">•</span>
-              <span>${escapeHtml(a.category || "Lainnya")}</span>
               <span style="opacity:.6">•</span>
               <span>Update ${fmtDate(a.updatedAt)}</span>
               ${badges}
@@ -1711,10 +1694,10 @@
         </div>
 
         <div class="kv">
-          <div class="box"><div class="k">Type</div><div class="v">${typeOfApp(a)==="games" ? "Game" : "Aplikasi"}</div></div>
           <div class="box"><div class="k">Version</div><div class="v">${escapeHtml(a.version || "-")}</div></div>
           <div class="box"><div class="k">Size</div><div class="v">${escapeHtml(a.size || "-")}</div></div>
           <div class="box"><div class="k">Downloads</div><div class="v">${fmtNum(a.downloads)}</div></div>
+          <div class="box"><div class="k">Developer</div><div class="v">${escapeHtml(a.developer || "-")}</div></div>
         </div>
 
         <div class="panel" id="reviewPanel">
@@ -1811,9 +1794,7 @@
       lockBodyScroll(true);
 
       setupReviewUI(id);
-      // Listener khusus reviews => bar biru & list auto update TANPA tutup modal
       attachReviewsListener(id);
-      // initial render (kalau belum kena listener)
       updateReviewStatsUI(a.reviews || {});
       renderReviewsList(id, a.reviews || {});
     }
@@ -1836,7 +1817,7 @@
     overlay.addEventListener("click",(e)=>{ if (e.target===overlay) closeDetail(); });
     window.addEventListener("keydown",(e)=>{ if (e.key==="Escape") closeDetail(); });
 
-    // ===== Review UI (interactive) =====
+    // ===== Review UI =====
     let _reviewFormCache = null;
 
     function setupReviewUI(appId){
@@ -1916,6 +1897,7 @@
           console.error(e);
         }
       };
+
       commentBox.addEventListener("input", updateCharInfo);
 
       submitBtn.onclick = async ()=>{
@@ -1933,12 +1915,10 @@
           toast("Komentar terlalu panjang (max 500).");
           return;
         }
-
         try{
           await submitReview(appId, selectedStars, comment);
           submitBtn.textContent = "Perbarui";
           hintEl.textContent = "Ulasan tersimpan. Kamu bisa perbarui kapan saja.";
-          // bar biru & list akan auto update via listener (attachReviewsListener)
         } catch (e){
           toast("Gagal menyimpan ulasan. Cek Rules.");
           console.error(e);
@@ -2002,15 +1982,12 @@
       });
     }
 
-    // ====== Realtime load (apps list) ======
+    // ====== Realtime load ======
     const appsRef = ref(db, "apps");
     onValue(appsRef, (snapshot)=>{
       allApps = normalizeApps(snapshot.val());
-      renderSubcats();
       render();
 
-      // kalau modal lagi kebuka, biarkan reviews listener yang handle stats/list.
-      // tapi kalau reviews listener belum attach (misal buka via deep link sebelum data), kita sync sekali:
       if (currentAppId && !unsubscribeReviews){
         attachReviewsListener(currentAppId);
       }
@@ -2019,28 +1996,10 @@
       console.error(err);
     });
 
-    // init
+    // init UI
     setActiveTabs();
     setActiveNav();
-
-    // deep link: ?id=...
-    (function(){
-      const url = new URL(location.href);
-      const idParam = url.searchParams.get("id");
-      if (idParam){
-        // nunggu data appsRef kebaca, lalu openDetail dipanggil saat allApps sudah ada
-        const stop = onValue(appsRef, (snap)=>{
-          const raw = snap.val();
-          allApps = normalizeApps(raw);
-          renderSubcats();
-          render();
-          if (allApps.some(x=>x.id===idParam)){
-            openDetail(idParam);
-          }
-          stop();
-        }, { onlyOnce: true });
-      }
-    })();
+    updateHeaderVisibility();
   </script>
 </body>
 </html>
