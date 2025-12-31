@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>APK Store</title>
-  <meta name="description" content="APK Store — UI ala Play Store: Apps & Games, banner, kategori per-row, detail + rating & ulasan realtime (1 user 1 ulasan)." />
+  <meta name="description" content="APK Store — UI ala Play Store: banner populer, kategori per-row, detail + rating & ulasan realtime (1 user 1 ulasan), whitelist & votes ulasan." />
 
   <style>
     :root{
@@ -26,6 +26,7 @@
       --safeB: env(safe-area-inset-bottom);
       --safeL: env(safe-area-inset-left);
       --safeR: env(safe-area-inset-right);
+      --navH: 72px;
     }
     *{box-sizing:border-box}
     html,body{height:100%}
@@ -156,11 +157,19 @@
 
     /* ===== Bottom nav ===== */
     .bottomNav{
-      position: sticky;bottom: 0;z-index: 40;
+      position: fixed;
+      left: 0; right: 0; bottom: 0;
+      z-index: 40;
       background: rgba(246,247,251,.90);
       backdrop-filter: blur(10px);
       border-top: 1px solid rgba(229,231,235,.75);
       padding-bottom: var(--safeB);
+      transition: transform .18s ease, opacity .18s ease;
+    }
+    body.kbd .bottomNav{
+      transform: translateY(120%);
+      opacity: 0;
+      pointer-events: none;
     }
     .bottomNav-inner{
       max-width: 1120px;margin: 0 auto;
@@ -169,6 +178,7 @@
       padding-right: calc(14px + var(--safeR));
       display:grid;grid-template-columns: repeat(3, 1fr);
       gap: 6px;
+      min-height: var(--navH);
     }
     .navBtn{
       border:none;background:transparent;border-radius: 14px;
@@ -184,7 +194,10 @@
     .navBtn svg{width:20px;height:20px}
 
     /* ===== Content ===== */
-    .content{min-height: calc(100vh - 210px);padding-bottom: 14px;}
+    .content{
+      min-height: calc(100vh - 210px);
+      padding-bottom: calc(var(--navH) + 20px + var(--safeB));
+    }
     .state{
       padding: 14px;border: 1px dashed rgba(100,116,139,.35);
       border-radius: 16px;color: var(--muted);
@@ -205,7 +218,7 @@
     .linkBtn:hover{background: rgba(26,115,232,.08)}
     .linkBtn:active{transform:scale(.99)}
 
-    /* Banner carousel (Play Store-ish) */
+    /* Banner carousel */
     .bannerRow{
       display:flex;gap:12px;overflow:auto;
       -webkit-overflow-scrolling: touch;
@@ -370,8 +383,10 @@
       box-shadow: 0 10px 18px rgba(26,115,232,.16);
       white-space:nowrap;flex:0 0 auto;
       min-height: 44px;
+      display:inline-flex;align-items:center;gap:8px;
     }
     .btnInstall:active{transform:scale(.99)}
+    .btnInstall svg{width:18px;height:18px}
 
     /* Stars */
     .stars{display:inline-flex;gap:2px;align-items:center;transform: translateY(1px)}
@@ -445,13 +460,22 @@
       border: 1px solid var(--line);background:#fff;
       cursor:pointer;font-weight: 1000;font-size: 13px;
       min-height:44px;
+      display:inline-flex;align-items:center;gap:8px;
     }
+    .btn svg{width:18px;height:18px}
     .btn.primary{
       background: var(--brand);border-color: transparent;color:#fff;
       box-shadow: 0 10px 18px rgba(26,115,232,.18);
-      text-decoration:none;display:inline-flex;align-items:center;gap:8px;
+      text-decoration:none;
     }
     .btn:active{transform:scale(.99)}
+    .btn.ghost{
+      background: rgba(255,255,255,.92);
+    }
+    .btn.wl.on{
+      border-color: rgba(26,115,232,.45);
+      box-shadow: 0 0 0 4px rgba(26,115,232,.10);
+    }
 
     .kv{
       display:grid;grid-template-columns: repeat(2, minmax(0,1fr));
@@ -516,6 +540,15 @@
       display:grid;grid-template-columns: 20px 1fr 34px;
       gap: 8px;align-items:center;
       color: var(--muted);font-size: 12px;
+      padding: 6px 8px;
+      border-radius: 12px;
+      cursor: pointer;
+      user-select:none;
+    }
+    .barRow:hover{ background: rgba(2,6,23,.03); }
+    .barRow.active{
+      background: rgba(26,115,232,.10);
+      color: var(--brand2);
     }
     .bar{
       height: 8px;border-radius: 999px;
@@ -529,6 +562,35 @@
       border-radius: 999px;
       transition: width .18s ease;
     }
+
+    /* My review compact card */
+    .myReviewCard{
+      border: 1px solid rgba(229,231,235,.9);
+      border-radius: 16px;
+      background: rgba(255,255,255,.92);
+      padding: 10px 12px;
+    }
+    .myReviewTop{
+      display:flex;align-items:center;justify-content:space-between;gap:10px;
+    }
+    .myReviewTop .t{
+      font-weight:1000;font-size:13px;color:var(--text);
+    }
+    .iconBtn{
+      width: 42px;height:42px;border-radius: 14px;
+      border: 1px solid rgba(229,231,235,.9);
+      background:#fff;
+      display:grid;place-items:center;
+      cursor:pointer;
+      min-height:44px;
+    }
+    .iconBtn:active{transform:scale(.99)}
+    .iconBtn svg{width:18px;height:18px}
+    .myReviewMeta{margin-top:6px;color:var(--muted);font-size:12px;display:flex;gap:10px;flex-wrap:wrap;align-items:center;}
+    .myReviewText{margin-top:6px;color:var(--text);font-size:13px;line-height:1.45;white-space:pre-wrap;word-break:break-word;}
+    .myReviewEmpty{margin-top:6px;color:var(--muted);font-size:13px;line-height:1.45;}
+    .editor{display:none;margin-top:10px;}
+    .editor.show{display:block;}
 
     .rateStars{
       display:flex;gap: 6px;flex-wrap:wrap;align-items:center;
@@ -578,8 +640,47 @@
       margin-top: 6px;font-size: 13px;line-height: 1.45;
       color: var(--text);white-space: pre-wrap;word-break: break-word;
     }
+    .voteRow{
+      margin-top: 8px;
+      display:flex;
+      gap:10px;
+      align-items:center;
+      flex-wrap:wrap;
+      color: var(--muted);
+      font-size: 12px;
+    }
+    .voteBtn{
+      height: 36px;
+      border-radius: 999px;
+      padding: 0 10px;
+      border: 1px solid rgba(229,231,235,.95);
+      background: rgba(255,255,255,.92);
+      display:inline-flex;
+      align-items:center;
+      gap: 6px;
+      cursor:pointer;
+      font-weight:1000;
+      min-height:44px;
+    }
+    .voteBtn.active{
+      border-color: rgba(26,115,232,.45);
+      box-shadow: 0 0 0 4px rgba(26,115,232,.10);
+      color: var(--brand2);
+    }
+    .voteBtn svg{width:16px;height:16px}
+    .voteBtn:active{transform:scale(.99)}
+    .filterPill{
+      font-size:12px;font-weight:1000;
+      color: var(--brand2);
+      background: rgba(26,115,232,.10);
+      border: 1px solid rgba(26,115,232,.18);
+      padding: 6px 10px;
+      border-radius: 999px;
+      display:none;
+    }
+    .filterPill.show{display:inline-flex}
 
-    /* ===== Profile modern ===== */
+    /* ===== Profile modern (no reviews list) ===== */
     .profileShell{display:grid;gap:14px;}
     .profileHero{
       border-radius: 22px;
@@ -632,16 +733,6 @@
       min-height:44px;
     }
     .ghostBtn:active{transform:scale(.99)}
-    .dangerBtn{
-      height: 40px;border-radius: 999px;
-      padding: 0 14px;border: 1px solid rgba(239,68,68,.22);
-      background: rgba(239,68,68,.08);
-      color: #b91c1c;
-      font-weight: 1000;
-      cursor:pointer;
-      min-height:44px;
-    }
-    .dangerBtn:active{transform:scale(.99)}
 
     .profileStats{
       margin-top: 14px;
@@ -700,7 +791,7 @@
       .banner{width: 560px;}
     }
 
-    /* Bottom sheet on small screens */
+    /* Mobile tweaks */
     @media (max-width: 560px){
       .overlay{display:none}
       .overlay.show{display:flex;align-items:flex-end;}
@@ -709,9 +800,22 @@
       .tile{min-width: 200px; max-width: 200px;}
       .hero{flex-direction: column;}
       .hero .ico{width: 74px; height: 74px; border-radius: 18px;}
+
+      /* profile centered on mobile */
+      .profileAvatar{
+        left: 50%;
+        transform: translateX(-50%);
+      }
+      .profileHeaderRow{
+        padding-left: 0;
+        padding-top: 56px;
+        text-align:center;
+        flex-direction:column;
+        align-items:center;
+        justify-content:center;
+      }
+      .profileActions{justify-content:center;}
       .profileStats{grid-template-columns: repeat(2, minmax(0,1fr));}
-      .profileHeaderRow{padding-left: 0; padding-top: 56px;}
-      .profileAvatar{left: 14px;}
     }
   </style>
 </head>
@@ -797,7 +901,7 @@
   </div>
 
   <div id="toast" style="
-    position:fixed;left:50%;bottom:calc(18px + var(--safeB));transform:translateX(-50%);
+    position:fixed;left:50%;bottom:calc(var(--navH) + 18px + var(--safeB));transform:translateX(-50%);
     background:rgba(2,6,23,.92);color:#fff;padding:10px 12px;border-radius:999px;
     font-size:13px;display:none;z-index:90;box-shadow:0 18px 40px rgba(2,6,23,.35);
     max-width:92vw;"></div>
@@ -816,9 +920,11 @@
       ref,
       onValue,
       get,
-      set
+      set,
+      remove
     } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
+    // ====== Firebase config ======
     // ✅ Firebase config kamu
     const firebaseConfig = {
       apiKey: "AIzaSyAu--L2T5_o9xLVT09mXFLIcpPuLLWlL1Q",
@@ -850,7 +956,7 @@
       toastEl.textContent = msg;
       toastEl.style.display = "block";
       clearTimeout(toastEl._t);
-      toastEl._t = setTimeout(()=>toastEl.style.display="none", 1800);
+      toastEl._t = setTimeout(()=>toastEl.style.display="none", 1900);
     }
     function safeText(v, fallback=""){ return (typeof v === "string" || typeof v === "number") ? String(v) : fallback; }
     function escapeHtml(s){
@@ -921,6 +1027,25 @@
         </svg>
       `;
     }
+    function iconPencil(){
+      return `<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 20h9" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4 11.5-11.5Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>`;
+    }
+    function iconShare(){
+      return `<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M15 8a3 3 0 1 0-2.8-4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M7 12l10-5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M7 12l10 5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M6 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" stroke="currentColor" stroke-width="2"/><path d="M18 21a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" stroke="currentColor" stroke-width="2"/></svg>`;
+    }
+    function iconDownload(){
+      return `<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3v10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M8 11l4 4 4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 21h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>`;
+    }
+    function iconBookmark(){
+      return `<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>`;
+    }
+    function iconThumbUp(){
+      return `<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M14 10V4a2 2 0 0 0-2-2L7 12v10h10a2 2 0 0 0 2-1.5l2-7A2 2 0 0 0 19 10h-5Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M7 12H4v10h3" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>`;
+    }
+    function iconThumbDown(){
+      return `<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M10 14v6a2 2 0 0 0 2 2l5-10V2H7a2 2 0 0 0-2 1.5l-2 7A2 2 0 0 0 5 14h5Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M17 12h3V2h-3" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>`;
+    }
+
     function computeReviewStats(reviewsObj){
       if (!reviewsObj || typeof reviewsObj !== "object") return { avg: 0, count: 0, dist:[0,0,0,0,0] };
       let sum = 0, count = 0;
@@ -935,17 +1060,68 @@
       return { avg: count ? (sum/count) : 0, count, dist };
     }
 
+    function computeVoteCounts(votesObj){
+      const counts = {};
+      if (!votesObj || typeof votesObj !== "object") return counts;
+      for (const reviewUid of Object.keys(votesObj)){
+        const m = votesObj[reviewUid] || {};
+        let like = 0, dislike = 0;
+        for (const voterUid of Object.keys(m)){
+          const val = Number(m[voterUid]);
+          if (val === 1) like += 1;
+          else if (val === -1) dislike += 1;
+        }
+        counts[reviewUid] = { like, dislike, score: like - dislike };
+      }
+      return counts;
+    }
+
     // ====== Firebase init ======
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
     const auth = getAuth(app);
     const provider = new GoogleAuthProvider();
 
+    // ====== Keyboard fix: hide bottom nav when keyboard open ======
+    function updateKeyboardState(){
+      const vv = window.visualViewport;
+      if (!vv) return;
+      const ratio = vv.height / window.innerHeight;
+      const open = ratio < 0.78; // threshold
+      document.body.classList.toggle("kbd", open);
+    }
+    if (window.visualViewport){
+      window.visualViewport.addEventListener("resize", updateKeyboardState);
+      window.visualViewport.addEventListener("scroll", updateKeyboardState);
+    }
+    document.addEventListener("focusin",(e)=>{
+      if (e.target && (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA")){
+        setTimeout(updateKeyboardState, 0);
+      }
+    });
+    document.addEventListener("focusout",(e)=>{
+      if (e.target && (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA")){
+        setTimeout(updateKeyboardState, 50);
+      }
+    });
+
     // ====== State ======
     let currentUser = null;
     let allApps = [];
     let currentAppId = null;
+
+    // modal listeners
     let unsubscribeReviews = null;
+    let unsubscribeVotes = null;
+
+    // user whitelist listener
+    let unsubscribeWhitelist = null;
+    let whitelist = {}; // {appId: true|{addedAt}}
+
+    // detail state
+    let reviewFilterStar = 0; // 0=default (popular by likes), else 1..5
+    let currentVotes = {};    // raw votes
+    let voteCounts = {};      // {reviewUid:{like,dislike,score}}
 
     const state = {
       tab: "apps",      // apps|games
@@ -955,12 +1131,7 @@
     };
 
     function updateHeaderVisibility(){
-      // profile: sembunyikan search + tabs (biar "beneran profile")
       headerExtras.classList.toggle("hidden", state.page === "profile");
-      // bersihin query kalau user masuk profile (biar ga ngerusak UX balik)
-      if (state.page === "profile") {
-        // jangan ngilangin isi input user kalau lagi ngetik di home
-      }
     }
 
     function typeOfApp(a){
@@ -999,16 +1170,37 @@
     }
 
     // ====== Auth ======
+    function stopWhitelistListener(){
+      if (typeof unsubscribeWhitelist === "function"){
+        try{ unsubscribeWhitelist(); }catch{}
+      }
+      unsubscribeWhitelist = null;
+      whitelist = {};
+    }
+    function startWhitelistListener(uid){
+      stopWhitelistListener();
+      const wRef = ref(db, `users/${uid}/whitelist`);
+      unsubscribeWhitelist = onValue(wRef, (snap)=>{
+        whitelist = snap.exists() ? (snap.val() || {}) : {};
+        // update button state if modal open
+        if (currentAppId) updateWhitelistButton(currentAppId);
+        if (state.page === "profile") render();
+      });
+    }
+
     onAuthStateChanged(auth, (user)=>{
       currentUser = user || null;
       if (currentUser){
         loginBtn.style.display = "none";
         avatarBtn.style.display = "grid";
         headerAvatar.src = currentUser.photoURL || "icon/default.png";
+        startWhitelistListener(currentUser.uid);
       } else {
         loginBtn.style.display = "inline-flex";
         avatarBtn.style.display = "none";
+        stopWhitelistListener();
       }
+
       if (currentAppId) refreshReviewForm(currentAppId);
       if (state.page === "profile") render();
     });
@@ -1112,13 +1304,7 @@
       return copy.sort((x,y)=>(Number(y.downloads||0)-Number(x.downloads||0)));
     }
 
-    function labelSort(v){
-      if (v === "latest") return "Terbaru";
-      if (v === "rating") return "Rating";
-      return "Populer";
-    }
-
-    // ====== Categories list (NO chips/menu, only sections) ======
+    // ====== Categories list (no chips) ======
     function categoriesForTab(){
       const cats = new Map();
       for (const a of filteredByTab()){
@@ -1147,7 +1333,7 @@
       return div;
     }
 
-    function createRowCard(a, idx=null){
+    function createRowCard(a, idx=null, minimalMeta=false){
       const {avg, count} = computeReviewStats(a.reviews);
       const card = document.createElement("div");
       card.className = "rowCard";
@@ -1166,17 +1352,19 @@
             <div style="display:flex;gap:6px;align-items:center">${badges.join("")}</div>
           </div>
           <div class="rowDesc">${escapeHtml(a.description || "-")}</div>
-          <div class="rowMeta">
-            <span>${starsDisplay(avg)}</span>
-            <span class="ratingNum">${avg ? avg.toFixed(1) : "0.0"}</span>
-            <span>(${count})</span>
-            <span>•</span>
-            <span>${fmtNum(a.downloads)} download</span>
-            <span>•</span>
-            <span>Update ${fmtDate(a.updatedAt)}</span>
-          </div>
+          ${minimalMeta ? "" : `
+            <div class="rowMeta">
+              <span>${starsDisplay(avg)}</span>
+              <span class="ratingNum">${avg ? avg.toFixed(1) : "0.0"}</span>
+              <span>(${count})</span>
+              <span>•</span>
+              <span>${fmtNum(a.downloads)} download</span>
+              <span>•</span>
+              <span>Update ${fmtDate(a.updatedAt)}</span>
+            </div>
+          `}
         </div>
-        <button class="btnInstall" type="button">Install</button>
+        <button class="btnInstall" type="button">${iconDownload()} Install</button>
       `;
 
       const btn = card.querySelector(".btnInstall");
@@ -1272,7 +1460,7 @@
         return;
       }
 
-      // Banner "Populer sekarang" (Play Store style)
+      // Banner populer
       const topPopular = sortItems(apps, "popular").slice(0, 6);
       const bannerSec = document.createElement("section");
       bannerSec.className = "section";
@@ -1294,10 +1482,9 @@
         render();
       };
 
-      // Kategori sections (per kategori, scroll horizontal)
-      const cats = categoriesForTab();
-      const catsToShow = cats.slice(0, 12); // tampil banyak, tapi tetap smooth
-      for (const c of catsToShow){
+      // kategori sections
+      const cats = categoriesForTab().slice(0, 12);
+      for (const c of cats){
         const items = sortItems(apps.filter(a => (a.category || "Lainnya") === c), "popular");
         if (!items.length) continue;
         contentEl.appendChild(sectionBlock(c, items.slice(0, 12), ()=>{
@@ -1347,6 +1534,8 @@
       contentEl.appendChild(vlist);
     }
 
+    function appById(id){ return allApps.find(x=>x.id===id); }
+
     async function renderProfile(){
       contentEl.innerHTML = "";
       countPill.textContent = "";
@@ -1364,7 +1553,7 @@
               <div class="profileHeaderRow">
                 <div style="min-width:0">
                   <p class="pName">Guest</p>
-                  <div class="pEmail">Login untuk kasih rating & ulasan</div>
+                  <div class="pEmail">Login untuk whitelist & ulasan</div>
                 </div>
                 <div class="profileActions">
                   <button class="ghostBtn" id="pLogin">Login Google</button>
@@ -1372,7 +1561,7 @@
               </div>
 
               <div class="profileStats">
-                <div class="stat"><div class="k">Ulasan</div><div class="v">0</div></div>
+                <div class="stat"><div class="k">Whitelist</div><div class="v">0</div></div>
                 <div class="stat"><div class="k">Tab</div><div class="v">${state.tab === "games" ? "Game" : "Aplikasi"}</div></div>
                 <div class="stat"><div class="k">Status</div><div class="v">Guest</div></div>
               </div>
@@ -1387,7 +1576,7 @@
                   <div class="settingIcon">🔐</div>
                   <div class="settingText">
                     <div class="settingTitle">Login</div>
-                    <div class="settingDesc">Satu akun = satu ulasan per item</div>
+                    <div class="settingDesc">Whitelist & 1 akun = 1 ulasan</div>
                   </div>
                 </div>
                 <div class="chev">›</div>
@@ -1402,23 +1591,8 @@
         return;
       }
 
-      // Logged-in
-      const myUid = currentUser.uid;
-      const mine = allApps
-        .filter(a => a.reviews && a.reviews[myUid])
-        .map(a => {
-          const r = a.reviews[myUid];
-          return {
-            app: a,
-            stars: Number(r?.stars || 0),
-            updatedAt: Number(r?.updatedAt || 0),
-            comment: String(r?.comment || "")
-          };
-        })
-        .sort((x,y)=>(y.updatedAt||0)-(x.updatedAt||0));
-
-      // average stars from my reviews
-      const myAvg = mine.length ? (mine.reduce((s,x)=>s + (x.stars||0), 0) / mine.length) : 0;
+      const wIds = Object.keys(whitelist || {});
+      const wItems = wIds.map(id => appById(id)).filter(Boolean);
 
       shell.innerHTML = `
         <div class="profileHero">
@@ -1431,25 +1605,24 @@
                 <div class="pEmail">${escapeHtml(currentUser.email || "-")}</div>
               </div>
               <div class="profileActions">
-                <button class="ghostBtn" id="pMyReviews">Ulasan saya</button>
-                <button class="dangerBtn" id="pLogout">Logout</button>
+                <button class="ghostBtn" id="pManageWL">Whitelist</button>
               </div>
             </div>
 
             <div class="profileStats">
-              <div class="stat"><div class="k">Ulasan</div><div class="v">${mine.length}</div></div>
-              <div class="stat"><div class="k">Rata-rata</div><div class="v">${myAvg ? myAvg.toFixed(1) : "0.0"}</div></div>
-              <div class="stat"><div class="k">Terakhir</div><div class="v">${mine[0]?.updatedAt ? timeAgo(mine[0].updatedAt) : "-"}</div></div>
+              <div class="stat"><div class="k">Whitelist</div><div class="v">${wItems.length}</div></div>
+              <div class="stat"><div class="k">UID</div><div class="v" title="${escapeHtml(currentUser.uid)}">${escapeHtml(currentUser.uid).slice(0,8)}…</div></div>
+              <div class="stat"><div class="k">Status</div><div class="v">Login</div></div>
             </div>
           </div>
         </div>
 
-        <div class="cardList" id="myReviewsCard">
+        <div class="cardList" id="wlCard">
           <div class="cardListHead">
-            <h3>Ulasan Saya</h3>
-            <span class="pill">${mine.length ? "Klik item untuk edit" : "Belum ada ulasan"}</span>
+            <h3>Whitelist</h3>
+            <span class="pill">${wItems.length ? "Tap untuk buka" : "Kosong"}</span>
           </div>
-          <div class="cardListBody" id="myReviewsBody"></div>
+          <div class="cardListBody" id="wlBody"></div>
         </div>
 
         <div class="cardList">
@@ -1460,7 +1633,7 @@
                 <div class="settingIcon">🧩</div>
                 <div class="settingText">
                   <div class="settingTitle">Struktur data</div>
-                  <div class="settingDesc">RTDB: apps/{appId} + reviews/{uid}</div>
+                  <div class="settingDesc">apps/{appId} + reviews/{uid} + whitelist</div>
                 </div>
               </div>
               <div class="chev">›</div>
@@ -1470,8 +1643,19 @@
               <div class="settingLeft">
                 <div class="settingIcon">🛡️</div>
                 <div class="settingText">
-                  <div class="settingTitle">Keamanan ulasan</div>
-                  <div class="settingDesc">Pastikan Rules: auth.uid == $uid</div>
+                  <div class="settingTitle">Keamanan</div>
+                  <div class="settingDesc">Rules: auth.uid == $uid (review & whitelist)</div>
+                </div>
+              </div>
+              <div class="chev">›</div>
+            </div>
+
+            <div class="settingRow" id="logoutRow">
+              <div class="settingLeft">
+                <div class="settingIcon">🚪</div>
+                <div class="settingText">
+                  <div class="settingTitle">Logout</div>
+                  <div class="settingDesc">Keluar dari akun Google</div>
                 </div>
               </div>
               <div class="chev">›</div>
@@ -1481,56 +1665,37 @@
       `;
       contentEl.appendChild(shell);
 
-      shell.querySelector("#pLogout").onclick = async ()=>{
-        try{
-          await signOut(auth);
-          toast("Logout berhasil.");
-        } catch (e){
-          toast("Logout gagal.");
-          console.error(e);
-        }
+      shell.querySelector("#howData").onclick = ()=>toast("Data: apps/{appId} + reviews/{uid} + users/{uid}/whitelist");
+      shell.querySelector("#rulesTip").onclick = ()=>toast("Rules penting: write hanya boleh auth.uid untuk review/vote/whitelist");
+      shell.querySelector("#logoutRow").onclick = async ()=>{
+        try{ await signOut(auth); toast("Logout berhasil."); }catch(e){ console.error(e); toast("Logout gagal."); }
       };
 
-      shell.querySelector("#howData").onclick = ()=>{
-        toast("Data: apps/{appId} (name, icon, category, type, downloadUrl, ...) + reviews/{uid}");
-      };
-      shell.querySelector("#rulesTip").onclick = ()=>{
-        toast("Rules penting: hanya auth.uid boleh nulis review di path reviews/$uid");
-      };
-
-      const body = shell.querySelector("#myReviewsBody");
-      if (!mine.length){
-        body.innerHTML = `<div class="state" style="margin:0">Belum ada ulasan. Coba buka salah satu item lalu kasih bintang.</div>`;
+      const wlBody = shell.querySelector("#wlBody");
+      if (!wItems.length){
+        wlBody.innerHTML = `<div class="state" style="margin:0">Belum ada whitelist. Buka detail item → tambahkan ke whitelist.</div>`;
       } else {
         const list = document.createElement("div");
         list.className = "vlist";
-        mine.slice(0, 40).forEach((x)=>{
-          const a = x.app;
-          const card = document.createElement("div");
-          card.className = "rowCard";
-          card.onclick = ()=>openDetail(a.id);
-          card.innerHTML = `
-            <img class="ico" src="${a.icon || "icon/default.png"}" alt="${escapeHtml(a.name)}" onerror="this.src='icon/default.png'">
-            <div class="rowMain">
-              <div class="rowTitle">
-                <h3 class="rowName">${escapeHtml(a.name)}</h3>
-                <span class="badge">${timeAgo(x.updatedAt)}</span>
-              </div>
-              <div class="rowMeta">
-                <span>${starsDisplay(x.stars)}</span>
-                <span class="ratingNum">${x.stars ? x.stars.toFixed(0) : "0"}</span>
-              </div>
-              <div class="rowDesc">${escapeHtml(x.comment || "(Tanpa komentar)")}</div>
-            </div>
-          `;
+        wItems.slice(0, 120).forEach((a)=>{
+          const card = createRowCard(a, null, true);
+          // replace install button -> remove from whitelist
+          const btn = card.querySelector(".btnInstall");
+          btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6 6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg> Hapus`;
+          btn.style.background = "rgba(239,68,68,.10)";
+          btn.style.borderColor = "rgba(239,68,68,.22)";
+          btn.style.color = "#b91c1c";
+          btn.onclick = async (e)=>{
+            e.stopPropagation();
+            await removeWhitelist(a.id);
+          };
           list.appendChild(card);
         });
-        body.appendChild(list);
+        wlBody.appendChild(list);
       }
 
-      shell.querySelector("#pMyReviews").onclick = ()=>{
-        const el = shell.querySelector("#myReviewsCard");
-        el.scrollIntoView({behavior:"smooth", block:"start"});
+      shell.querySelector("#pManageWL").onclick = ()=>{
+        shell.querySelector("#wlCard").scrollIntoView({behavior:"smooth", block:"start"});
       };
     }
 
@@ -1540,7 +1705,79 @@
       return renderHome();
     }
 
-    // ====== Reviews LIVE (bar biru auto update) ======
+    // ====== Whitelist ======
+    function isWhitelisted(appId){
+      return Boolean(whitelist && whitelist[appId]);
+    }
+    async function addWhitelist(appId){
+      if (!currentUser){
+        toast("Login dulu untuk whitelist.");
+        return false;
+      }
+      await set(ref(db, `users/${currentUser.uid}/whitelist/${appId}`), { addedAt: Date.now() });
+      toast("Ditambahkan ke whitelist.");
+      return true;
+    }
+    async function removeWhitelist(appId){
+      if (!currentUser){
+        toast("Login dulu.");
+        return false;
+      }
+      await remove(ref(db, `users/${currentUser.uid}/whitelist/${appId}`));
+      toast("Dihapus dari whitelist.");
+      return true;
+    }
+    async function toggleWhitelist(appId){
+      if (isWhitelisted(appId)) return removeWhitelist(appId);
+      return addWhitelist(appId);
+    }
+    function updateWhitelistButton(appId){
+      const btn = document.getElementById("whitelistBtn");
+      if (!btn) return;
+      const on = isWhitelisted(appId);
+      btn.classList.toggle("on", on);
+      btn.innerHTML = `${iconBookmark()} ${on ? "Whitelisted" : "Whitelist"}`;
+    }
+
+    // ====== Votes for reviews ======
+    function myVote(reviewUid){
+      if (!currentUser) return 0;
+      return Number(currentVotes?.[reviewUid]?.[currentUser.uid] || 0);
+    }
+    async function setVote(appId, reviewUid, val){
+      if (!currentUser){
+        toast("Login dulu untuk vote.");
+        return;
+      }
+      const path = `apps/${appId}/reviewVotes/${reviewUid}/${currentUser.uid}`;
+      const v = myVote(reviewUid);
+      // toggle behavior
+      if (v === val){
+        await remove(ref(db, path));
+      } else {
+        await set(ref(db, path), val);
+      }
+    }
+
+    // ====== Reviews LIVE + filter ======
+    function setReviewFilter(star){
+      reviewFilterStar = star;
+      const pill = document.getElementById("filterPill");
+      if (pill){
+        pill.classList.toggle("show", reviewFilterStar !== 0);
+        pill.textContent = reviewFilterStar ? `Filter: ${reviewFilterStar}★` : "";
+      }
+      // highlight bars
+      document.querySelectorAll(".barRow").forEach(r=>{
+        const s = Number(r.dataset.star || 0);
+        r.classList.toggle("active", reviewFilterStar !== 0 && s === reviewFilterStar);
+      });
+      if (currentAppId){
+        const a = appById(currentAppId);
+        renderReviewsList(currentAppId, a?.reviews || {});
+      }
+    }
+
     function updateReviewStatsUI(reviews){
       const stats = computeReviewStats(reviews || {});
       const avg = stats.avg ? stats.avg.toFixed(1) : "0.0";
@@ -1582,11 +1819,22 @@
       });
     }
 
-    function attachReviewsListener(appId){
+    function stopDetailListeners(){
       if (typeof unsubscribeReviews === "function"){
         try{ unsubscribeReviews(); }catch{}
-        unsubscribeReviews = null;
       }
+      if (typeof unsubscribeVotes === "function"){
+        try{ unsubscribeVotes(); }catch{}
+      }
+      unsubscribeReviews = null;
+      unsubscribeVotes = null;
+      currentVotes = {};
+      voteCounts = {};
+    }
+
+    function attachReviewsListener(appId){
+      stopDetailListeners();
+
       const rRef = ref(db, `apps/${appId}/reviews`);
       unsubscribeReviews = onValue(rRef, (snap)=>{
         const reviews = snap.exists() ? snap.val() : {};
@@ -1595,6 +1843,16 @@
 
         updateReviewStatsUI(reviews);
         renderReviewsList(appId, reviews);
+        refreshMyReviewSummary(appId, reviews);
+      });
+
+      const vRef = ref(db, `apps/${appId}/reviewVotes`);
+      unsubscribeVotes = onValue(vRef, (snap)=>{
+        currentVotes = snap.exists() ? (snap.val() || {}) : {};
+        voteCounts = computeVoteCounts(currentVotes);
+        // rerender list (popular depends on likes)
+        const a = appById(appId);
+        renderReviewsList(appId, a?.reviews || {});
       });
     }
 
@@ -1617,7 +1875,7 @@
         updatedAt: Date.now()
       };
 
-      // optimistic UI
+      // optimistic
       const idx = allApps.findIndex(x=>x.id===appId);
       if (idx !== -1){
         if (!allApps[idx].reviews || typeof allApps[idx].reviews !== "object") allApps[idx].reviews = {};
@@ -1635,12 +1893,12 @@
     }
 
     function openDetail(id){
-      const a = allApps.find(x=>x.id===id);
-      if (!a){
-        toast("Item tidak ditemukan.");
-        return;
-      }
+      const a = appById(id);
+      if (!a){ toast("Item tidak ditemukan."); return; }
       currentAppId = id;
+
+      // reset filter setiap buka detail
+      reviewFilterStar = 0;
 
       const url = new URL(location.href);
       url.searchParams.set("id", id);
@@ -1668,7 +1926,6 @@
       const dist = stats.dist;
       const total = Math.max(1, stats.count);
 
-      // NOTE: kategori di detail DIHAPUS (biar ga dobel)
       modalBody.innerHTML = `
         <div class="hero">
           <img class="ico" src="${a.icon || "icon/default.png"}" alt="${escapeHtml(a.name)}" onerror="this.src='icon/default.png'">
@@ -1685,10 +1942,10 @@
 
             <div class="actions">
               <a class="btn primary" href="${a.downloadUrl || "#"}" target="_blank" rel="noopener" ${a.downloadUrl ? "" : "onclick='return false;'"}>
-                ⬇ Install
+                ${iconDownload()} Install
               </a>
-              <button class="btn" id="copyLinkBtn" type="button">Copy Link</button>
-              <button class="btn" id="shareBtn" type="button">Share</button>
+              <button class="btn wl" id="whitelistBtn" type="button">${iconBookmark()} Whitelist</button>
+              <button class="btn ghost" id="shareBtn" type="button">${iconShare()} Share</button>
             </div>
           </div>
         </div>
@@ -1703,10 +1960,13 @@
         <div class="panel" id="reviewPanel">
           <div class="panelHead">
             <h3>Ratings & reviews</h3>
-            <div class="reviewSummary">
-              <span id="avgStars">${starsDisplay(stats.avg)}</span>
-              <span class="ratingNum" id="avgNum">${stats.avg ? stats.avg.toFixed(1) : "0.0"}</span>
-              <span id="reviewCount">(${stats.count})</span>
+            <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+              <span class="filterPill" id="filterPill"></span>
+              <div class="reviewSummary">
+                <span id="avgStars">${starsDisplay(stats.avg)}</span>
+                <span class="ratingNum" id="avgNum">${stats.avg ? stats.avg.toFixed(1) : "0.0"}</span>
+                <span id="reviewCount">(${stats.count})</span>
+              </div>
             </div>
           </div>
 
@@ -1718,12 +1978,12 @@
                 <div class="hint" id="bigCount">${stats.count} ulasan</div>
               </div>
 
-              <div class="bars">
+              <div class="bars" id="barsWrap">
                 ${[5,4,3,2,1].map(s=>{
                   const c = dist[s-1] || 0;
                   const pct = Math.round((c/total)*100);
                   return `
-                    <div class="barRow">
+                    <div class="barRow" data-star="${s}" title="Klik untuk filter ${s} bintang">
                       <div>${s}</div>
                       <div class="bar"><span data-star="${s}" style="width:${pct}%"></span></div>
                       <div class="barPct" data-star="${s}">${pct}%</div>
@@ -1734,22 +1994,32 @@
             </div>
 
             <div>
-              <div class="rateStars" id="rateStars"></div>
-              <div class="hint" id="selectedLabel" style="margin-top:2px">Belum memilih rating</div>
-
-              <textarea id="commentBox" placeholder="Tulis ulasan kamu (opsional)..."></textarea>
-
-              <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between;margin-top:10px">
-                <div class="hint" id="reviewHint">Pilih bintang, tulis ulasan, lalu klik Kirim.</div>
-                <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-                  <button class="btn" id="reviewLoginBtn" style="display:none" type="button">Login untuk Ulasan</button>
-                  <button class="btn primary" id="submitReviewBtn" type="button">Kirim</button>
+              <div class="myReviewCard" id="myReviewCard">
+                <div class="myReviewTop">
+                  <div class="t">Ulasan kamu</div>
+                  <button class="iconBtn" id="editReviewBtn" type="button" aria-label="Edit ulasan">${iconPencil()}</button>
+                </div>
+                <div id="myReviewBody">
+                  <div class="myReviewEmpty">Loading…</div>
                 </div>
               </div>
 
-              <div class="hint" style="margin-top:8px">
-                1 akun Google = 1 ulasan. Bisa <b>Perbarui</b> kapan saja.
-                <span id="charInfo" class="hint"></span>
+              <div class="editor" id="reviewEditor" aria-hidden="true">
+                <div class="hint" id="selectedLabel" style="margin-top:8px">Pilih rating</div>
+                <div class="rateStars" id="rateStars"></div>
+                <textarea id="commentBox" placeholder="Tulis ulasan kamu (opsional)..."></textarea>
+
+                <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between;margin-top:10px">
+                  <div class="hint" id="reviewHint">Ketik lalu Kirim.</div>
+                  <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+                    <button class="btn" id="cancelEditBtn" type="button">Batal</button>
+                    <button class="btn primary" id="submitReviewBtn" type="button">Kirim</button>
+                  </div>
+                </div>
+
+                <div class="hint" style="margin-top:8px">
+                  1 akun Google = 1 ulasan. <span id="charInfo" class="hint"></span>
+                </div>
               </div>
             </div>
           </div>
@@ -1772,31 +2042,56 @@
         ${shotsHtml}
       `;
 
-      const shareUrl = location.href;
-      document.getElementById("copyLinkBtn").onclick = async ()=>{
-        try{
-          await navigator.clipboard.writeText(shareUrl);
-          toast("Link berhasil di-copy!");
-        } catch {
-          toast("Gagal copy. Coba manual.");
+      // actions
+      document.getElementById("shareBtn").onclick = async ()=>{
+        const shareUrl = location.href;
+        if (navigator.share){
+          try{ await navigator.share({ title: a.name, text: "Install dari APK Store", url: shareUrl }); } catch {}
+        } else {
+          try{ await navigator.clipboard.writeText(shareUrl); toast("Link disalin (Share tidak tersedia)."); }
+          catch { toast("Browser belum support Share."); }
         }
       };
-      document.getElementById("shareBtn").onclick = async ()=>{
-        if (navigator.share){
-          try{
-            await navigator.share({ title: a.name, text: "Install dari APK Store", url: shareUrl });
-          } catch {}
-        } else toast("Browser belum support Share. Pakai Copy Link.");
+
+      document.getElementById("whitelistBtn").onclick = async ()=>{
+        if (!currentUser){
+          toast("Login dulu untuk whitelist.");
+          return;
+        }
+        try{
+          await toggleWhitelist(id);
+          updateWhitelistButton(id);
+        } catch (e){
+          console.error(e);
+          toast("Gagal whitelist. Cek Rules.");
+        }
       };
+
+      // bars clickable filter
+      document.getElementById("barsWrap").addEventListener("click", (e)=>{
+        const row = e.target.closest(".barRow");
+        if (!row) return;
+        const s = Number(row.dataset.star || 0);
+        if (!s) return;
+        // toggle
+        if (reviewFilterStar === s) setReviewFilter(0);
+        else setReviewFilter(s);
+      });
 
       overlay.classList.add("show");
       overlay.setAttribute("aria-hidden","false");
       lockBodyScroll(true);
 
+      // init button state + review ui
+      updateWhitelistButton(id);
       setupReviewUI(id);
+
+      // listeners
       attachReviewsListener(id);
       updateReviewStatsUI(a.reviews || {});
       renderReviewsList(id, a.reviews || {});
+      refreshMyReviewSummary(id, a.reviews || {});
+      setReviewFilter(0);
     }
 
     function closeDetail(){
@@ -1807,40 +2102,82 @@
       url.searchParams.delete("id");
       history.replaceState({}, "", url);
       currentAppId = null;
-
-      if (typeof unsubscribeReviews === "function"){
-        try{ unsubscribeReviews(); }catch{}
-        unsubscribeReviews = null;
-      }
+      stopDetailListeners();
     }
     closeBtn.onclick = closeDetail;
     overlay.addEventListener("click",(e)=>{ if (e.target===overlay) closeDetail(); });
     window.addEventListener("keydown",(e)=>{ if (e.key==="Escape") closeDetail(); });
 
-    // ===== Review UI =====
+    // ===== Review editor + summary =====
     let _reviewFormCache = null;
+
+    function setEditorOpen(open){
+      const editor = document.getElementById("reviewEditor");
+      if (!editor) return;
+      editor.classList.toggle("show", open);
+      editor.setAttribute("aria-hidden", open ? "false" : "true");
+    }
+
+    function refreshMyReviewSummary(appId, reviews){
+      const body = document.getElementById("myReviewBody");
+      const editBtn = document.getElementById("editReviewBtn");
+      if (!body || !editBtn) return;
+
+      if (!currentUser){
+        body.innerHTML = `
+          <div class="myReviewEmpty">Login untuk menulis ulasan.</div>
+          <div class="myReviewMeta"><button class="btn" id="myLoginBtn" type="button">Login Google</button></div>
+        `;
+        editBtn.style.opacity = ".5";
+        editBtn.disabled = true;
+        const b = document.getElementById("myLoginBtn");
+        if (b) b.onclick = ()=>loginBtn.click();
+        return;
+      }
+
+      editBtn.style.opacity = "1";
+      editBtn.disabled = false;
+
+      const mine = (reviews && reviews[currentUser.uid]) ? reviews[currentUser.uid] : null;
+      if (!mine){
+        body.innerHTML = `<div class="myReviewEmpty">Belum ada ulasan. Tap ikon pensil untuk menulis.</div>`;
+        return;
+      }
+      const s = Number(mine.stars || 0);
+      const c = String(mine.comment || "");
+      body.innerHTML = `
+        <div class="myReviewMeta">
+          <span>${starsDisplay(s)}</span>
+          <span class="ratingNum">${s || "0"}</span>
+          <span>•</span>
+          <span>${mine.updatedAt ? timeAgo(mine.updatedAt) : ""}</span>
+        </div>
+        ${c ? `<div class="myReviewText">${escapeHtml(c)}</div>` : `<div class="myReviewEmpty">(Tanpa komentar)</div>`}
+      `;
+    }
 
     function setupReviewUI(appId){
       const rateStarsEl = document.getElementById("rateStars");
       const commentBox = document.getElementById("commentBox");
       const submitBtn = document.getElementById("submitReviewBtn");
-      const loginReviewBtn = document.getElementById("reviewLoginBtn");
+      const cancelBtn = document.getElementById("cancelEditBtn");
       const hintEl = document.getElementById("reviewHint");
       const charInfo = document.getElementById("charInfo");
       const selectedLabel = document.getElementById("selectedLabel");
+      const editBtn = document.getElementById("editReviewBtn");
 
       let selectedStars = 0;
       const MAX_LEN = 500;
 
       function updateSelectedLabel(){
-        selectedLabel.textContent = selectedStars ? `Rating dipilih: ${selectedStars}/5` : "Belum memilih rating";
+        selectedLabel.textContent = selectedStars ? `Rating: ${selectedStars}/5` : "Pilih rating";
       }
       function updateCharInfo(){
         const len = (commentBox.value || "").length;
-        charInfo.textContent = ` • ${len}/${MAX_LEN}`;
+        charInfo.textContent = `${len}/${MAX_LEN}`;
         if (len > MAX_LEN){
           charInfo.classList.add("danger");
-          charInfo.textContent = ` • ${len}/${MAX_LEN} (kepanjangan)`;
+          charInfo.textContent = `${len}/${MAX_LEN} (kepanjangan)`;
         } else charInfo.classList.remove("danger");
       }
       function renderStars(){
@@ -1865,20 +2202,18 @@
           selectedStars = 0;
           commentBox.value = "";
           submitBtn.textContent = "Kirim";
-          hintEl.textContent = "Login untuk memberi ulasan.";
-          loginReviewBtn.style.display = "inline-flex";
+          hintEl.textContent = "Login dulu untuk ulasan.";
           renderStars(); updateSelectedLabel(); updateCharInfo();
           return;
         }
-        loginReviewBtn.style.display = "none";
-        hintEl.textContent = "Pilih bintang, tulis ulasan, lalu klik Kirim.";
+        hintEl.textContent = "Isi lalu Kirim.";
 
         const mine = await getMyReview(appId);
         if (mine){
           selectedStars = Number(mine.stars || 0);
           commentBox.value = String(mine.comment || "");
           submitBtn.textContent = "Perbarui";
-          hintEl.textContent = `Ulasan kamu terakhir diupdate: ${timeAgo(mine.updatedAt)}`;
+          hintEl.textContent = `Terakhir: ${timeAgo(mine.updatedAt)}`;
         } else {
           selectedStars = 0;
           commentBox.value = "";
@@ -1887,15 +2222,19 @@
         renderStars(); updateSelectedLabel(); updateCharInfo();
       }
 
-      loginReviewBtn.onclick = async ()=>{
-        try{
-          await signInWithPopup(auth, provider);
-          toast("Login berhasil!");
-          await loadMyExistingReview();
-        } catch (e){
-          toast("Login gagal. Cek Authorized domains.");
-          console.error(e);
+      editBtn.onclick = async ()=>{
+        if (!currentUser){
+          toast("Login dulu untuk ulasan.");
+          return;
         }
+        await loadMyExistingReview();
+        setEditorOpen(true);
+        // fokus halus
+        setTimeout(()=>commentBox.focus({preventScroll:false}), 50);
+      };
+
+      cancelBtn.onclick = ()=>{
+        setEditorOpen(false);
       };
 
       commentBox.addEventListener("input", updateCharInfo);
@@ -1903,11 +2242,10 @@
       submitBtn.onclick = async ()=>{
         if (!currentUser){
           toast("Login dulu untuk ulasan.");
-          loginReviewBtn.style.display = "inline-flex";
           return;
         }
         if (selectedStars < 1 || selectedStars > 5){
-          toast("Pilih rating 1–5 bintang dulu (klik bintangnya).");
+          toast("Pilih rating 1–5 bintang.");
           return;
         }
         const comment = (commentBox.value || "").trim();
@@ -1917,8 +2255,9 @@
         }
         try{
           await submitReview(appId, selectedStars, comment);
-          submitBtn.textContent = "Perbarui";
-          hintEl.textContent = "Ulasan tersimpan. Kamu bisa perbarui kapan saja.";
+          toast("Ulasan tersimpan.");
+          setEditorOpen(false); // ✅ setelah kirim/perbarui, editor hilang
+          // summary akan ke-update dari listener
         } catch (e){
           toast("Gagal menyimpan ulasan. Cek Rules.");
           console.error(e);
@@ -1926,7 +2265,7 @@
       };
 
       renderStars(); updateSelectedLabel(); updateCharInfo();
-      loadMyExistingReview();
+      setEditorOpen(false);
       _reviewFormCache = { appId, reload: loadMyExistingReview };
     }
 
@@ -1937,7 +2276,7 @@
     }
 
     function renderReviewsList(appId, reviewsOverride=null){
-      const a = allApps.find(x=>x.id===appId);
+      const a = appById(appId);
       if (!a) return;
 
       const list = document.getElementById("reviewsList");
@@ -1951,18 +2290,38 @@
           comment: String(v?.comment || ""),
           userName: String(v?.userName || "User"),
           userPhoto: String(v?.userPhoto || ""),
-          updatedAt: Number(v?.updatedAt || 0)
+          updatedAt: Number(v?.updatedAt || 0),
+          like: voteCounts?.[uid]?.like || 0,
+          dislike: voteCounts?.[uid]?.dislike || 0,
+          score: voteCounts?.[uid]?.score || 0
         }))
-        .filter(r=>r.stars>=1 && r.stars<=5)
-        .sort((x,y)=>(y.updatedAt||0)-(x.updatedAt||0));
+        .filter(r=>r.stars>=1 && r.stars<=5);
+
+      // filtering
+      let filtered = entries;
+      if (reviewFilterStar){
+        filtered = entries.filter(r=>r.stars === reviewFilterStar)
+          .sort((x,y)=>(y.updatedAt||0)-(x.updatedAt||0)); // newest for star filter
+      } else {
+        // default: popular by likes (score, then likes, then time)
+        filtered = entries.sort((x,y)=>{
+          if (y.score !== x.score) return y.score - x.score;
+          if (y.like !== x.like) return y.like - x.like;
+          return (y.updatedAt||0) - (x.updatedAt||0);
+        });
+      }
 
       list.innerHTML = "";
-      if (entries.length === 0){
-        list.innerHTML = `<div class="hint">Belum ada ulasan. Jadilah yang pertama!</div>`;
+      if (filtered.length === 0){
+        list.innerHTML = `<div class="hint">${reviewFilterStar ? "Tidak ada ulasan untuk filter ini." : "Belum ada ulasan. Jadilah yang pertama!"}</div>`;
         return;
       }
 
-      entries.slice(0, 30).forEach(r=>{
+      filtered.slice(0, 40).forEach(r=>{
+        const my = myVote(r.uid);
+        const likeActive = my === 1;
+        const dislikeActive = my === -1;
+
         const div = document.createElement("div");
         div.className = "reviewItem";
         div.innerHTML = `
@@ -1976,10 +2335,30 @@
               <div class="rTime">${r.updatedAt ? timeAgo(r.updatedAt) : ""}</div>
             </div>
             ${r.comment ? `<div class="rComment">${escapeHtml(r.comment)}</div>` : `<div class="hint" style="margin-top:6px">(Tanpa komentar)</div>`}
+
+            <div class="voteRow">
+              <button class="voteBtn ${likeActive ? "active":""}" data-v="1" data-ruid="${r.uid}" type="button" aria-label="Like">${iconThumbUp()} <span>${r.like}</span></button>
+              <button class="voteBtn ${dislikeActive ? "active":""}" data-v="-1" data-ruid="${r.uid}" type="button" aria-label="Dislike">${iconThumbDown()} <span>${r.dislike}</span></button>
+            </div>
           </div>
         `;
         list.appendChild(div);
       });
+
+      // click handler votes (event delegation)
+      list.onclick = async (e)=>{
+        const btn = e.target.closest(".voteBtn");
+        if (!btn) return;
+        const v = Number(btn.dataset.v || 0);
+        const ruid = String(btn.dataset.ruid || "");
+        if (!v || !ruid) return;
+        try{
+          await setVote(appId, ruid, v);
+        } catch (err){
+          console.error(err);
+          toast("Gagal vote. Cek Rules.");
+        }
+      };
     }
 
     // ====== Realtime load ======
