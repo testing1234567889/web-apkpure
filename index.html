@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>APK Store</title>
   <meta name="description" content="APK Store — UI ala Play Store: Apps & Games, kategori scroll, detail + rating & komentar (1 user 1 ulasan)." />
-
   <style>
     :root{
       --bg:#f6f7fb;
@@ -21,7 +20,6 @@
       --star:#fbbf24;
       --starOff:#cbd5e1;
       --shadow: 0 10px 25px rgba(15, 23, 42, .07);
-      --radius:16px;
       --safeT: env(safe-area-inset-top);
       --safeB: env(safe-area-inset-bottom);
       --safeL: env(safe-area-inset-left);
@@ -38,7 +36,6 @@
     }
     a{color:inherit;text-decoration:none}
     button, input, textarea, select{font:inherit}
-
     .wrap{
       max-width: 1120px;
       margin: 0 auto;
@@ -95,7 +92,6 @@
       overflow:hidden;
       text-overflow:ellipsis;
     }
-
     .auth{
       display:flex;
       align-items:center;
@@ -112,6 +108,7 @@
       font-size:13px;
       font-weight:900;
       cursor:pointer;
+      min-height:44px;
     }
     .btnAuth.primary{
       background: var(--brand);
@@ -121,7 +118,7 @@
     }
     .btnAuth:active{transform:scale(.99)}
 
-    /* avatar-only in header (no name, no logout) */
+    /* avatar-only in header */
     .avatarBtn{
       width:40px;height:40px;
       border-radius:999px;
@@ -220,6 +217,7 @@
       font-weight:900;
       cursor:pointer;
       white-space:nowrap;
+      min-height:44px;
     }
     .chip.active{
       border-color: rgba(26,115,232,.45);
@@ -239,6 +237,7 @@
       gap: 8px;
       flex:0 0 auto;
       box-shadow: 0 10px 18px rgba(15,23,42,.04);
+      min-height:44px;
     }
     .sortPill select{
       border:none;
@@ -315,10 +314,7 @@
       gap:10px;
       margin-bottom: 10px;
     }
-    .sectionTitle{
-      font-weight:1000;
-      font-size:15px;
-    }
+    .sectionTitle{ font-weight:1000; font-size:15px; }
     .linkBtn{
       border:none;
       background:transparent;
@@ -328,6 +324,7 @@
       color: var(--brand2);
       padding: 6px 10px;
       border-radius: 999px;
+      min-height:44px;
     }
     .linkBtn:hover{background: rgba(26,115,232,.08)}
     .linkBtn:active{transform:scale(.99)}
@@ -518,6 +515,7 @@
       cursor:pointer;
       display:grid; place-items:center;
       box-shadow: 0 10px 20px rgba(15,23,42,.06);
+      min-height:44px;
     }
     .xbtn:active{transform:scale(.99)}
     .modalBody{
@@ -560,7 +558,7 @@
       cursor:pointer;
       font-weight: 1000;
       font-size: 13px;
-      min-height: 44px;
+      min-height:44px;
     }
     .btn.primary{
       background: var(--brand);
@@ -601,11 +599,7 @@
       gap: 10px;
       margin-bottom: 10px;
     }
-    .panelHead h3{
-      margin:0;
-      font-size: 14px;
-      font-weight: 1000;
-    }
+    .panelHead h3{ margin:0; font-size: 14px; font-weight: 1000; }
     .panel p{
       margin:0;
       color: var(--muted);
@@ -681,6 +675,7 @@
       width: 0%;
       background: var(--brand);
       border-radius: 999px;
+      transition: width .18s ease;
     }
 
     .rateStars{
@@ -696,6 +691,7 @@
       border-radius: 14px;
       cursor:pointer;
       touch-action: manipulation;
+      min-height:44px;
     }
     .starBtn:hover{background: rgba(26,115,232,.08)}
     .starBtn svg{width: 30px; height: 30px}
@@ -938,7 +934,7 @@
       set
     } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-    // ====== Firebase config ======
+    // ✅ Firebase config kamu
     const firebaseConfig = {
       apiKey: "AIzaSyAu--L2T5_o9xLVT09mXFLIcpPuLLWlL1Q",
       authDomain: "aplikasi-percobaan-dbf84.firebaseapp.com",
@@ -962,7 +958,6 @@
     const closeBtn = $("closeBtn");
     const toastEl = $("toast");
     const sortSelect = $("sortSelect");
-
     const loginBtn = $("loginBtn");
     const avatarBtn = $("avatarBtn");
     const headerAvatar = $("headerAvatar");
@@ -1010,8 +1005,8 @@
     function fmtNum(n){
       const x = Number(n);
       if (!isFinite(x)) return "0";
-      if (x >= 1e6) return (x/1e6).toFixed(1).replace(/\\.0$/,"")+"M";
-      if (x >= 1e3) return (x/1e3).toFixed(1).replace(/\\.0$/,"")+"K";
+      if (x >= 1e6) return (x/1e6).toFixed(1).replace(/\.0$/,"")+"M";
+      if (x >= 1e3) return (x/1e3).toFixed(1).replace(/\.0$/,"")+"K";
       return String(Math.round(x));
     }
     function isNew(updatedAt){
@@ -1041,7 +1036,6 @@
         </svg>
       `;
     }
-
     function computeReviewStats(reviewsObj){
       if (!reviewsObj || typeof reviewsObj !== "object") return { avg: 0, count: 0, dist:[0,0,0,0,0] };
       let sum = 0, count = 0;
@@ -1066,13 +1060,14 @@
     let currentUser = null;
     let allApps = [];
     let currentAppId = null;
+    let unsubscribeReviews = null; // listener khusus reviews modal
 
     const state = {
-      tab: "apps",          // "apps" | "games"
+      tab: "apps",
       category: "Semua",
-      page: "home",         // home|top|profile
+      page: "home",
       query: "",
-      sort: "popular"       // popular|rating|latest
+      sort: "popular" // popular|rating|latest
     };
 
     function typeOfApp(a){
@@ -1123,7 +1118,6 @@
         loginBtn.style.display = "inline-flex";
         avatarBtn.style.display = "none";
       }
-
       if (currentAppId) refreshReviewForm(currentAppId);
       if (state.page === "profile") render();
     });
@@ -1137,7 +1131,6 @@
         console.error(e);
       }
     };
-
     avatarBtn.onclick = ()=>{
       state.page = "profile";
       setActiveNav();
@@ -1156,7 +1149,6 @@
       setActiveNav();
       render();
     });
-
     document.querySelectorAll(".navBtn").forEach(btn=>{
       btn.addEventListener("click", ()=>{
         state.page = btn.dataset.page;
@@ -1165,7 +1157,6 @@
         window.scrollTo({top:0, behavior:"smooth"});
       });
     });
-
     function setActiveTabs(){
       document.querySelectorAll(".tab").forEach(t=>{
         t.classList.toggle("active", t.dataset.tab === state.tab);
@@ -1182,24 +1173,22 @@
     sortSelect.addEventListener("change", ()=>{
       state.sort = sortSelect.value;
       render();
+      if (currentAppId) {
+        // kalau modal sedang terbuka, stats tidak bergantung sort, tapi list home/top akan berubah
+      }
     });
 
     // ====== Categories (chips) ======
     function buildCategoriesForTab(){
-      const cats = new Map(); // cat -> count
+      const cats = new Map();
       for (const a of allApps){
         if (typeOfApp(a) !== state.tab) continue;
         const c = a.category || "Lainnya";
         cats.set(c, (cats.get(c)||0)+1);
       }
-      // Semuanya dulu, lalu urut by count desc
-      const list = Array.from(cats.entries())
-        .sort((x,y)=>y[1]-x[1])
-        .map(([c])=>c);
-
+      const list = Array.from(cats.entries()).sort((x,y)=>y[1]-x[1]).map(([c])=>c);
       return ["Semua", ...list];
     }
-
     function renderSubcats(){
       const cats = buildCategoriesForTab();
       subcatsEl.innerHTML = "";
@@ -1210,7 +1199,6 @@
         btn.onclick = ()=>{
           state.category = c;
           renderSubcats();
-          // tetap home supaya “kategori” kerasa
           state.page = "home";
           setActiveNav();
           render();
@@ -1230,7 +1218,6 @@
         render();
       }, 120);
     });
-
     function matchesQuery(a){
       const q = state.query.trim().toLowerCase();
       if (!q) return true;
@@ -1259,13 +1246,16 @@
         return copy.sort((x,y)=>{
           const rx = computeReviewStats(x.reviews).avg;
           const ry = computeReviewStats(y.reviews).avg;
-          // tie-breaker: downloads
           if (ry !== rx) return ry - rx;
           return (Number(y.downloads||0)-Number(x.downloads||0));
         });
       }
-      // popular
       return copy.sort((x,y)=>(Number(y.downloads||0)-Number(x.downloads||0)));
+    }
+    function labelSort(){
+      if (state.sort === "latest") return "Terbaru";
+      if (state.sort === "rating") return "Rating";
+      return "Populer";
     }
 
     // ====== UI components ======
@@ -1347,13 +1337,9 @@
       if (onSeeAll){
         head.querySelector("button").onclick = onSeeAll;
       }
-
       const row = document.createElement("div");
       row.className = "hscroll";
-      for(const a of items){
-        row.appendChild(createTile(a));
-      }
-
+      for(const a of items){ row.appendChild(createTile(a)); }
       section.appendChild(head);
       section.appendChild(row);
       return section;
@@ -1365,7 +1351,6 @@
       countPill.textContent = `${apps.length}`;
       contentEl.innerHTML = "";
 
-      // Search: list vertical
       if (state.query.trim()){
         const box = document.createElement("div");
         box.className = "section";
@@ -1375,7 +1360,7 @@
         if (apps.length === 0){
           vlist.innerHTML = `<div class="state">Tidak ada hasil. Coba kata kunci lain.</div>`;
         } else {
-          sortItems(apps).slice(0, 80).forEach((a,i)=>vlist.appendChild(createRowCard(a, null)));
+          sortItems(apps).slice(0, 80).forEach(a=>vlist.appendChild(createRowCard(a, null)));
         }
         box.appendChild(vlist);
         contentEl.appendChild(box);
@@ -1387,43 +1372,36 @@
         return;
       }
 
-      // HOME ala Play Store: tampil per kategori (Tools, Entertainment, Offline, dll)
       const catsAll = buildCategoriesForTab().filter(c=>c!=="Semua");
       let catsToShow = catsAll;
 
       if (state.category !== "Semua"){
         catsToShow = [state.category].filter(Boolean);
       } else {
-        // tampilkan maksimal 8 kategori teratas (by count)
         catsToShow = catsAll.slice(0, 8);
       }
 
-      // header kecil info sorting di kanan (bukan section populer/rating terpisah)
       const info = document.createElement("div");
       info.className = "sectionHead";
       info.style.marginTop = "6px";
       info.innerHTML = `<div class="sectionTitle">Kategori</div><div class="pill">Sort: ${labelSort()}</div>`;
       contentEl.appendChild(info);
 
-      // render tiap kategori sebagai row horizontal
       for (const c of catsToShow){
         const items = allApps
-          .filter(a=>typeOfApp(a)===state.tab && (c ? a.category===c : true))
-          .filter(a=>matchesQuery(a)); // query kosong tapi aman
+          .filter(a=>typeOfApp(a)===state.tab && a.category===c)
+          .filter(a=>matchesQuery(a));
         const sorted = sortItems(items);
         if (sorted.length === 0) continue;
-
         contentEl.appendChild(sectionBlock(c, sorted.slice(0, 12), ()=>{
           state.page = "top";
-          setActiveNav();
-          // set filter ke kategori ini
           state.category = c;
           renderSubcats();
+          setActiveNav();
           render();
         }));
       }
 
-      // kalau kategorinya banyak, kasih tombol “lihat semua” ke Top
       if (state.category === "Semua" && catsAll.length > 8){
         const more = document.createElement("div");
         more.className = "section";
@@ -1435,12 +1413,6 @@
         `;
         contentEl.appendChild(more);
       }
-    }
-
-    function labelSort(){
-      if (state.sort === "latest") return "Terbaru";
-      if (state.sort === "rating") return "Rating";
-      return "Populer";
     }
 
     function renderTop(){
@@ -1488,7 +1460,6 @@
 
       panel.innerHTML = `
         <div class="panelHead"><h3>Profil</h3><span class="badge">Login</span></div>
-
         <div class="profileCard">
           <img class="pAvatar" src="${currentUser.photoURL || "icon/default.png"}" alt="avatar" onerror="this.src='icon/default.png'">
           <div class="pMain">
@@ -1496,12 +1467,10 @@
             <div class="pEmail">${escapeHtml(currentUser.email || "-")}</div>
           </div>
         </div>
-
         <div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap;align-items:center">
           <button class="btn" id="pHow">Cara isi data</button>
           <button class="btn primary" id="pLogout">Logout</button>
         </div>
-
         <div style="margin-top:12px" class="hint">
           1 akun Google = 1 ulasan per item. Kamu bisa <b>perbarui</b> ulasan kapan saja.
         </div>
@@ -1521,7 +1490,6 @@
         toast("Data di RTDB: apps/{appId} (name, icon, category, type, downloadUrl, ...)");
       };
 
-      // My reviews list
       const myUid = currentUser.uid;
       const mine = allApps
         .filter(a => a.reviews && a.reviews[myUid])
@@ -1580,20 +1548,71 @@
 
     function render(){
       renderSubcats();
-
-      // URL params: ?id=...
-      const url = new URL(location.href);
-      const idParam = url.searchParams.get("id");
-      if (idParam && !currentAppId){
-        openDetail(idParam);
-      }
-
       if (state.page === "top") return renderTop();
       if (state.page === "profile") return renderProfile();
       return renderHome();
     }
 
-    // ====== Detail + Reviews (1 user 1 ulasan) ======
+    // ====== Reviews LIVE (fix bar biru ga perlu tutup modal) ======
+    function updateReviewStatsUI(reviews){
+      const stats = computeReviewStats(reviews || {});
+      const avg = stats.avg ? stats.avg.toFixed(1) : "0.0";
+
+      // Hero
+      const heroStars = document.getElementById("heroStars");
+      const heroAvg = document.getElementById("heroAvg");
+      const heroCount = document.getElementById("heroCount");
+      if (heroStars) heroStars.innerHTML = starsDisplay(stats.avg);
+      if (heroAvg) heroAvg.textContent = avg;
+      if (heroCount) heroCount.textContent = `(${stats.count} ulasan)`;
+
+      // Panel header
+      const avgStarsEl = document.getElementById("avgStars");
+      const avgNum = document.getElementById("avgNum");
+      const reviewCount = document.getElementById("reviewCount");
+      if (avgStarsEl) avgStarsEl.innerHTML = starsDisplay(stats.avg);
+      if (avgNum) avgNum.textContent = avg;
+      if (reviewCount) reviewCount.textContent = `(${stats.count})`;
+
+      // Big
+      const bigAvg = document.getElementById("bigAvg");
+      const bigStars = document.getElementById("bigStars");
+      const bigCount = document.getElementById("bigCount");
+      if (bigAvg) bigAvg.textContent = avg;
+      if (bigStars) bigStars.innerHTML = starsDisplay(stats.avg);
+      if (bigCount) bigCount.textContent = `${stats.count} ulasan`;
+
+      // Bars
+      const total = Math.max(1, stats.count);
+      [5,4,3,2,1].forEach((s)=>{
+        const span = document.querySelector(`.bar > span[data-star="${s}"]`);
+        const pctEl = document.querySelector(`.barPct[data-star="${s}"]`);
+        if (!span) return;
+        const c = stats.dist[s-1] || 0;
+        const pct = Math.round((c/total)*100);
+        span.style.width = pct + "%";
+        if (pctEl) pctEl.textContent = pct + "%";
+      });
+    }
+
+    function attachReviewsListener(appId){
+      // stop listener lama
+      if (typeof unsubscribeReviews === "function"){
+        try{ unsubscribeReviews(); }catch{}
+        unsubscribeReviews = null;
+      }
+      const rRef = ref(db, `apps/${appId}/reviews`);
+      unsubscribeReviews = onValue(rRef, (snap)=>{
+        const reviews = snap.exists() ? snap.val() : {};
+        // update cache lokal agar tile/list lain ikut benar
+        const idx = allApps.findIndex(x=>x.id===appId);
+        if (idx !== -1) allApps[idx].reviews = reviews;
+
+        updateReviewStatsUI(reviews);
+        renderReviewsList(appId, reviews);
+      });
+    }
+
     async function getMyReview(appId){
       if (!currentUser) return null;
       const uid = currentUser.uid;
@@ -1602,12 +1621,9 @@
     }
 
     async function submitReview(appId, stars, comment){
-      if (!currentUser){
-        toast("Login dulu untuk ulasan.");
-        return;
-      }
+      if (!currentUser) throw new Error("Not logged in");
       const uid = currentUser.uid;
-      const reviewRef = ref(db, `apps/${appId}/reviews/${uid}`);
+
       const payload = {
         stars: Number(stars),
         comment: String(comment || ""),
@@ -1615,8 +1631,19 @@
         userPhoto: currentUser.photoURL || "",
         updatedAt: Date.now()
       };
-      await set(reviewRef, payload);
-      toast("Ulasan tersimpan!");
+
+      // optimistic UI (langsung update bar & list)
+      const idx = allApps.findIndex(x=>x.id===appId);
+      if (idx !== -1){
+        if (!allApps[idx].reviews || typeof allApps[idx].reviews !== "object") allApps[idx].reviews = {};
+        allApps[idx].reviews[uid] = payload;
+        updateReviewStatsUI(allApps[idx].reviews);
+        renderReviewsList(appId, allApps[idx].reviews);
+      }
+
+      // commit ke DB
+      await set(ref(db, `apps/${appId}/reviews/${uid}`), payload);
+      return payload;
     }
 
     function lockBodyScroll(lock){
@@ -1663,9 +1690,9 @@
           <div style="min-width:0">
             <h2>${escapeHtml(a.name)}</h2>
             <div class="heroSmall">
-              <span>${starsDisplay(stats.avg)}</span>
-              <span class="ratingNum">${stats.avg ? stats.avg.toFixed(1) : "0.0"}</span>
-              <span>(${stats.count} ulasan)</span>
+              <span id="heroStars">${starsDisplay(stats.avg)}</span>
+              <span class="ratingNum" id="heroAvg">${stats.avg ? stats.avg.toFixed(1) : "0.0"}</span>
+              <span id="heroCount">(${stats.count} ulasan)</span>
               <span style="opacity:.6">•</span>
               <span>${escapeHtml(a.category || "Lainnya")}</span>
               <span style="opacity:.6">•</span>
@@ -1694,7 +1721,7 @@
           <div class="panelHead">
             <h3>Ratings & reviews</h3>
             <div class="reviewSummary">
-              <span>${starsDisplay(stats.avg)}</span>
+              <span id="avgStars">${starsDisplay(stats.avg)}</span>
               <span class="ratingNum" id="avgNum">${stats.avg ? stats.avg.toFixed(1) : "0.0"}</span>
               <span id="reviewCount">(${stats.count})</span>
             </div>
@@ -1703,9 +1730,9 @@
           <div class="reviewGrid">
             <div class="reviewStats">
               <div class="bigRating">
-                <div class="num">${stats.avg ? stats.avg.toFixed(1) : "0.0"}</div>
-                <div>${starsDisplay(stats.avg)}</div>
-                <div class="hint">${stats.count} ulasan</div>
+                <div class="num" id="bigAvg">${stats.avg ? stats.avg.toFixed(1) : "0.0"}</div>
+                <div id="bigStars">${starsDisplay(stats.avg)}</div>
+                <div class="hint" id="bigCount">${stats.count} ulasan</div>
               </div>
 
               <div class="bars">
@@ -1715,8 +1742,8 @@
                   return `
                     <div class="barRow">
                       <div>${s}</div>
-                      <div class="bar"><span style="width:${pct}%"></span></div>
-                      <div>${pct}%</div>
+                      <div class="bar"><span data-star="${s}" style="width:${pct}%"></span></div>
+                      <div class="barPct" data-star="${s}">${pct}%</div>
                     </div>
                   `;
                 }).join("")}
@@ -1784,7 +1811,11 @@
       lockBodyScroll(true);
 
       setupReviewUI(id);
-      renderReviewsList(id);
+      // Listener khusus reviews => bar biru & list auto update TANPA tutup modal
+      attachReviewsListener(id);
+      // initial render (kalau belum kena listener)
+      updateReviewStatsUI(a.reviews || {});
+      renderReviewsList(id, a.reviews || {});
     }
 
     function closeDetail(){
@@ -1795,6 +1826,11 @@
       url.searchParams.delete("id");
       history.replaceState({}, "", url);
       currentAppId = null;
+
+      if (typeof unsubscribeReviews === "function"){
+        try{ unsubscribeReviews(); }catch{}
+        unsubscribeReviews = null;
+      }
     }
     closeBtn.onclick = closeDetail;
     overlay.addEventListener("click",(e)=>{ if (e.target===overlay) closeDetail(); });
@@ -1902,16 +1938,15 @@
           await submitReview(appId, selectedStars, comment);
           submitBtn.textContent = "Perbarui";
           hintEl.textContent = "Ulasan tersimpan. Kamu bisa perbarui kapan saja.";
-          renderReviewsList(appId);
+          // bar biru & list akan auto update via listener (attachReviewsListener)
         } catch (e){
-          toast("Gagal menyimpan ulasan.");
+          toast("Gagal menyimpan ulasan. Cek Rules.");
           console.error(e);
         }
       };
 
       renderStars(); updateSelectedLabel(); updateCharInfo();
       loadMyExistingReview();
-
       _reviewFormCache = { appId, reload: loadMyExistingReview };
     }
 
@@ -1921,16 +1956,14 @@
       }
     }
 
-    function renderReviewsList(appId){
+    function renderReviewsList(appId, reviewsOverride=null){
       const a = allApps.find(x=>x.id===appId);
       if (!a) return;
 
       const list = document.getElementById("reviewsList");
-      const avgNum = document.getElementById("avgNum");
-      const reviewCount = document.getElementById("reviewCount");
-      if (!list || !avgNum || !reviewCount) return;
+      if (!list) return;
 
-      const reviewsObj = a.reviews || {};
+      const reviewsObj = reviewsOverride ?? a.reviews ?? {};
       const entries = Object.entries(reviewsObj)
         .map(([uid,v])=>({
           uid,
@@ -1942,10 +1975,6 @@
         }))
         .filter(r=>r.stars>=1 && r.stars<=5)
         .sort((x,y)=>(y.updatedAt||0)-(x.updatedAt||0));
-
-      const stats = computeReviewStats(reviewsObj);
-      avgNum.textContent = stats.avg ? stats.avg.toFixed(1) : "0.0";
-      reviewCount.textContent = `(${stats.count})`;
 
       list.innerHTML = "";
       if (entries.length === 0){
@@ -1973,24 +2002,45 @@
       });
     }
 
-    // ====== Realtime load ======
+    // ====== Realtime load (apps list) ======
     const appsRef = ref(db, "apps");
     onValue(appsRef, (snapshot)=>{
       allApps = normalizeApps(snapshot.val());
       renderSubcats();
       render();
 
-      if (currentAppId){
-        renderReviewsList(currentAppId);
+      // kalau modal lagi kebuka, biarkan reviews listener yang handle stats/list.
+      // tapi kalau reviews listener belum attach (misal buka via deep link sebelum data), kita sync sekali:
+      if (currentAppId && !unsubscribeReviews){
+        attachReviewsListener(currentAppId);
       }
     }, (err)=>{
       contentEl.innerHTML = `<div class="state">Gagal load data. Cek Rules / koneksi internet.<br><br><b>${escapeHtml(safeText(err?.message,""))}</b></div>`;
       console.error(err);
     });
 
-    // init UI
+    // init
     setActiveTabs();
     setActiveNav();
+
+    // deep link: ?id=...
+    (function(){
+      const url = new URL(location.href);
+      const idParam = url.searchParams.get("id");
+      if (idParam){
+        // nunggu data appsRef kebaca, lalu openDetail dipanggil saat allApps sudah ada
+        const stop = onValue(appsRef, (snap)=>{
+          const raw = snap.val();
+          allApps = normalizeApps(raw);
+          renderSubcats();
+          render();
+          if (allApps.some(x=>x.id===idParam)){
+            openDetail(idParam);
+          }
+          stop();
+        }, { onlyOnce: true });
+      }
+    })();
   </script>
 </body>
 </html>
