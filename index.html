@@ -13,7 +13,7 @@
       --text:#0f172a;
       --muted:#64748b;
       --line:#e5e7eb;
-      --brand:#1a73e8;      /* Play Store-ish blue */
+      --brand:#1a73e8;
       --brand2:#0b57d0;
       --good:#10b981;
       --warn:#f59e0b;
@@ -22,7 +22,6 @@
       --starOff:#cbd5e1;
       --shadow: 0 10px 25px rgba(15, 23, 42, .07);
       --radius:16px;
-      --tap: rgba(26,115,232,.12);
       --safeT: env(safe-area-inset-top);
       --safeB: env(safe-area-inset-bottom);
       --safeL: env(safe-area-inset-left);
@@ -39,6 +38,7 @@
     }
     a{color:inherit;text-decoration:none}
     button, input, textarea, select{font:inherit}
+
     .wrap{
       max-width: 1120px;
       margin: 0 auto;
@@ -120,29 +120,26 @@
       box-shadow: 0 10px 18px rgba(26,115,232,.18);
     }
     .btnAuth:active{transform:scale(.99)}
-    .userPill{
-      display:none;
-      align-items:center;
-      gap:8px;
-      padding: 6px 10px;
-      border-radius: 999px;
-      border: 1px solid var(--line);
-      background: var(--card);
-      max-width: 220px;
-    }
-    .avatar{
-      width:26px;height:26px;border-radius:999px;
-      object-fit:cover;border:1px solid var(--line);
+
+    /* avatar-only in header (no name, no logout) */
+    .avatarBtn{
+      width:40px;height:40px;
+      border-radius:999px;
+      border:1px solid var(--line);
       background:#fff;
-      flex:0 0 auto;
-    }
-    .uname{
-      font-weight:900;
-      font-size:13px;
+      display:none;
+      place-items:center;
+      cursor:pointer;
+      padding:0;
+      box-shadow: 0 10px 18px rgba(15,23,42,.06);
       overflow:hidden;
-      text-overflow:ellipsis;
-      white-space:nowrap;
     }
+    .avatarBtn img{
+      width:100%;height:100%;
+      object-fit:cover;
+      display:block;
+    }
+    .avatarBtn:active{transform:scale(.99)}
 
     .searchBar{
       display:flex;
@@ -196,6 +193,12 @@
       background: var(--brand);
     }
 
+    .subcatsRow{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 10px;
+    }
     .subcats{
       display:flex;
       gap:8px;
@@ -203,6 +206,8 @@
       padding-bottom: 2px;
       scrollbar-width:thin;
       -webkit-overflow-scrolling: touch;
+      flex: 1;
+      min-width:0;
     }
     .chip{
       height:36px;
@@ -221,7 +226,31 @@
       box-shadow: 0 0 0 4px rgba(26,115,232,.12);
     }
 
-    /* ===== Bottom nav (mobile) ===== */
+    .sortPill{
+      height:36px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: var(--card);
+      padding: 0 10px;
+      font-weight:1000;
+      color: var(--text);
+      display:flex;
+      align-items:center;
+      gap: 8px;
+      flex:0 0 auto;
+      box-shadow: 0 10px 18px rgba(15,23,42,.04);
+    }
+    .sortPill select{
+      border:none;
+      outline:none;
+      background:transparent;
+      font-weight:1000;
+      cursor:pointer;
+      padding: 0 2px;
+      font-size:13px;
+    }
+
+    /* ===== Bottom nav ===== */
     .bottomNav{
       position: sticky;
       bottom: 0;
@@ -238,7 +267,7 @@
       padding-left: calc(14px + var(--safeL));
       padding-right: calc(14px + var(--safeR));
       display:grid;
-      grid-template-columns: repeat(4, 1fr);
+      grid-template-columns: repeat(3, 1fr);
       gap: 6px;
     }
     .navBtn{
@@ -255,6 +284,7 @@
       color: var(--muted);
       font-weight:900;
       font-size:11px;
+      min-height: 44px;
     }
     .navBtn.active{
       color: var(--brand2);
@@ -265,7 +295,7 @@
 
     /* ===== Content ===== */
     .content{
-      min-height: calc(100vh - 220px);
+      min-height: calc(100vh - 210px);
       padding-bottom: 14px;
     }
     .state{
@@ -277,10 +307,7 @@
       text-align:center;
     }
 
-    .section{
-      margin-top: 14px;
-      background: transparent;
-    }
+    .section{ margin-top: 14px; }
     .sectionHead{
       display:flex;
       align-items:center;
@@ -357,7 +384,7 @@
       font-size:12px;
     }
 
-    /* Vertical list (search/charts) */
+    /* Vertical list (Top/search) */
     .vlist{
       display:grid;
       grid-template-columns: 1fr;
@@ -374,7 +401,6 @@
       gap: 12px;
       align-items:center;
     }
-    .rowCard:hover{box-shadow: 0 16px 32px rgba(15,23,42,.10)}
     .rowMain{min-width:0; flex:1}
     .rowTitle{
       display:flex;
@@ -433,6 +459,7 @@
       box-shadow: 0 10px 18px rgba(26,115,232,.16);
       white-space:nowrap;
       flex:0 0 auto;
+      min-height: 44px;
     }
     .btnInstall:active{transform:scale(.99)}
 
@@ -443,7 +470,7 @@
     .off{fill: var(--starOff)}
     .ratingNum{font-weight:1000;color: var(--text)}
 
-    /* ===== Modal (bottom sheet on mobile) ===== */
+    /* ===== Modal ===== */
     .overlay{
       position:fixed; inset:0;
       background: rgba(2,6,23,.56);
@@ -505,21 +532,9 @@
       .modalBody{max-height: calc(100vh - 140px)}
     }
 
-    .hero{
-      display:flex;
-      gap: 14px;
-      align-items:flex-start;
-    }
-    .hero .ico{
-      width: 86px; height: 86px;
-      border-radius: 22px;
-    }
-    .hero h2{
-      margin:0;
-      font-size: 20px;
-      line-height:1.15;
-      font-weight: 1000;
-    }
+    .hero{ display:flex; gap: 14px; align-items:flex-start; }
+    .hero .ico{ width: 86px; height: 86px; border-radius: 22px; }
+    .hero h2{ margin:0; font-size: 20px; line-height:1.15; font-weight: 1000; }
     .heroSmall{
       margin-top: 8px;
       color: var(--muted);
@@ -545,6 +560,7 @@
       cursor:pointer;
       font-weight: 1000;
       font-size: 13px;
+      min-height: 44px;
     }
     .btn.primary{
       background: var(--brand);
@@ -644,10 +660,7 @@
       align-items:flex-start;
     }
     .bigRating .num{font-size:36px;font-weight:1000;line-height:1}
-    .bars{
-      display:grid;
-      gap: 6px;
-    }
+    .bars{ display:grid; gap: 6px; }
     .barRow{
       display:grid;
       grid-template-columns: 20px 1fr 34px;
@@ -756,14 +769,43 @@
       word-break: break-word;
     }
 
+    /* Profile */
+    .profileCard{
+      display:flex;
+      gap: 12px;
+      align-items:center;
+    }
+    .pAvatar{
+      width:54px;height:54px;border-radius:999px;
+      border:1px solid var(--line);
+      object-fit:cover;background:#fff;
+      flex:0 0 auto;
+    }
+    .pMain{min-width:0;flex:1}
+    .pName{
+      font-weight:1000;
+      font-size:16px;
+      margin:0;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      white-space:nowrap;
+    }
+    .pEmail{
+      margin-top:4px;
+      color: var(--muted);
+      font-size:13px;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      white-space:nowrap;
+    }
+
     /* Desktop tweaks */
     @media (min-width: 860px){
-      .header-inner{grid-template-columns: 1fr}
       .kv{grid-template-columns: repeat(4, minmax(0,1fr));}
       .reviewGrid{grid-template-columns: 1fr 1fr;}
     }
 
-    /* Bottom sheet behavior on small screens */
+    /* Bottom sheet on small screens */
     @media (max-width: 560px){
       .overlay{display:none}
       .overlay.show{
@@ -775,9 +817,7 @@
         width: 100%;
         border-radius: 22px 22px 0 0;
       }
-      .modalBody{
-        max-height: calc(100dvh - 90px);
-      }
+      .modalBody{ max-height: calc(100dvh - 90px); }
       .tile{min-width: 200px; max-width: 200px;}
       .hero{flex-direction: column;}
       .hero .ico{width: 74px; height: 74px; border-radius: 18px;}
@@ -803,11 +843,9 @@
 
         <div class="auth">
           <button class="btnAuth primary" id="loginBtn">Login Google</button>
-          <div class="userPill" id="userBox" title="Akun login">
-            <img class="avatar" id="userAvatar" alt="avatar">
-            <div class="uname" id="userName">User</div>
-          </div>
-          <button class="btnAuth" id="logoutBtn" style="display:none;">Logout</button>
+          <button class="avatarBtn" id="avatarBtn" aria-label="Buka profil">
+            <img id="headerAvatar" alt="profil">
+          </button>
         </div>
       </div>
 
@@ -825,7 +863,17 @@
         <div class="tab" data-tab="games">Game</div>
       </div>
 
-      <div class="subcats" id="subcats" aria-label="Kategori"></div>
+      <div class="subcatsRow">
+        <div class="subcats" id="subcats" aria-label="Kategori"></div>
+        <div class="sortPill" title="Urutkan daftar">
+          <span style="font-size:12px;color:var(--muted);font-weight:1000">Sort</span>
+          <select id="sortSelect" aria-label="Sort">
+            <option value="popular">Populer</option>
+            <option value="rating">Rating</option>
+            <option value="latest">Terbaru</option>
+          </select>
+        </div>
+      </div>
     </div>
   </header>
 
@@ -841,17 +889,13 @@
         <svg viewBox="0 0 24 24" fill="none"><path d="M4 10.5 12 4l8 6.5V20a1 1 0 0 1-1 1h-5v-6H10v6H5a1 1 0 0 1-1-1v-9.5Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
         Home
       </button>
-      <button class="navBtn" data-page="charts" id="navCharts">
-        <svg viewBox="0 0 24 24" fill="none"><path d="M4 20V10m5 10V4m5 16v-7m5 7v-12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-        Charts
+      <button class="navBtn" data-page="top" id="navTop">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M6 21V10m6 11V3m6 18v-8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        Top
       </button>
-      <button class="navBtn" data-page="categories" id="navCats">
-        <svg viewBox="0 0 24 24" fill="none"><path d="M4 7a3 3 0 0 1 3-3h3v6H7a3 3 0 0 1-3-3Zm10-3h3a3 3 0 0 1 3 3 3 3 0 0 1-3 3h-3V4Zm-10 13a3 3 0 0 1 3-3h3v6H7a3 3 0 0 1-3-3Zm10-3h3a3 3 0 0 1 3 3 3 3 0 0 1-3 3h-3v-6Z" stroke="currentColor" stroke-width="2"/></svg>
-        Kategori
-      </button>
-      <button class="navBtn" data-page="account" id="navAcc">
+      <button class="navBtn" data-page="profile" id="navProfile">
         <svg viewBox="0 0 24 24" fill="none"><path d="M20 21a8 8 0 1 0-16 0" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M12 11a4 4 0 1 0-4-4 4 4 0 0 0 4 4Z" stroke="currentColor" stroke-width="2"/></svg>
-        Akun
+        Profil
       </button>
     </div>
   </nav>
@@ -894,7 +938,7 @@
       set
     } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-    // ====== Firebase config ======    // ✅ Firebase config kamu
+    // ====== Firebase config ======
     const firebaseConfig = {
       apiKey: "AIzaSyAu--L2T5_o9xLVT09mXFLIcpPuLLWlL1Q",
       authDomain: "aplikasi-percobaan-dbf84.firebaseapp.com",
@@ -917,12 +961,11 @@
     const modalTitle = $("modalTitle");
     const closeBtn = $("closeBtn");
     const toastEl = $("toast");
+    const sortSelect = $("sortSelect");
 
     const loginBtn = $("loginBtn");
-    const logoutBtn = $("logoutBtn");
-    const userBox = $("userBox");
-    const userAvatar = $("userAvatar");
-    const userName = $("userName");
+    const avatarBtn = $("avatarBtn");
+    const headerAvatar = $("headerAvatar");
 
     function toast(msg){
       toastEl.textContent = msg;
@@ -1000,10 +1043,9 @@
     }
 
     function computeReviewStats(reviewsObj){
-      // reviewsObj: {uid: {stars, comment, updatedAt, userName, userPhoto}}
       if (!reviewsObj || typeof reviewsObj !== "object") return { avg: 0, count: 0, dist:[0,0,0,0,0] };
       let sum = 0, count = 0;
-      const dist = [0,0,0,0,0]; // index 0..4 => 1..5
+      const dist = [0,0,0,0,0];
       for (const uid in reviewsObj){
         const s = Number(reviewsObj[uid]?.stars);
         if (isFinite(s) && s >= 1 && s <= 5){
@@ -1028,15 +1070,15 @@
     const state = {
       tab: "apps",          // "apps" | "games"
       category: "Semua",
-      page: "home",         // home|charts|categories|account
-      query: ""
+      page: "home",         // home|top|profile
+      query: "",
+      sort: "popular"       // popular|rating|latest
     };
 
     function typeOfApp(a){
       const t = String(a.type || "").toLowerCase().trim();
       if (t === "game" || t === "games") return "games";
       if (t === "app" || t === "apps") return "apps";
-      // fallback heuristik
       const cat = String(a.category || "").toLowerCase();
       if (cat.includes("game") || cat.includes("games")) return "games";
       return "apps";
@@ -1049,7 +1091,7 @@
         const a = raw[id] || {};
         arr.push({
           id,
-          type: safeText(a.type, ""),              // disarankan isi: "app" / "game"
+          type: safeText(a.type, ""),
           name: safeText(a.name, "Untitled"),
           description: safeText(a.description, ""),
           version: safeText(a.version, ""),
@@ -1075,19 +1117,15 @@
       currentUser = user || null;
       if (currentUser){
         loginBtn.style.display = "none";
-        logoutBtn.style.display = "inline-flex";
-        userBox.style.display = "inline-flex";
-        userName.textContent = currentUser.displayName || "User";
-        userAvatar.src = currentUser.photoURL || "";
-        userAvatar.style.display = currentUser.photoURL ? "block" : "none";
+        avatarBtn.style.display = "grid";
+        headerAvatar.src = currentUser.photoURL || "icon/default.png";
       } else {
         loginBtn.style.display = "inline-flex";
-        logoutBtn.style.display = "none";
-        userBox.style.display = "none";
+        avatarBtn.style.display = "none";
       }
-      // kalau modal review sedang terbuka, refresh form
+
       if (currentAppId) refreshReviewForm(currentAppId);
-      if (state.page === "account") render();
+      if (state.page === "profile") render();
     });
 
     loginBtn.onclick = async ()=>{
@@ -1099,14 +1137,12 @@
         console.error(e);
       }
     };
-    logoutBtn.onclick = async ()=>{
-      try{
-        await signOut(auth);
-        toast("Logout berhasil.");
-      } catch (e){
-        toast("Logout gagal.");
-        console.error(e);
-      }
+
+    avatarBtn.onclick = ()=>{
+      state.page = "profile";
+      setActiveNav();
+      render();
+      window.scrollTo({top:0, behavior:"smooth"});
     };
 
     // ====== Tabs + Nav ======
@@ -1126,6 +1162,7 @@
         state.page = btn.dataset.page;
         setActiveNav();
         render();
+        window.scrollTo({top:0, behavior:"smooth"});
       });
     });
 
@@ -1140,20 +1177,31 @@
       });
     }
 
-    // ====== Categories (subcats) ======
-    function buildCategories(){
-      const cats = new Set(["Semua"]);
+    // ===== Sort =====
+    sortSelect.value = state.sort;
+    sortSelect.addEventListener("change", ()=>{
+      state.sort = sortSelect.value;
+      render();
+    });
+
+    // ====== Categories (chips) ======
+    function buildCategoriesForTab(){
+      const cats = new Map(); // cat -> count
       for (const a of allApps){
         if (typeOfApp(a) !== state.tab) continue;
-        if (a.category) cats.add(a.category);
+        const c = a.category || "Lainnya";
+        cats.set(c, (cats.get(c)||0)+1);
       }
-      // urutkan: Semuanya dulu, sisanya A-Z
-      const rest = Array.from(cats).filter(x=>x!=="Semua").sort((a,b)=>a.localeCompare(b));
-      return ["Semua", ...rest];
+      // Semuanya dulu, lalu urut by count desc
+      const list = Array.from(cats.entries())
+        .sort((x,y)=>y[1]-x[1])
+        .map(([c])=>c);
+
+      return ["Semua", ...list];
     }
 
     function renderSubcats(){
-      const cats = buildCategories();
+      const cats = buildCategoriesForTab();
       subcatsEl.innerHTML = "";
       for (const c of cats){
         const btn = document.createElement("button");
@@ -1162,6 +1210,9 @@
         btn.onclick = ()=>{
           state.category = c;
           renderSubcats();
+          // tetap home supaya “kategori” kerasa
+          state.page = "home";
+          setActiveNav();
           render();
         };
         subcatsEl.appendChild(btn);
@@ -1174,6 +1225,8 @@
       clearTimeout(t);
       t = setTimeout(()=>{
         state.query = qEl.value || "";
+        state.page = "home";
+        setActiveNav();
         render();
       }, 120);
     });
@@ -1189,9 +1242,30 @@
       if (state.category === "Semua") return true;
       return a.category === state.category;
     }
-
     function filteredApps(){
       return allApps.filter(a=>matchesTabAndCat(a) && matchesQuery(a));
+    }
+
+    function sortItems(items){
+      const copy = items.slice();
+      if (state.sort === "latest"){
+        return copy.sort((x,y)=>{
+          const dx = parseDate(x.updatedAt)?.getTime() || 0;
+          const dy = parseDate(y.updatedAt)?.getTime() || 0;
+          return dy - dx;
+        });
+      }
+      if (state.sort === "rating"){
+        return copy.sort((x,y)=>{
+          const rx = computeReviewStats(x.reviews).avg;
+          const ry = computeReviewStats(y.reviews).avg;
+          // tie-breaker: downloads
+          if (ry !== rx) return ry - rx;
+          return (Number(y.downloads||0)-Number(x.downloads||0));
+        });
+      }
+      // popular
+      return copy.sort((x,y)=>(Number(y.downloads||0)-Number(x.downloads||0)));
     }
 
     // ====== UI components ======
@@ -1215,7 +1289,7 @@
       return div;
     }
 
-    function createRowCard(a){
+    function createRowCard(a, idx=null){
       const {avg, count} = computeReviewStats(a.reviews);
       const card = document.createElement("div");
       card.className = "rowCard";
@@ -1225,11 +1299,13 @@
       if (isNew(a.updatedAt)) badges.push(`<span class="badge new">NEW</span>`);
       if (a.mod) badges.push(`<span class="badge mod">MOD</span>`);
 
+      const rank = (idx !== null) ? `<span class="badge" style="margin-right:6px">#${idx+1}</span>` : ``;
+
       card.innerHTML = `
         <img class="ico" src="${a.icon || "icon/default.png"}" alt="${escapeHtml(a.name)}" onerror="this.src='icon/default.png'">
         <div class="rowMain">
           <div class="rowTitle">
-            <h3 class="rowName">${escapeHtml(a.name)}</h3>
+            <h3 class="rowName">${rank}${escapeHtml(a.name)}</h3>
             <div style="display:flex;gap:6px;align-items:center">${badges.join("")}</div>
           </div>
           <div class="rowDesc">${escapeHtml(a.description || "-")}</div>
@@ -1246,7 +1322,6 @@
         <button class="btnInstall" type="button">Install</button>
       `;
 
-      // tombol install jangan buka modal
       const btn = card.querySelector(".btnInstall");
       btn.onclick = (e)=>{
         e.stopPropagation();
@@ -1266,7 +1341,7 @@
       const head = document.createElement("div");
       head.className = "sectionHead";
       head.innerHTML = `
-        <div class="sectionTitle">${title}</div>
+        <div class="sectionTitle">${escapeHtml(title)}</div>
         ${onSeeAll ? `<button class="linkBtn" type="button">Lihat semua</button>` : ``}
       `;
       if (onSeeAll){
@@ -1287,25 +1362,20 @@
     // ====== Pages ======
     function renderHome(){
       const apps = filteredApps();
-
       countPill.textContent = `${apps.length}`;
       contentEl.innerHTML = "";
 
-      // kalau user sedang search, langsung tampilkan hasil list vertikal (lebih “Play Store”)
+      // Search: list vertical
       if (state.query.trim()){
         const box = document.createElement("div");
         box.className = "section";
-        box.innerHTML = `<div class="sectionHead"><div class="sectionTitle">Hasil pencarian</div></div>`;
+        box.innerHTML = `<div class="sectionHead"><div class="sectionTitle">Hasil pencarian</div><div class="pill">Sort: ${labelSort()}</div></div>`;
         const vlist = document.createElement("div");
         vlist.className = "vlist";
         if (apps.length === 0){
           vlist.innerHTML = `<div class="state">Tidak ada hasil. Coba kata kunci lain.</div>`;
         } else {
-          apps
-            .slice()
-            .sort((x,y)=>(Number(y.downloads||0)-Number(x.downloads||0)))
-            .slice(0, 60)
-            .forEach(a=>vlist.appendChild(createRowCard(a)));
+          sortItems(apps).slice(0, 80).forEach((a,i)=>vlist.appendChild(createRowCard(a, null)));
         }
         box.appendChild(vlist);
         contentEl.appendChild(box);
@@ -1317,50 +1387,73 @@
         return;
       }
 
-      const byLatest = apps.slice().sort((x,y)=>{
-        const dx = parseDate(x.updatedAt)?.getTime() || 0;
-        const dy = parseDate(y.updatedAt)?.getTime() || 0;
-        return dy - dx;
-      });
+      // HOME ala Play Store: tampil per kategori (Tools, Entertainment, Offline, dll)
+      const catsAll = buildCategoriesForTab().filter(c=>c!=="Semua");
+      let catsToShow = catsAll;
 
-      const byPopular = apps.slice().sort((x,y)=>(Number(y.downloads||0)-Number(x.downloads||0)));
+      if (state.category !== "Semua"){
+        catsToShow = [state.category].filter(Boolean);
+      } else {
+        // tampilkan maksimal 8 kategori teratas (by count)
+        catsToShow = catsAll.slice(0, 8);
+      }
 
-      const byRating = apps.slice().sort((x,y)=>{
-        const rx = computeReviewStats(x.reviews).avg;
-        const ry = computeReviewStats(y.reviews).avg;
-        return ry - rx;
-      });
+      // header kecil info sorting di kanan (bukan section populer/rating terpisah)
+      const info = document.createElement("div");
+      info.className = "sectionHead";
+      info.style.marginTop = "6px";
+      info.innerHTML = `<div class="sectionTitle">Kategori</div><div class="pill">Sort: ${labelSort()}</div>`;
+      contentEl.appendChild(info);
 
-      const modOnly = apps.filter(a=>a.mod);
+      // render tiap kategori sebagai row horizontal
+      for (const c of catsToShow){
+        const items = allApps
+          .filter(a=>typeOfApp(a)===state.tab && (c ? a.category===c : true))
+          .filter(a=>matchesQuery(a)); // query kosong tapi aman
+        const sorted = sortItems(items);
+        if (sorted.length === 0) continue;
 
-      // “Rasa Play Store”: beberapa row horizontal
-      contentEl.appendChild(sectionBlock("Rekomendasi", byLatest.slice(0, 12), ()=>{
-        state.page = "charts"; setActiveNav(); render();
-      }));
-      contentEl.appendChild(sectionBlock("Paling Populer", byPopular.slice(0, 12), ()=>{
-        state.page = "charts"; setActiveNav(); render();
-      }));
-      contentEl.appendChild(sectionBlock("Rating Tertinggi", byRating.slice(0, 12), ()=>{
-        state.page = "charts"; setActiveNav(); render();
-      }));
-      if (modOnly.length){
-        contentEl.appendChild(sectionBlock("MOD & Premium", modOnly.slice(0, 12), ()=>{
-          state.page = "charts"; setActiveNav(); render();
+        contentEl.appendChild(sectionBlock(c, sorted.slice(0, 12), ()=>{
+          state.page = "top";
+          setActiveNav();
+          // set filter ke kategori ini
+          state.category = c;
+          renderSubcats();
+          render();
         }));
+      }
+
+      // kalau kategorinya banyak, kasih tombol “lihat semua” ke Top
+      if (state.category === "Semua" && catsAll.length > 8){
+        const more = document.createElement("div");
+        more.className = "section";
+        more.innerHTML = `
+          <div class="state">
+            Banyak kategori lainnya (${catsAll.length}).<br>
+            Buka tab <b>Top</b> untuk lihat daftar lengkap.
+          </div>
+        `;
+        contentEl.appendChild(more);
       }
     }
 
-    function renderCharts(){
-      const apps = filteredApps()
-        .slice()
-        .sort((x,y)=>(Number(y.downloads||0)-Number(x.downloads||0)));
+    function labelSort(){
+      if (state.sort === "latest") return "Terbaru";
+      if (state.sort === "rating") return "Rating";
+      return "Populer";
+    }
 
+    function renderTop(){
+      const apps = sortItems(filteredApps());
       countPill.textContent = `${apps.length}`;
       contentEl.innerHTML = "";
 
       const head = document.createElement("div");
       head.className = "sectionHead";
-      head.innerHTML = `<div class="sectionTitle">Top charts</div><div class="pill">Sort: populer</div>`;
+      head.innerHTML = `
+        <div class="sectionTitle">Top ${state.tab === "games" ? "Game" : "Aplikasi"}</div>
+        <div class="pill">${state.category === "Semua" ? "Semua kategori" : escapeHtml(state.category)} • Sort: ${labelSort()}</div>
+      `;
       contentEl.appendChild(head);
 
       const vlist = document.createElement("div");
@@ -1368,87 +1461,121 @@
       if (apps.length === 0){
         vlist.innerHTML = `<div class="state">Tidak ada data.</div>`;
       } else {
-        apps.slice(0, 100).forEach(a=>vlist.appendChild(createRowCard(a)));
+        apps.slice(0, 120).forEach((a,i)=>vlist.appendChild(createRowCard(a, i)));
       }
       contentEl.appendChild(vlist);
     }
 
-    function renderCategories(){
-      const cats = buildCategories();
-      countPill.textContent = `${cats.length - 1}`;
-      contentEl.innerHTML = `<div class="sectionHead"><div class="sectionTitle">Kategori</div></div>`;
-
-      const grid = document.createElement("div");
-      grid.style.display = "grid";
-      grid.style.gridTemplateColumns = "repeat(2, minmax(0, 1fr))";
-      grid.style.gap = "10px";
-
-      for (const c of cats){
-        if (c === "Semua") continue;
-        const card = document.createElement("div");
-        card.className = "rowCard";
-        card.style.alignItems = "center";
-        card.innerHTML = `
-          <div style="width:44px;height:44px;border-radius:16px;background:rgba(26,115,232,.10);display:grid;place-items:center;color:var(--brand2);flex:0 0 auto">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M4 7a3 3 0 0 1 3-3h3v6H7a3 3 0 0 1-3-3Zm10-3h3a3 3 0 0 1 3 3 3 3 0 0 1-3 3h-3V4Zm-10 13a3 3 0 0 1 3-3h3v6H7a3 3 0 0 1-3-3Zm10-3h3a3 3 0 0 1 3 3 3 3 0 0 1-3 3h-3v-6Z" stroke="currentColor" stroke-width="2"/></svg>
-          </div>
-          <div class="rowMain">
-            <div class="rowTitle">
-              <h3 class="rowName">${escapeHtml(c)}</h3>
-              <span class="badge">${fmtNum(allApps.filter(a=>typeOfApp(a)===state.tab && a.category===c).length)} item</span>
-            </div>
-            <div class="rowDesc">Tap untuk lihat ${state.tab === "games" ? "game" : "aplikasi"} kategori ini.</div>
-          </div>
-        `;
-        card.onclick = ()=>{
-          state.category = c;
-          state.page = "home";
-          setActiveNav();
-          renderSubcats();
-          render();
-          window.scrollTo({top:0, behavior:"smooth"});
-        };
-        grid.appendChild(card);
-      }
-      contentEl.appendChild(grid);
-    }
-
-    function renderAccount(){
+    async function renderProfile(){
       contentEl.innerHTML = "";
       countPill.textContent = "";
 
       const panel = document.createElement("div");
       panel.className = "panel";
+
+      if (!currentUser){
+        panel.innerHTML = `
+          <div class="panelHead"><h3>Profil</h3><span class="badge">Guest</span></div>
+          <p>Kamu belum login. Login untuk bisa kasih rating & komentar (1 akun = 1 ulasan).</p>
+          <div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap">
+            <button class="btn primary" id="pLogin">Login Google</button>
+          </div>
+        `;
+        contentEl.appendChild(panel);
+        panel.querySelector("#pLogin").onclick = ()=>loginBtn.click();
+        return;
+      }
+
       panel.innerHTML = `
-        <div class="panelHead">
-          <h3>Akun</h3>
-          <span class="badge">${state.tab === "games" ? "Game" : "Aplikasi"}</span>
+        <div class="panelHead"><h3>Profil</h3><span class="badge">Login</span></div>
+
+        <div class="profileCard">
+          <img class="pAvatar" src="${currentUser.photoURL || "icon/default.png"}" alt="avatar" onerror="this.src='icon/default.png'">
+          <div class="pMain">
+            <p class="pName">${escapeHtml(currentUser.displayName || "User")}</p>
+            <div class="pEmail">${escapeHtml(currentUser.email || "-")}</div>
+          </div>
         </div>
-        <p>
-          ${currentUser ? `
-            Login sebagai: <b>${escapeHtml(currentUser.displayName || "User")}</b>\\n
-            Email: <b>${escapeHtml(currentUser.email || "-")}</b>\\n
-            Kamu bisa memberi <b>1 ulasan per item</b> (bisa diperbarui).
-          ` : `
-            Kamu belum login.\\n
-            Login Google untuk bisa kasih rating & komentar (1 user = 1 ulasan).
-          `}
-        </p>
-        <div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap">
-          ${currentUser ? `<button class="btn primary" id="accLogout">Logout</button>` : `<button class="btn primary" id="accLogin">Login Google</button>`}
-          <button class="btn" id="accHow">Cara isi data</button>
+
+        <div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+          <button class="btn" id="pHow">Cara isi data</button>
+          <button class="btn primary" id="pLogout">Logout</button>
+        </div>
+
+        <div style="margin-top:12px" class="hint">
+          1 akun Google = 1 ulasan per item. Kamu bisa <b>perbarui</b> ulasan kapan saja.
         </div>
       `;
       contentEl.appendChild(panel);
 
-      if (currentUser){
-        panel.querySelector("#accLogout").onclick = ()=>logoutBtn.click();
-      } else {
-        panel.querySelector("#accLogin").onclick = ()=>loginBtn.click();
-      }
-      panel.querySelector("#accHow").onclick = ()=>{
+      panel.querySelector("#pLogout").onclick = async ()=>{
+        try{
+          await signOut(auth);
+          toast("Logout berhasil.");
+        } catch (e){
+          toast("Logout gagal.");
+          console.error(e);
+        }
+      };
+      panel.querySelector("#pHow").onclick = ()=>{
         toast("Data di RTDB: apps/{appId} (name, icon, category, type, downloadUrl, ...)");
       };
+
+      // My reviews list
+      const myUid = currentUser.uid;
+      const mine = allApps
+        .filter(a => a.reviews && a.reviews[myUid])
+        .map(a => {
+          const r = a.reviews[myUid];
+          return {
+            app: a,
+            stars: Number(r?.stars || 0),
+            updatedAt: Number(r?.updatedAt || 0),
+            comment: String(r?.comment || "")
+          };
+        })
+        .sort((x,y)=>(y.updatedAt||0)-(x.updatedAt||0));
+
+      const panel2 = document.createElement("div");
+      panel2.className = "panel";
+      panel2.style.marginTop = "14px";
+      panel2.innerHTML = `
+        <div class="panelHead"><h3>Ulasan Saya</h3><span class="badge">${mine.length} item</span></div>
+        <div id="myReviews"></div>
+      `;
+      contentEl.appendChild(panel2);
+
+      const box = panel2.querySelector("#myReviews");
+      if (mine.length === 0){
+        box.innerHTML = `<div class="hint">Kamu belum kasih ulasan ke item mana pun.</div>`;
+      } else {
+        const list = document.createElement("div");
+        list.className = "vlist";
+        mine.slice(0, 30).forEach((x)=>{
+          const a = x.app;
+          const card = document.createElement("div");
+          card.className = "rowCard";
+          card.onclick = ()=>openDetail(a.id);
+          card.innerHTML = `
+            <img class="ico" src="${a.icon || "icon/default.png"}" alt="${escapeHtml(a.name)}" onerror="this.src='icon/default.png'">
+            <div class="rowMain">
+              <div class="rowTitle">
+                <h3 class="rowName">${escapeHtml(a.name)}</h3>
+                <span class="badge">${timeAgo(x.updatedAt)}</span>
+              </div>
+              <div class="rowMeta">
+                <span>${starsDisplay(x.stars)}</span>
+                <span class="ratingNum">${x.stars ? x.stars.toFixed(0) : "0"}</span>
+                <span>•</span>
+                <span>${escapeHtml(a.category || "Lainnya")}</span>
+              </div>
+              <div class="rowDesc">${escapeHtml(x.comment || "(Tanpa komentar)")}</div>
+            </div>
+          `;
+          list.appendChild(card);
+        });
+        box.appendChild(list);
+      }
     }
 
     function render(){
@@ -1461,9 +1588,8 @@
         openDetail(idParam);
       }
 
-      if (state.page === "charts") return renderCharts();
-      if (state.page === "categories") return renderCategories();
-      if (state.page === "account") return renderAccount();
+      if (state.page === "top") return renderTop();
+      if (state.page === "profile") return renderProfile();
       return renderHome();
     }
 
@@ -1636,7 +1762,6 @@
         ${shotsHtml}
       `;
 
-      // copy/share
       const shareUrl = location.href;
       document.getElementById("copyLinkBtn").onclick = async ()=>{
         try{
@@ -1852,11 +1977,9 @@
     const appsRef = ref(db, "apps");
     onValue(appsRef, (snapshot)=>{
       allApps = normalizeApps(snapshot.val());
-      // count pill (home updates later)
       renderSubcats();
       render();
 
-      // live update modal review list if open
       if (currentAppId){
         renderReviewsList(currentAppId);
       }
@@ -1864,6 +1987,10 @@
       contentEl.innerHTML = `<div class="state">Gagal load data. Cek Rules / koneksi internet.<br><br><b>${escapeHtml(safeText(err?.message,""))}</b></div>`;
       console.error(err);
     });
+
+    // init UI
+    setActiveTabs();
+    setActiveNav();
   </script>
 </body>
 </html>
