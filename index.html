@@ -699,19 +699,33 @@
     .danger{color: var(--danger); font-weight:1000}
 
     .reviewsList{
-      display:grid;gap: 10px;margin-top: 10px;
-    }
-    .reviewItem{
-      background:#fff;border: 1px solid var(--line);
-      border-radius: 16px;padding: 10px 12px;
-      display:flex;gap: 10px;align-items:flex-start;
-    }
+  display:flex;
+  flex-direction:column;
+  gap: 10px;
+  margin-top: 10px;
+}
+.reviewsSentinelWrap{ padding: 6px 0 20px; }
+.reviewsSentinel{ text-align:center; }
 
+.reviewItem{
+  background:#fff;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 10px 12px;
+  display:flex;
+  gap: 10px;
+  align-items:flex-start;
 
-    .reviewItem.pinned{
-      border-color: rgba(99,102,241,.35);
-      box-shadow: 0 10px 30px rgba(99,102,241,.08);
-    }
+  /* performance: skip offscreen rendering on supporting browsers */
+  content-visibility: auto;
+  contain: layout paint style;
+  contain-intrinsic-size: 160px;
+}
+
+.reviewItem.pinned{
+  border-color: rgba(99,102,241,.35);
+  box-shadow: 0 2px 12px rgba(99,102,241,.06);
+}
     .replySection{ margin-top: 10px; }
     .replyActions{ display:flex; gap:8px; flex-wrap:wrap; margin-top: 6px; }
     .replyBtn{
@@ -1382,16 +1396,24 @@
     const provider = new GoogleAuthProvider();
 
     // ====== Keyboard fix: hide bottom nav when keyboard open ======
-    function updateKeyboardState(){
-      const vv = window.visualViewport;
-      if (!vv) return;
-      const ratio = vv.height / window.innerHeight;
-      const open = ratio < 0.78; // threshold
-      document.body.classList.toggle("kbd", open);
-    }
+    let _kbdRaf = 0;
+let _kbdOpen = null;
+function updateKeyboardState(){
+  if (_kbdRaf) return;
+  _kbdRaf = requestAnimationFrame(()=>{
+    _kbdRaf = 0;
+    const vv = window.visualViewport;
+    if (!vv) return;
+    const ratio = vv.height / window.innerHeight;
+    const open = ratio < 0.78; // threshold
+    if (_kbdOpen === open) return;
+    _kbdOpen = open;
+    document.body.classList.toggle("kbd", open);
+  });
+}
     if (window.visualViewport){
-      window.visualViewport.addEventListener("resize", updateKeyboardState);
-      window.visualViewport.addEventListener("scroll", updateKeyboardState);
+      try{ window.visualViewport.addEventListener("resize", updateKeyboardState, {passive:true}); }catch{ window.visualViewport.addEventListener("resize", updateKeyboardState); }
+      try{ window.visualViewport.addEventListener("scroll", updateKeyboardState, {passive:true}); }catch{ window.visualViewport.addEventListener("scroll", updateKeyboardState); }
     }
     document.addEventListener("focusin",(e)=>{
       if (e.target && (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA")){
@@ -1551,7 +1573,7 @@
       };
 
       tick();
-      _reviewEditTicker = setInterval(tick, 250);
+      _reviewEditTicker = setInterval(tick, 1000);
     }
 
 
@@ -2925,12 +2947,408 @@
       }
     }
 
+        // ====== Reviews list rendering (optimized for smooth scroll) ======
+    const REVIEWS_PAGE_SIZE = 30;
+    const _reviewUI = {
+      visibleCount: new Map(),   // appId -> number
+      lastData: new Map(),       // appId -> array
+      openReplies: new Map(),    // appId -> Set(reviewUid)
+      openEditor: new Map(),     // appId -> Set(reviewUid)
+      drafts: new Map(),         // `${appId}:${reviewUid}` -> text
+      observer: null
+    };
+
+    function _getSet(map, appId){
+      let s = map.get(appId);
+      if (!s){ s = new Set(); map.set(appId, s); }
+      return s;
+    }
+
+    function _replyCount(appId, reviewUid){
+      const a = appById(appId);
+      const root = (a?.replies || currentReplies || {});
+      const obj = root?.[reviewUid] || {};
+      return Object.keys(obj||{}).filter(k=>{
+        const rv = obj[k];
+        const txt = String(rv?.text || rv?.comment || "");
+        return txt.trim().length > 0;
+      }).length;
+    }
+
+    function buildRepliesHtml(appId, reviewUid){
+      const a = appById(appId);
+      const root = (a?.replies || currentReplies || {});
+      const obj = root?.[reviewUid] || {};
+
+      const arr = Object.entries(obj).map(([ruid,rv])=>({
+        uid: String(rv?.uid || ruid),
+        userName: String(rv?.userName || "User"),
+        userPhoto: String(rv?.userPhoto || ""),
+        text: String(rv?.text || rv?.comment || ""),
+        updatedAt: Number(rv?.updatedAt || 0)
+      }))
+      .filter(x=>x.text.trim().length>0)
+      .sort((x,y)=>(x.updatedAt||0)-(y.updatedAt||0)); // oldest -> newest
+
+      if (!arr.length) return "";
+
+      return arr.map(rep=>`
+        <div class="replyItem">
+          <div class="replyTop">
+            <div style="display:flex;gap:8px;align-items:center;min-width:0;flex-wrap:wrap">
+              <img class="rAvatar" style="width:26px;height:26px" loading="lazy" decoding="async"
+                   src="${rep.userPhoto || "icon/default.png"}" alt="avatar" onerror="this.src='icon/default.png'">
+              <div class="replyName" title="${escapeHtml(rep.userName)}">
+                ${escapeHtml(rep.userName)}${isAdminUid(rep.uid) ? ' <span class="adminBadge small" title="Admin">ADMIN</span>' : ''}
+              </div>
+            </div>
+            <div class="rTime">${rep.updatedAt ? timeAgo(rep.updatedAt) : ""}</div>
+          </div>
+          <div class="replyText">${escapeHtml(rep.text)}</div>
+        </div>
+      `).join("");
+    }
+
+    function buildReplyEditorHtml(appId, targetUid){
+      const a = appById(appId);
+      const root = (a?.replies || currentReplies || {});
+      const repliesObj = root?.[targetUid] || {};
+      const myReply = (currentUser && repliesObj && repliesObj[currentUser.uid]) ? repliesObj[currentUser.uid] : null;
+
+      const key = `${appId}:${targetUid}`;
+      const draft = _reviewUI.drafts.get(key);
+      const prefill = (draft != null) ? draft : String(myReply?.text || myReply?.comment || "");
+
+      const hint = isAdminUid(currentUser?.uid)
+        ? "Admin: bisa balas semua ulasan."
+        : "User: hanya bisa balas ulasan ADMIN.";
+
+      return `
+        <textarea class="replyBox" maxlength="300" placeholder="Tulis balasan...">${escapeHtml(prefill)}</textarea>
+        <div class="row">
+          <button class="btn replyCancelBtn" data-ruid="${targetUid}" type="button">Batal</button>
+          <button class="btn primary replySendBtn" data-ruid="${targetUid}" type="button">Kirim</button>
+        </div>
+        <div class="hint" style="margin-top:6px">${hint}</div>
+      `;
+    }
+
+    function createReviewsSentinel(){
+      const wrap = document.createElement("div");
+      wrap.className = "reviewsSentinelWrap";
+      wrap.innerHTML = `
+        <div id="reviewsSentinel" class="reviewsSentinel hint">
+          <span class="sentinelText">Muat lebih banyak...</span>
+          <button id="reviewsLoadMoreBtn" class="btn small" type="button" style="margin-left:8px">Muat</button>
+        </div>
+      `;
+      return wrap;
+    }
+
+    function createReviewItemNode(appId, r){
+      const a = appById(appId);
+      const root = (a?.replies || currentReplies || {});
+      const repliesObj = root?.[r.uid] || {};
+      const replyCount = _replyCount(appId, r.uid);
+
+      const canReply = canReplyToReview(r.uid);
+      const my = myVote(r.uid);
+      const likeActive = my === 1;
+      const dislikeActive = my === -1;
+
+      const openReplies = _getSet(_reviewUI.openReplies, appId).has(r.uid);
+      const openEditor = _getSet(_reviewUI.openEditor, appId).has(r.uid);
+
+      const myReply = (currentUser && repliesObj && repliesObj[currentUser.uid]) ? repliesObj[currentUser.uid] : null;
+      const replyLabel = myReply ? "Edit balasan" : "Balas";
+
+      const div = document.createElement("div");
+      div.className = `reviewItem${r.isAdmin ? " pinned":""}`;
+      div.innerHTML = `
+        <img class="rAvatar" loading="lazy" decoding="async"
+             src="${r.userPhoto || "icon/default.png"}" alt="avatar" onerror="this.src='icon/default.png'">
+        <div class="rMain">
+          <div class="rTop">
+            <div style="display:flex;gap:8px;align-items:center;min-width:0;flex-wrap:wrap">
+              <div class="rName" title="${escapeHtml(r.userName)}">
+                ${escapeHtml(r.userName)}${r.isAdmin ? ' <span class="adminBadge small" title="Admin">ADMIN</span>' : ''}
+              </div>
+              <div>${starsDisplay(r.stars)}</div>
+            </div>
+            <div class="rTime">${r.updatedAt ? timeAgo(r.updatedAt) : ""}</div>
+          </div>
+
+          ${r.comment ? `<div class="rComment">${escapeHtml(r.comment)}</div>` : `<div class="hint" style="margin-top:6px">(Tanpa komentar)</div>`}
+
+          <div class="voteRow">
+            <button class="voteBtn ${likeActive ? "active":""}" data-v="1" data-ruid="${r.uid}" type="button" aria-label="Like">
+              ${iconThumbUp()} <span>${r.like}</span>
+            </button>
+            <button class="voteBtn ${dislikeActive ? "active":""}" data-v="-1" data-ruid="${r.uid}" type="button" aria-label="Dislike">
+              ${iconThumbDown()} <span>${r.dislike}</span>
+            </button>
+          </div>
+
+          <div class="replySection">
+            ${(replyCount || canReply) ? `
+              <div class="replyActions">
+                ${replyCount ? `<button class="replyBtn repliesToggleBtn" data-ruid="${r.uid}" type="button">
+                  ${openReplies ? "Sembunyikan balasan" : ("Lihat balasan (" + replyCount + ")")}
+                </button>` : ``}
+                ${canReply ? `<button class="replyBtn replyToggleBtn" data-ruid="${r.uid}" type="button">${replyLabel}</button>` : ``}
+              </div>
+            ` : ``}
+
+            <div class="replyList ${openReplies ? "" : "hidden"}" data-ruid="${r.uid}">
+              ${openReplies ? buildRepliesHtml(appId, r.uid) : ""}
+            </div>
+
+            <div class="replyEditor ${openEditor ? "" : "hidden"}" data-ruid="${r.uid}">
+              ${openEditor ? buildReplyEditorHtml(appId, r.uid) : ""}
+            </div>
+          </div>
+        </div>
+      `;
+
+      // bind draft sync only for opened editor (few nodes only)
+      if (openEditor){
+        const ta = div.querySelector("textarea.replyBox");
+        if (ta){
+          const key = `${appId}:${r.uid}`;
+          ta.addEventListener("input", ()=>_reviewUI.drafts.set(key, String(ta.value||"")), {passive:true});
+        }
+      }
+      return div;
+    }
+
+    function setupReviewsObserver(appId){
+      const list = document.getElementById("reviewsList");
+      if (!list) return;
+
+      const data = _reviewUI.lastData.get(appId) || [];
+      const visible = _reviewUI.visibleCount.get(appId) || 0;
+      const sentinelWrap = list.querySelector(".reviewsSentinelWrap");
+      if (!sentinelWrap) return;
+
+      // hide/disable load-more when done
+      const sentinel = sentinelWrap.querySelector("#reviewsSentinel");
+      const btn = sentinelWrap.querySelector("#reviewsLoadMoreBtn");
+      if (visible >= data.length){
+        sentinelWrap.remove();
+        try{ _reviewUI.observer?.disconnect(); }catch{}
+        return;
+      }
+
+      // button fallback always works
+      if (btn){
+        btn.onclick = ()=>loadMoreReviews(appId);
+      }
+
+      if (!("IntersectionObserver" in window)){
+        // no IO support: rely on button
+        return;
+      }
+
+      try{ _reviewUI.observer?.disconnect(); }catch{}
+      _reviewUI.observer = new IntersectionObserver((entries)=>{
+        const ent = entries[0];
+        if (!ent || !ent.isIntersecting) return;
+        loadMoreReviews(appId);
+      }, {root:null, rootMargin:"700px 0px", threshold:0.01});
+
+      _reviewUI.observer.observe(sentinel);
+    }
+
+    function loadMoreReviews(appId){
+      const list = document.getElementById("reviewsList");
+      if (!list) return;
+
+      const data = _reviewUI.lastData.get(appId) || [];
+      let visible = _reviewUI.visibleCount.get(appId) || 0;
+      if (visible >= data.length) return;
+
+      const next = Math.min(data.length, visible + REVIEWS_PAGE_SIZE);
+      _reviewUI.visibleCount.set(appId, next);
+
+      const sentinelWrap = list.querySelector(".reviewsSentinelWrap");
+      const frag = document.createDocumentFragment();
+      data.slice(visible, next).forEach(r=>frag.appendChild(createReviewItemNode(appId, r)));
+
+      if (sentinelWrap){
+        list.insertBefore(frag, sentinelWrap);
+      } else {
+        list.appendChild(frag);
+      }
+
+      // remove sentinel when done
+      if (next >= data.length){
+        sentinelWrap?.remove();
+        try{ _reviewUI.observer?.disconnect(); }catch{}
+      } else {
+        // keep observer alive
+        setupReviewsObserver(appId);
+      }
+    }
+
+    function bindReviewsListHandlers(){
+      const list = document.getElementById("reviewsList");
+      if (!list || list.dataset.bound === "1") return;
+      list.dataset.bound = "1";
+
+      list.addEventListener("click", async (e)=>{
+        const appId = String(list.dataset.appId || currentAppId || "");
+        if (!appId) return;
+
+        // votes
+        const voteBtn = e.target.closest(".voteBtn");
+        if (voteBtn){
+          const v = Number(voteBtn.dataset.v || 0);
+          const ruid = String(voteBtn.dataset.ruid || "");
+          if (!v || !ruid) return;
+          try{
+            await setVote(appId, ruid, v);
+          } catch (err){
+            console.error(err);
+            toast("Gagal vote. Cek Rules.");
+          }
+          return;
+        }
+
+        // toggle replies list
+        const repliesToggle = e.target.closest(".repliesToggleBtn");
+        if (repliesToggle){
+          const targetUid = String(repliesToggle.dataset.ruid || "");
+          const item = repliesToggle.closest(".reviewItem");
+          const box = item?.querySelector(`.replyList[data-ruid="${targetUid}"]`);
+          if (!targetUid || !box) return;
+
+          const set = _getSet(_reviewUI.openReplies, appId);
+          if (set.has(targetUid)){
+            set.delete(targetUid);
+            box.classList.add("hidden");
+            box.innerHTML = "";
+            repliesToggle.textContent = `Lihat balasan (${_replyCount(appId, targetUid)})`;
+          } else {
+            set.add(targetUid);
+            box.innerHTML = buildRepliesHtml(appId, targetUid);
+            box.classList.remove("hidden");
+            repliesToggle.textContent = "Sembunyikan balasan";
+          }
+          return;
+        }
+
+        // toggle reply editor
+        const toggleBtn = e.target.closest(".replyToggleBtn");
+        if (toggleBtn){
+          const targetUid = String(toggleBtn.dataset.ruid || "");
+          if (!targetUid) return;
+          if (!currentUser){
+            toast("Login dulu untuk membalas.");
+            return;
+          }
+          if (!canReplyToReview(targetUid)){
+            toast("Tidak punya akses membalas ulasan ini.");
+            return;
+          }
+
+          const item = toggleBtn.closest(".reviewItem");
+          const editor = item?.querySelector(`.replyEditor[data-ruid="${targetUid}"]`);
+          if (!editor) return;
+
+          const set = _getSet(_reviewUI.openEditor, appId);
+          if (!editor.classList.contains("hidden")){
+            set.delete(targetUid);
+            editor.classList.add("hidden");
+            editor.innerHTML = "";
+            return;
+          }
+
+          set.add(targetUid);
+          editor.innerHTML = buildReplyEditorHtml(appId, targetUid);
+          editor.classList.remove("hidden");
+
+          const ta = editor.querySelector("textarea.replyBox");
+          if (ta){
+            const key = `${appId}:${targetUid}`;
+            ta.addEventListener("input", ()=>_reviewUI.drafts.set(key, String(ta.value||"")), {passive:true});
+            try{ ta.focus({preventScroll:true}); }catch{ ta.focus(); }
+          }
+          return;
+        }
+
+        // cancel
+        const cancelBtn = e.target.closest(".replyCancelBtn");
+        if (cancelBtn){
+          const targetUid = String(cancelBtn.dataset.ruid || "");
+          const item = cancelBtn.closest(".reviewItem");
+          const editor = item?.querySelector(`.replyEditor[data-ruid="${targetUid}"]`);
+          if (!editor) return;
+
+          _getSet(_reviewUI.openEditor, appId).delete(targetUid);
+          editor.classList.add("hidden");
+          editor.innerHTML = "";
+          _reviewUI.drafts.delete(`${appId}:${targetUid}`);
+          return;
+        }
+
+        // send
+        const sendBtn = e.target.closest(".replySendBtn");
+        if (sendBtn){
+          const targetUid = String(sendBtn.dataset.ruid || "");
+          const item = sendBtn.closest(".reviewItem");
+          const editor = item?.querySelector(`.replyEditor[data-ruid="${targetUid}"]`);
+          const box = editor?.querySelector("textarea.replyBox");
+          if (!editor || !box) return;
+
+          const text = String(box.value || "").trim();
+          if (!text){
+            toast("Balasan tidak boleh kosong.");
+            return;
+          }
+          if (text.length > 300){
+            toast("Balasan terlalu panjang (max 300).");
+            return;
+          }
+
+          sendBtn.disabled = true;
+          try{
+            await submitReply(appId, targetUid, text);
+            toast("Balasan terkirim.");
+
+            _getSet(_reviewUI.openEditor, appId).delete(targetUid);
+            _reviewUI.drafts.delete(`${appId}:${targetUid}`);
+            editor.classList.add("hidden");
+            editor.innerHTML = "";
+
+            // auto open replies to show the new message
+            const repliesBox = item?.querySelector(`.replyList[data-ruid="${targetUid}"]`);
+            const repliesToggle = item?.querySelector(`.repliesToggleBtn[data-ruid="${targetUid}"]`);
+            if (repliesBox){
+              _getSet(_reviewUI.openReplies, appId).add(targetUid);
+              repliesBox.innerHTML = buildRepliesHtml(appId, targetUid);
+              repliesBox.classList.remove("hidden");
+              if (repliesToggle) repliesToggle.textContent = "Sembunyikan balasan";
+            }
+          } catch (err){
+            console.error(err);
+            toast(err?.code === "REPLY_NOT_ALLOWED" ? "Tidak diizinkan membalas ulasan ini." : "Gagal kirim balasan.");
+          } finally {
+            sendBtn.disabled = false;
+          }
+          return;
+        }
+      }, {passive:false});
+    }
+
     function renderReviewsList(appId, reviewsOverride=null){
       const a = appById(appId);
       if (!a) return;
 
       const list = document.getElementById("reviewsList");
       if (!list) return;
+
+      bindReviewsListHandlers();
+      list.dataset.appId = String(appId || "");
 
       const reviewsObj = reviewsOverride ?? a.reviews ?? {};
       const entries = Object.entries(reviewsObj)
@@ -2948,7 +3366,7 @@
         }))
         .filter(r=>r.stars>=1 && r.stars<=5);
 
-      // filtering
+      // filtering + sorting
       let filtered = entries;
       if (reviewFilterStar){
         filtered = entries.filter(r=>r.stars === reviewFilterStar)
@@ -2967,196 +3385,30 @@
       const normal = filtered.filter(r=>!r.isAdmin);
       filtered = pinned.concat(normal);
 
-      list.innerHTML = "";
+      _reviewUI.lastData.set(appId, filtered);
+
+      list.replaceChildren();
+
       if (filtered.length === 0){
-        list.innerHTML = `<div class="hint">${reviewFilterStar ? "Tidak ada ulasan untuk filter ini." : "Belum ada ulasan. Jadilah yang pertama!"}</div>`;
+        list.innerHTML = `<div class="hint">${reviewFilterStar ? "Belum ada ulasan untuk filter ini." : "Belum ada ulasan. Jadilah yang pertama!"}</div>`;
         return;
       }
 
-      const repliesRoot = (a.replies || currentReplies || {});
+      // keep previous visibleCount (don’t jump the user back up)
+      const prevVisible = _reviewUI.visibleCount.get(appId) || 0;
+      const initCount = Math.max(Math.min(prevVisible || 40, filtered.length), Math.min(40, filtered.length));
+      _reviewUI.visibleCount.set(appId, initCount);
 
-      filtered.slice(0, 40).forEach(r=>{
-        const my = myVote(r.uid);
-        const likeActive = my === 1;
-        const dislikeActive = my === -1;
+      const frag = document.createDocumentFragment();
+      filtered.slice(0, initCount).forEach(r=>frag.appendChild(createReviewItemNode(appId, r)));
 
-        const repliesObj = repliesRoot?.[r.uid] || {};
-        const repliesArr = Object.entries(repliesObj).map(([ruid,rv])=>({
-          uid: String(rv?.uid || ruid),
-          role: String(rv?.role || (isAdminUid(rv?.uid || ruid) ? "admin":"user")),
-          userName: String(rv?.userName || "User"),
-          userPhoto: String(rv?.userPhoto || ""),
-          text: String(rv?.text || rv?.comment || ""),
-          updatedAt: Number(rv?.updatedAt || 0),
-          createdAt: Number(rv?.createdAt || 0)
-        }))
-        .filter(x=>x.text.trim().length>0)
-        .sort((x,y)=>(x.updatedAt||0)-(y.updatedAt||0)); // oldest -> newest
+      // sentinel (load more) only if needed
+      if (initCount < filtered.length){
+        frag.appendChild(createReviewsSentinel());
+      }
 
-        const repliesHtml = repliesArr.length ? `
-          <div class="replyList">
-            ${repliesArr.map(rep=>`
-              <div class="replyItem">
-                <div class="replyTop">
-                  <div style="display:flex;gap:8px;align-items:center;min-width:0;flex-wrap:wrap">
-                    <img class="rAvatar" style="width:26px;height:26px" src="${rep.userPhoto || "icon/default.png"}" alt="avatar" onerror="this.src='icon/default.png'">
-                    <div class="replyName" title="${escapeHtml(rep.userName)}">${escapeHtml(rep.userName)}${isAdminUid(rep.uid) ? ' <span class="adminBadge small" title="Admin">ADMIN</span>' : ''}</div>
-                  </div>
-                  <div class="rTime">${rep.updatedAt ? timeAgo(rep.updatedAt) : ""}</div>
-                </div>
-                <div class="replyText">${escapeHtml(rep.text)}</div>
-              </div>
-            `).join("")}
-          </div>
-        ` : ``;
-
-        const canReply = canReplyToReview(r.uid);
-        const myReply = (currentUser && repliesObj && repliesObj[currentUser.uid]) ? repliesObj[currentUser.uid] : null;
-        const replyLabel = myReply ? "Edit balasan" : "Balas";
-
-        const div = document.createElement("div");
-        div.className = `reviewItem${r.isAdmin ? " pinned":""}`;
-        div.innerHTML = `
-          <img class="rAvatar" src="${r.userPhoto || "icon/default.png"}" alt="avatar" onerror="this.src='icon/default.png'">
-          <div class="rMain">
-            <div class="rTop">
-              <div style="display:flex;gap:8px;align-items:center;min-width:0;flex-wrap:wrap">
-                <div class="rName" title="${escapeHtml(r.userName)}">${escapeHtml(r.userName)}${r.isAdmin ? ' <span class="adminBadge small" title="Admin">ADMIN</span>' : ''}</div>
-                <div>${starsDisplay(r.stars)}</div>
-              </div>
-              <div class="rTime">${r.updatedAt ? timeAgo(r.updatedAt) : ""}</div>
-            </div>
-            ${r.comment ? `<div class="rComment">${escapeHtml(r.comment)}</div>` : `<div class="hint" style="margin-top:6px">(Tanpa komentar)</div>`}
-
-            <div class="voteRow">
-              <button class="voteBtn ${likeActive ? "active":""}" data-v="1" data-ruid="${r.uid}" type="button" aria-label="Like">${iconThumbUp()} <span>${r.like}</span></button>
-              <button class="voteBtn ${dislikeActive ? "active":""}" data-v="-1" data-ruid="${r.uid}" type="button" aria-label="Dislike">${iconThumbDown()} <span>${r.dislike}</span></button>
-            </div>
-
-            <div class="replySection">
-              ${canReply ? `
-                <div class="replyActions">
-                  <button class="replyBtn replyToggleBtn" data-ruid="${r.uid}" type="button">${replyLabel}</button>
-                </div>
-                <div class="replyEditor hidden" data-ruid="${r.uid}">
-                  <textarea class="replyBox" maxlength="300" placeholder="Tulis balasan..."></textarea>
-                  <div class="row">
-                    <button class="btn replyCancelBtn" data-ruid="${r.uid}" type="button">Batal</button>
-                    <button class="btn primary replySendBtn" data-ruid="${r.uid}" type="button">Kirim</button>
-                  </div>
-                  <div class="hint" style="margin-top:6px">User biasa: hanya bisa balas ulasan ADMIN. Admin: bebas balas semua.</div>
-                </div>
-              ` : ``}
-
-              ${repliesHtml}
-            </div>
-          </div>
-        `;
-
-        list.appendChild(div);
-      });
-
-      // click handler votes + replies (event delegation)
-      list.onclick = async (e)=>{
-        const voteBtn = e.target.closest(".voteBtn");
-        if (voteBtn){
-          const v = Number(voteBtn.dataset.v || 0);
-          const ruid = String(voteBtn.dataset.ruid || "");
-          if (!v || !ruid) return;
-          try{
-            await setVote(appId, ruid, v);
-          } catch (err){
-            console.error(err);
-            toast("Gagal vote. Cek Rules.");
-          }
-          return;
-        }
-
-        const toggleBtn = e.target.closest(".replyToggleBtn");
-        if (toggleBtn){
-          const targetUid = String(toggleBtn.dataset.ruid || "");
-          if (!targetUid) return;
-          if (!currentUser){
-            toast("Login dulu untuk membalas.");
-            return;
-          }
-          if (!canReplyToReview(targetUid)){
-            toast("Balasan hanya untuk ulasan ADMIN.");
-            return;
-          }
-          const item = toggleBtn.closest(".reviewItem");
-          if (!item) return;
-          const editor = item.querySelector(`.replyEditor[data-ruid="${targetUid}"]`);
-          if (!editor) return;
-
-          const box = editor.querySelector("textarea.replyBox");
-          const send = editor.querySelector(".replySendBtn");
-          if (!box || !send) return;
-
-          const repliesObj = (appById(appId)?.replies || currentReplies || {})?.[targetUid] || {};
-          const myReply = repliesObj?.[currentUser.uid] || null;
-
-          if (!editor.classList.contains("hidden")){
-            // close
-            editor.classList.add("hidden");
-            return;
-          }
-
-          // open & prefill
-          editor.classList.remove("hidden");
-          box.value = String(myReply?.text || myReply?.comment || "");
-          send.textContent = myReply ? "Perbarui" : "Kirim";
-          setTimeout(()=>box.focus({preventScroll:false}), 30);
-          return;
-        }
-
-        const cancelBtn = e.target.closest(".replyCancelBtn");
-        if (cancelBtn){
-          const targetUid = String(cancelBtn.dataset.ruid || "");
-          const item = cancelBtn.closest(".reviewItem");
-          const editor = item?.querySelector(`.replyEditor[data-ruid="${targetUid}"]`);
-          if (editor) editor.classList.add("hidden");
-          return;
-        }
-
-        const sendBtn = e.target.closest(".replySendBtn");
-        if (sendBtn){
-          const targetUid = String(sendBtn.dataset.ruid || "");
-          if (!targetUid) return;
-          if (!currentUser){
-            toast("Login dulu untuk membalas.");
-            return;
-          }
-          if (!canReplyToReview(targetUid)){
-            toast("Balasan hanya untuk ulasan ADMIN.");
-            return;
-          }
-          const item = sendBtn.closest(".reviewItem");
-          const editor = item?.querySelector(`.replyEditor[data-ruid="${targetUid}"]`);
-          const box = editor?.querySelector("textarea.replyBox");
-          if (!editor || !box) return;
-
-          const text = String(box.value || "").trim();
-          if (!text){
-            toast("Balasan tidak boleh kosong.");
-            return;
-          }
-          if (text.length > 300){
-            toast("Balasan terlalu panjang (max 300).");
-            return;
-          }
-          try{
-            await submitReply(appId, targetUid, text);
-            toast("Balasan tersimpan.");
-            editor.classList.add("hidden");
-          } catch (err){
-            if (String(err?.code||"") === "REPLY_NOT_ALLOWED") toast("Balasan hanya untuk ulasan ADMIN.");
-            else toast("Gagal menyimpan balasan. Cek Rules.");
-            console.error(err);
-          }
-          return;
-        }
-      };
+      list.appendChild(frag);
+      setupReviewsObserver(appId);
     }
 
     // ====== Realtime load ======
@@ -3180,3 +3432,4 @@
   </script>
 </body>
 </html>
+
