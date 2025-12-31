@@ -405,6 +405,21 @@
     }
     .badge.new{border-color:rgba(16,185,129,.4); background:rgba(16,185,129,.08); color:var(--good);}
     .badge.mod{border-color:rgba(245,158,11,.45); background:rgba(245,158,11,.10); color:var(--warn);}
+.adminBadge{
+      font-size:11px;
+      padding:4px 8px;
+      border-radius:999px;
+      border: 1px solid rgba(26,115,232,.45);
+      background: rgba(26,115,232,.10);
+      color: var(--brand2);
+      font-weight:1000;
+      white-space:nowrap;
+      line-height:1;
+    }
+    .adminBadge.small{
+      font-size:10px;
+      padding:3px 7px;
+    }
     .rowDesc{
       margin-top:6px;color: var(--muted);
       font-size:13px;line-height:1.4;
@@ -701,8 +716,19 @@
       gap: 8px;flex-wrap:wrap;
     }
     .rName{
-      font-weight:1000;font-size: 13px;
-      max-width: 260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+      font-weight:1000;
+      font-size: 13px;
+      max-width: 260px;
+      display:flex;
+      align-items:center;
+      gap:6px;
+      min-width:0;
+    }
+    .rNameText{
+      min-width:0;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      white-space:nowrap;
     }
     .rTime{color: var(--muted);font-size: 12px;white-space:nowrap;}
     .rComment{
@@ -787,8 +813,24 @@
       gap:10px;
       min-width:0;
     }
-    .pName{margin:0;font-size:18px;font-weight:1000;letter-spacing:.1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+    .pName{
+      margin:0;
+      font-size:18px;
+      font-weight:1000;
+      letter-spacing:.1px;
+      display:flex;
+      align-items:center;
+      gap:8px;
+      min-width:0;
+    }
+    .pNameText{
+      min-width:0;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      white-space:nowrap;
+    }
     .pEmail{margin-top:4px;color:var(--muted);font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+      .profileHeaderRow .pName{justify-content:center;}
     .profileActions{
       display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end;
       padding-top: 4px;
@@ -1303,6 +1345,13 @@
       sort: "popular"   // popular|rating|latest (ONLY on Top page)
     };
 
+    // ====== Admin badge ======
+    const ADMIN_UID = "DAQG3iy23JekAyRb4PDQPORIeKY2";
+    function isAdminUid(uid){
+      return String(uid || "") === ADMIN_UID;
+    }
+
+
     function updateHeaderVisibility(){
       headerExtras.classList.toggle("hidden", state.page === "profile");
     }
@@ -1740,10 +1789,9 @@
               </div>
 
               <div class="profileStats">
-                <div class="stat"><div class="k">Whitelist</div><div class="v">0</div></div>
-                <div class="stat"><div class="k">Tab</div><div class="v">${state.tab === "games" ? "Game" : "Aplikasi"}</div></div>
-                
-              </div>
+                 <div class="stat"><div class="k">Whitelist</div><div class="v">0</div></div>
+                 <div class="stat"><div class="k">UID</div><div class="v">-</div></div>
+               </div>
             </div>
           </div>
 
@@ -1780,7 +1828,7 @@
             <img class="profileAvatar" src="${currentUser.photoURL || "icon/default.png"}" alt="avatar" onerror="this.src='icon/default.png'">
             <div class="profileHeaderRow">
               <div style="min-width:0">
-                <p class="pName">${escapeHtml(currentUser.displayName || "User")}</p>
+                <p class="pName"><span class="pNameText">${escapeHtml(currentUser.displayName || "User")}</span>${isAdminUid(currentUser.uid) ? '<span class="adminBadge" title="Admin">ADMIN</span>' : ''}</p>
                 <div class="pEmail">${escapeHtml(currentUser.email || "-")}</div>
               </div>
             </div>
@@ -1788,7 +1836,6 @@
             <div class="profileStats">
               <div class="stat"><div class="k">Whitelist</div><div class="v">${wItems.length}</div></div>
               <div class="stat"><div class="k">UID</div><div class="v" title="${escapeHtml(currentUser.uid)}">${escapeHtml(currentUser.uid).slice(0,8)}…</div></div>
-              <div class="stat"><div class="k">Tab</div><div class="v">${state.tab === "games" ? "Game" : "Aplikasi"}</div></div>
             </div>
           </div>
         </div>
@@ -2539,7 +2586,7 @@
           <div class="rMain">
             <div class="rTop">
               <div style="display:flex;gap:8px;align-items:center;min-width:0;flex-wrap:wrap">
-                <div class="rName" title="${escapeHtml(r.userName)}">${escapeHtml(r.userName)}</div>
+                <div class="rName" title="${escapeHtml(r.userName)}"><span class="rNameText">${escapeHtml(r.userName)}</span>${isAdminUid(r.uid) ? '<span class="adminBadge small" title="Admin">ADMIN</span>' : ''}</div>
                 <div>${starsDisplay(r.stars)}</div>
               </div>
               <div class="rTime">${r.updatedAt ? timeAgo(r.updatedAt) : ""}</div>
