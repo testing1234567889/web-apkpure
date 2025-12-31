@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>APK Download</title>
-  <meta name="description" content="Download APK terbaru - cepat, ringan, realtime." />
+  <meta name="description" content="Download APK terbaru - realtime, ringan, UI mirip Play Store." />
 
   <style>
     :root{
@@ -18,6 +18,8 @@
       --good:#10b981;
       --warn:#f59e0b;
       --danger:#ef4444;
+      --star:#fbbf24;     /* kuning */
+      --starOff:#cbd5e1;  /* abu */
       --shadow: 0 10px 25px rgba(15, 23, 42, .08);
       --radius:14px;
     }
@@ -29,6 +31,8 @@
       color:var(--text);
     }
     a{color:inherit}
+
+    /* Top bar */
     .topbar{
       position:sticky; top:0; z-index:20;
       background:linear-gradient(90deg,var(--brand),var(--brand2));
@@ -45,7 +49,7 @@
     }
     .logo{
       display:flex; align-items:center; gap:10px;
-      font-weight:800; letter-spacing:.3px;
+      font-weight:900; letter-spacing:.3px;
       white-space:nowrap;
     }
     .logo-badge{
@@ -55,7 +59,6 @@
       display:grid; place-items:center;
       border:1px solid rgba(255,255,255,.25);
     }
-    .logo svg{display:block}
     .search-wrap{
       flex:1;
       display:flex;
@@ -90,18 +93,18 @@
       background:rgba(255,255,255,.16);
       color:#fff;
       font-size:13px;
-      cursor:pointer;
-      user-select:none;
       white-space:nowrap;
+      user-select:none;
     }
 
+    /* Auth */
     .auth{
       display:flex;
       align-items:center;
       gap:10px;
       flex:0 0 auto;
     }
-    .auth .btnAuth{
+    .btnAuth{
       border-radius:999px;
       padding:9px 12px;
       border:1px solid rgba(255,255,255,.25);
@@ -109,11 +112,11 @@
       color:#fff;
       font-size:13px;
       cursor:pointer;
-      font-weight:800;
+      font-weight:900;
       white-space:nowrap;
     }
-    .auth .btnAuth:hover{filter:brightness(.98)}
-    .auth .btnAuth:active{transform:scale(.99)}
+    .btnAuth:hover{filter:brightness(.98)}
+    .btnAuth:active{transform:scale(.99)}
     .user{
       display:none;
       align-items:center;
@@ -133,14 +136,15 @@
       object-fit:cover;
       flex:0 0 auto;
     }
-    .user .name{
+    .user .uname{
       font-size:13px;
-      font-weight:800;
+      font-weight:900;
       overflow:hidden;
       text-overflow:ellipsis;
       white-space:nowrap;
     }
 
+    /* Page */
     .container{
       max-width:1100px;
       margin:0 auto;
@@ -171,6 +175,7 @@
       cursor:pointer;
       white-space:nowrap;
       box-shadow: 0 1px 0 rgba(15,23,42,.02);
+      font-weight:700;
     }
     .chip.active{
       border-color:rgba(0,166,255,.45);
@@ -229,7 +234,7 @@
       justify-content:space-between;
     }
     .name{
-      font-weight:800;
+      font-weight:900;
       font-size:16px;
       margin:0;
       line-height:1.2;
@@ -246,9 +251,10 @@
       background:#fff;
       color:var(--muted);
       white-space:nowrap;
+      font-weight:800;
     }
-    .badge.new{border-color:rgba(16,185,129,.4); background:rgba(16,185,129,.08); color:var(--good); font-weight:700;}
-    .badge.mod{border-color:rgba(245,158,11,.45); background:rgba(245,158,11,.10); color:var(--warn); font-weight:700;}
+    .badge.new{border-color:rgba(16,185,129,.4); background:rgba(16,185,129,.08); color:var(--good);}
+    .badge.mod{border-color:rgba(245,158,11,.45); background:rgba(245,158,11,.10); color:var(--warn);}
     .desc{
       margin:6px 0 8px;
       color:var(--muted);
@@ -267,7 +273,8 @@
       color:var(--muted);
       font-size:12px;
     }
-    .dot{opacity:.5}
+    .dot{opacity:.55}
+
     .dl-btn{
       flex:0 0 auto;
       text-decoration:none;
@@ -276,7 +283,7 @@
       border:none;
       padding:10px 14px;
       border-radius:999px;
-      font-weight:800;
+      font-weight:900;
       font-size:13px;
       cursor:pointer;
       white-space:nowrap;
@@ -284,6 +291,8 @@
     }
     .dl-btn:hover{filter:brightness(.98)}
     .dl-btn:active{transform:scale(.99)}
+
+    /* Stars (display) */
     .stars{
       display:inline-flex;
       gap:2px;
@@ -291,9 +300,10 @@
       align-items:center;
     }
     .stars svg{width:13px;height:13px}
-    .stars .on{fill: #fbbf24}
-    .stars .off{fill: #e5e7eb}
-    .ratingText{font-weight:800; color:var(--text)}
+    .stars .on{fill: var(--star)}
+    .stars .off{fill: var(--starOff)}
+    .ratingNum{font-weight:900; color:var(--text)}
+
     .state{
       padding:14px;
       border:1px dashed rgba(100,116,139,.35);
@@ -314,8 +324,8 @@
     }
     .overlay.show{display:block}
     .modal{
-      max-width:860px;
-      margin:40px auto;
+      max-width:920px;
+      margin:34px auto;
       background:var(--card);
       border-radius:18px;
       border:1px solid var(--line);
@@ -334,33 +344,38 @@
       display:flex;
       align-items:center;
       gap:10px;
-      font-weight:900;
+      font-weight:1000;
     }
     .xbtn{
-      background:transparent;
+      background:#fff;
       border:1px solid var(--line);
-      width:38px; height:38px;
+      width:40px; height:40px;
       border-radius:12px;
       cursor:pointer;
       display:grid; place-items:center;
+      box-shadow: 0 6px 14px rgba(15,23,42,.06);
     }
+    .xbtn:active{transform:scale(.99)}
     .modal-body{
       padding:14px;
       display:grid;
       gap:14px;
     }
+
     .hero{
       display:flex;
       gap:14px;
       align-items:flex-start;
     }
     .hero .icon{
-      width:84px; height:84px; border-radius:20px;
+      width:86px; height:86px;
+      border-radius:22px;
     }
     .hero h2{
       margin:0;
       font-size:20px;
       line-height:1.2;
+      font-weight:1000;
     }
     .hero .small{
       margin-top:6px;
@@ -371,46 +386,14 @@
       gap:10px;
       align-items:center;
     }
-    .kv{
-      display:grid;
-      grid-template-columns: repeat(2, minmax(0,1fr));
-      gap:10px;
-    }
-    .kv .box{
-      border:1px solid var(--line);
-      border-radius:14px;
-      padding:10px 12px;
-      background:rgba(255,255,255,.75);
-    }
-    .kv .k{font-size:12px; color:var(--muted)}
-    .kv .v{font-size:14px; font-weight:800; margin-top:4px}
-    .section{
-      border:1px solid var(--line);
-      border-radius:14px;
-      padding:12px;
-      background:rgba(255,255,255,.75);
-    }
-    .section h3{
-      margin:0 0 8px;
-      font-size:14px;
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:10px;
-    }
-    .section p{
-      margin:0;
-      color:var(--muted);
-      line-height:1.5;
-      font-size:13px;
-      white-space:pre-wrap;
-    }
+
     .actions{
       display:flex;
       flex-wrap:wrap;
       gap:10px;
       align-items:center;
       justify-content:space-between;
+      margin-top:12px;
     }
     .btn{
       padding:10px 14px;
@@ -418,7 +401,7 @@
       border:1px solid var(--line);
       background:#fff;
       cursor:pointer;
-      font-weight:800;
+      font-weight:900;
       font-size:13px;
     }
     .btn.primary{
@@ -433,46 +416,162 @@
     }
     .btn.primary:hover{filter:brightness(.98)}
     .btn:active{transform:scale(.99)}
-    .shots{
-      display:flex;
-      gap:10px;
-      overflow:auto;
-      padding-bottom:4px;
-    }
-    .shot{
-      width:180px; height:110px;
-      border-radius:14px;
-      object-fit:cover;
-      border:1px solid var(--line);
-      background:#fff;
-      flex:0 0 auto;
-    }
 
-    /* Rating widget */
-    .rateWrap{
-      display:flex;
-      flex-wrap:wrap;
+    .kv{
+      display:grid;
+      grid-template-columns: repeat(2, minmax(0,1fr));
       gap:10px;
+    }
+    .kv .box{
+      border:1px solid var(--line);
+      border-radius:14px;
+      padding:10px 12px;
+      background:rgba(255,255,255,.75);
+    }
+    .kv .k{font-size:12px; color:var(--muted)}
+    .kv .v{font-size:14px; font-weight:1000; margin-top:4px}
+
+    .section{
+      border:1px solid var(--line);
+      border-radius:14px;
+      padding:12px;
+      background:rgba(255,255,255,.75);
+    }
+    .section h3{
+      margin:0 0 10px;
+      font-size:14px;
+      font-weight:1000;
+      display:flex;
       align-items:center;
       justify-content:space-between;
+      gap:10px;
+    }
+    .section p{
+      margin:0;
+      color:var(--muted);
+      line-height:1.5;
+      font-size:13px;
+      white-space:pre-wrap;
+    }
+
+    /* Review UI (Play Store-ish) */
+    .reviewHeader{
+      display:flex;
+      flex-wrap:wrap;
+      align-items:center;
+      gap:10px;
+      justify-content:space-between;
+    }
+    .reviewSummary{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      flex-wrap:wrap;
+      color:var(--muted);
+      font-size:13px;
+    }
+    .reviewForm{
+      display:grid;
+      gap:10px;
+      margin-top:10px;
     }
     .rateStars{
       display:flex;
       gap:6px;
       align-items:center;
+      flex-wrap:wrap;
     }
-    .rateBtnStar{
+    .starBtn{
       border:none;
       background:transparent;
       cursor:pointer;
-      padding:4px;
-      border-radius:10px;
+      padding:6px;
+      border-radius:12px;
+      outline:none;
     }
-    .rateBtnStar:active{transform:scale(.98)}
-    .rateBtnStar svg{width:26px;height:26px}
-    .rateHint{
+    .starBtn:hover{background:rgba(2,132,199,.06)}
+    .starBtn:active{transform:scale(.99)}
+    .starBtn svg{width:28px;height:28px}
+    .starOn{fill:var(--star)}
+    .starOff{fill:var(--starOff)}
+    .formRow{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      align-items:center;
+      justify-content:space-between;
+    }
+    textarea{
+      width:100%;
+      min-height:92px;
+      resize:vertical;
+      padding:10px 12px;
+      border-radius:14px;
+      border:1px solid var(--line);
+      outline:none;
+      font-size:13px;
+      background:#fff;
+    }
+    textarea:focus{
+      box-shadow: 0 0 0 4px rgba(0,166,255,.14);
+      border-color: rgba(0,166,255,.35);
+    }
+    .hint{
       font-size:12px;
       color:var(--muted);
+    }
+    .danger{color:var(--danger); font-weight:900}
+
+    .reviewsList{
+      display:grid;
+      gap:10px;
+      margin-top:10px;
+    }
+    .reviewItem{
+      background:#fff;
+      border:1px solid var(--line);
+      border-radius:14px;
+      padding:10px 12px;
+      display:flex;
+      gap:10px;
+      align-items:flex-start;
+    }
+    .reviewItem .rAvatar{
+      width:34px; height:34px;
+      border-radius:999px;
+      border:1px solid var(--line);
+      object-fit:cover;
+      background:#fff;
+      flex:0 0 auto;
+    }
+    .reviewItem .rMain{flex:1; min-width:0}
+    .reviewItem .rTop{
+      display:flex;
+      gap:8px;
+      align-items:center;
+      justify-content:space-between;
+      flex-wrap:wrap;
+    }
+    .reviewItem .rName{
+      font-weight:1000;
+      font-size:13px;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      white-space:nowrap;
+      max-width: 260px;
+    }
+    .reviewItem .rTime{
+      color:var(--muted);
+      font-size:12px;
+      white-space:nowrap;
+    }
+    .reviewItem .rComment{
+      margin-top:6px;
+      color:var(--text);
+      font-size:13px;
+      line-height:1.45;
+      white-space:pre-wrap;
+      word-break:break-word;
     }
 
     /* Toast */
@@ -523,7 +622,7 @@
           </svg>
           <input id="q" type="text" placeholder="Cari aplikasi (capcut, game, editor)..." autocomplete="off"/>
         </div>
-        <div id="countPill" class="pill" title="Jumlah aplikasi">0 Apps</div>
+        <div id="countPill" class="pill">0 Apps</div>
       </div>
 
       <div class="auth">
@@ -531,7 +630,7 @@
 
         <div class="user" id="userBox" title="Akun login">
           <img class="avatar" id="userAvatar" alt="avatar" />
-          <div class="name" id="userName">User</div>
+          <div class="uname" id="userName">User</div>
         </div>
 
         <button class="btnAuth" id="logoutBtn" style="display:none;">Logout</button>
@@ -543,7 +642,7 @@
     <div class="toolbar">
       <div class="chips" id="chips"></div>
       <div class="sort">
-        <label for="sort" style="font-size:13px;color:var(--muted)">Sort</label>
+        <label for="sort" style="font-size:13px;color:var(--muted);font-weight:900">Sort</label>
         <select id="sort">
           <option value="latest">Terbaru</option>
           <option value="popular">Populer</option>
@@ -592,7 +691,7 @@
       set
     } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-    // ✅ config dari kamu
+    // ✅ Firebase config kamu
     const firebaseConfig = {
       apiKey: "AIzaSyAu--L2T5_o9xLVT09mXFLIcpPuLLWlL1Q",
       authDomain: "aplikasi-percobaan-dbf84.firebaseapp.com",
@@ -657,6 +756,21 @@
       return `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`;
     }
 
+    function timeAgo(ts){
+      const d = new Date(Number(ts)||0);
+      if (!ts || isNaN(d.getTime())) return "";
+      const now = Date.now();
+      const diff = Math.max(0, now - d.getTime());
+      const m = Math.floor(diff/60000);
+      if (m < 1) return "baru saja";
+      if (m < 60) return `${m} menit lalu`;
+      const h = Math.floor(m/60);
+      if (h < 24) return `${h} jam lalu`;
+      const day = Math.floor(h/24);
+      if (day < 30) return `${day} hari lalu`;
+      return fmtDate(d.getTime());
+    }
+
     function fmtNum(n){
       const x = Number(n);
       if (!isFinite(x)) return "0";
@@ -665,10 +779,9 @@
       return String(Math.round(x));
     }
 
-    function starsHtml(r){
-      const rating = Math.max(0, Math.min(5, Number(r)||0));
-      const full = Math.round(rating * 10) / 10;
-      let html = `<span class="stars" title="Rating ${full}">`;
+    function starsDisplay(avg){
+      const rating = Math.max(0, Math.min(5, Number(avg)||0));
+      let html = `<span class="stars" title="Rating ${rating.toFixed(1)}">`;
       for(let i=1;i<=5;i++){
         const on = (i <= Math.round(rating));
         html += `
@@ -680,10 +793,11 @@
       return html;
     }
 
-    function starSvg(fillOn){
+    function starSvg(on){
       return `
-        <svg viewBox="0 0 24 24" class="${fillOn ? "on":"off"}" aria-hidden="true">
-          <path d="M12 17.3l-6.2 3.4 1.5-7L1.9 8.9l7.2-1L12 1.5l2.9 6.4 7.2 1-5.4 4.8 1.5 7z"/>
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path fill="${on ? "var(--star)" : "var(--starOff)"}"
+            d="M12 17.3l-6.2 3.4 1.5-7L1.9 8.9l7.2-1L12 1.5l2.9 6.4 7.2 1-5.4 4.8 1.5 7z"/>
         </svg>
       `;
     }
@@ -742,12 +856,26 @@
     let query = "";
     let sortBy = "latest";
 
+    function computeReviewStats(reviewsObj){
+      // reviewsObj: {uid: {stars, comment, updatedAt, userName, userPhoto}}
+      if (!reviewsObj || typeof reviewsObj !== "object") return { avg: 0, count: 0 };
+      let sum = 0, count = 0;
+      for (const uid in reviewsObj){
+        const s = Number(reviewsObj[uid]?.stars);
+        if (isFinite(s) && s >= 1 && s <= 5){
+          sum += s; count += 1;
+        }
+      }
+      return { avg: count ? (sum/count) : 0, count };
+    }
+
     function normalizeApps(raw){
       const arr = [];
       if (!raw || typeof raw !== "object") return arr;
 
       for(const id of Object.keys(raw)){
         const a = raw[id] || {};
+        const reviews = (a.reviews && typeof a.reviews === "object") ? a.reviews : null;
         arr.push({
           id,
           name: safeText(a.name, "Untitled"),
@@ -764,27 +892,10 @@
           downloadUrl: safeText(a.downloadUrl, ""),
           changelog: safeText(a.changelog, ""),
           screenshots: Array.isArray(a.screenshots) ? a.screenshots.slice(0, 12) : [],
-          ratings: (a.ratings && typeof a.ratings === "object") ? a.ratings : null
+          reviews
         });
       }
       return arr;
-    }
-
-    function computeRatingStats(app){
-      // real stats dihitung dari apps/{id}/ratings/{uid}
-      const r = app.ratings;
-      if (!r) return { avg: 0, count: 0 };
-
-      let sum = 0;
-      let count = 0;
-      for (const uid in r){
-        const stars = Number(r[uid]?.stars);
-        if (isFinite(stars) && stars >= 1 && stars <= 5){
-          sum += stars;
-          count += 1;
-        }
-      }
-      return { avg: count ? (sum / count) : 0, count };
     }
 
     function buildCategories(){
@@ -829,11 +940,11 @@
         copy.sort((x,y)=> (y.downloads||0) - (x.downloads||0));
       } else if (sortBy === "rating"){
         copy.sort((x,y)=>{
-          const rx = computeRatingStats(x).avg;
-          const ry = computeRatingStats(y).avg;
+          const rx = computeReviewStats(x.reviews).avg;
+          const ry = computeReviewStats(y.reviews).avg;
           return ry - rx;
         });
-      } else { // latest
+      } else {
         copy.sort((x,y)=>{
           const dx = parseDate(x.updatedAt)?.getTime() || 0;
           const dy = parseDate(y.updatedAt)?.getTime() || 0;
@@ -844,7 +955,7 @@
     }
 
     function createCard(a){
-      const {avg, count} = computeRatingStats(a);
+      const {avg, count} = computeReviewStats(a.reviews);
 
       const card = document.createElement("div");
       card.className = "card";
@@ -890,8 +1001,8 @@
       const sub = document.createElement("div");
       sub.className = "subrow";
       sub.innerHTML = `
-        <span>${starsHtml(avg)}</span>
-        <span class="ratingText">${avg ? avg.toFixed(1) : "0.0"}</span>
+        <span>${starsDisplay(avg)}</span>
+        <span class="ratingNum">${avg ? avg.toFixed(1) : "0.0"}</span>
         <span>(${count})</span>
         <span class="dot">•</span>
         <span>${a.version ? "v"+a.version : "-"}</span>
@@ -917,7 +1028,7 @@
           toast("Link download belum diisi.");
           return;
         }
-        e.stopPropagation();
+        e.stopPropagation(); // supaya klik tombol tidak buka modal
       };
 
       card.appendChild(img);
@@ -949,46 +1060,53 @@
       }
     }
 
-    // ===== Detail + Rating (1 akun 1 vote) =====
-    async function getMyRating(appId){
+    // ===== Detail + Review (rating + comment) =====
+    let currentAppId = null;
+
+    async function getMyReview(appId){
       if (!currentUser) return null;
       const uid = currentUser.uid;
-      const snap = await get(ref(db, `apps/${appId}/ratings/${uid}`));
+      const snap = await get(ref(db, `apps/${appId}/reviews/${uid}`));
       return snap.exists() ? snap.val() : null;
     }
 
-    async function setMyRating(appId, stars){
+    async function submitReview(appId, stars, comment){
       if (!currentUser){
-        toast("Login dulu untuk rating.");
+        toast("Login dulu untuk ulasan.");
         return;
       }
       const uid = currentUser.uid;
-      const ratingRef = ref(db, `apps/${appId}/ratings/${uid}`);
+      const reviewRef = ref(db, `apps/${appId}/reviews/${uid}`);
 
-      // 1 akun = 1 data (overwrite rating lama, tetap 1 vote)
-      await set(ratingRef, {
+      const payload = {
         stars: Number(stars),
+        comment: String(comment || ""),
+        userName: currentUser.displayName || "User",
+        userPhoto: currentUser.photoURL || "",
         updatedAt: Date.now()
-      });
+      };
 
-      toast("Rating tersimpan!");
+      await set(reviewRef, payload);
+      toast("Ulasan tersimpan!");
     }
 
     function openDetail(id){
       const a = allApps.find(x => x.id === id);
       if (!a) return;
 
-      const {avg, count} = computeRatingStats(a);
+      currentAppId = id;
 
       const url = new URL(location.href);
       url.searchParams.set("id", id);
       history.replaceState({}, "", url);
 
+      const {avg, count} = computeReviewStats(a.reviews);
+
       const shotsHtml = (a.screenshots && a.screenshots.length)
         ? `<div class="section">
              <h3>Screenshots</h3>
-             <div class="shots">
-               ${a.screenshots.map(s => `<img class="shot" src="${s}" alt="screenshot" onerror="this.style.display='none'">`).join("")}
+             <div style="display:flex;gap:10px;overflow:auto;padding-bottom:4px">
+               ${a.screenshots.map(s => `<img style="width:180px;height:110px;border-radius:14px;object-fit:cover;border:1px solid var(--line);background:#fff" src="${s}" alt="screenshot" onerror="this.style.display='none'">`).join("")}
              </div>
            </div>`
         : "";
@@ -999,9 +1117,9 @@
           <div style="min-width:0">
             <h2>${a.name}</h2>
             <div class="small">
-              <span>${starsHtml(avg)}</span>
-              <span style="font-weight:900;color:var(--text)">${avg ? avg.toFixed(1) : "0.0"}</span>
-              <span>(${count} rating)</span>
+              <span>${starsDisplay(avg)}</span>
+              <span class="ratingNum">${avg ? avg.toFixed(1) : "0.0"}</span>
+              <span>(${count} ulasan)</span>
               <span style="opacity:.6">•</span>
               <span>${a.category || "Lainnya"}</span>
               <span style="opacity:.6">•</span>
@@ -1010,7 +1128,7 @@
               ${isNew(a.updatedAt) ? `<span class="badge new">NEW</span>` : ``}
             </div>
 
-            <div class="actions" style="margin-top:12px">
+            <div class="actions">
               <a class="btn primary" href="${a.downloadUrl || "#"}" target="_blank" rel="noopener" ${a.downloadUrl ? "" : "onclick='return false;'"}>
                 ⬇ Download APK
               </a>
@@ -1029,22 +1147,36 @@
           <div class="box"><div class="k">Downloads</div><div class="v">${fmtNum(a.downloads)}</div></div>
         </div>
 
-        <div class="section">
-          <h3>
-            <span>Rating (1 akun = 1 vote)</span>
-            <span class="rateHint" id="rateStatus">Loading...</span>
-          </h3>
-
-          <div class="rateWrap">
-            <div class="rateStars" id="rateStars"></div>
-            <div style="display:flex; gap:8px; flex-wrap:wrap">
-              <button class="btn" id="rateLoginBtn" style="display:none;">Login untuk Rating</button>
+        <div class="section" id="reviewSection">
+          <div class="reviewHeader">
+            <h3 style="margin:0">Ratings & reviews</h3>
+            <div class="reviewSummary" id="reviewSummary">
+              <span>${starsDisplay(avg)}</span>
+              <span class="ratingNum" id="avgNum">${avg ? avg.toFixed(1) : "0.0"}</span>
+              <span id="reviewCount">(${count})</span>
             </div>
           </div>
 
-          <div class="rateHint" style="margin-top:8px;">
-            Rating kamu disimpan per akun Google (UID). Kamu bisa ubah rating, tapi tetap dihitung 1 vote.
+          <div class="reviewForm">
+            <div class="rateStars" id="rateStars"></div>
+
+            <textarea id="commentBox" placeholder="Tulis ulasan kamu (opsional)..."></textarea>
+
+            <div class="formRow">
+              <div class="hint" id="reviewHint">Pilih bintang, tulis ulasan, lalu klik Kirim.</div>
+              <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+                <button class="btn" id="reviewLoginBtn" style="display:none;">Login untuk Ulasan</button>
+                <button class="btn primary" id="submitReviewBtn">Kirim</button>
+              </div>
+            </div>
+
+            <div class="hint">
+              1 akun Google = 1 ulasan. Kamu bisa <b>Perbarui</b> ulasan kapan saja.
+              <span id="charInfo" class="hint"></span>
+            </div>
           </div>
+
+          <div class="reviewsList" id="reviewsList"></div>
         </div>
 
         <div class="section">
@@ -1065,7 +1197,7 @@
       overlay.classList.add("show");
       overlay.setAttribute("aria-hidden", "false");
 
-      // share/copy buttons
+      // share/copy
       const copyBtn = document.getElementById("copyLinkBtn");
       const shareBtn = document.getElementById("shareBtn");
       const shareUrl = location.href;
@@ -1089,64 +1221,9 @@
         }
       };
 
-      // rating widget
-      const rateStarsEl = document.getElementById("rateStars");
-      const rateStatusEl = document.getElementById("rateStatus");
-      const rateLoginBtn = document.getElementById("rateLoginBtn");
-
-      rateLoginBtn.onclick = async () => {
-        try{
-          await signInWithPopup(auth, provider);
-          toast("Login berhasil!");
-          // after login, refresh rating view
-          renderMyRating();
-        } catch (e){
-          toast("Login gagal. Cek Authorized domains.");
-          console.error(e);
-        }
-      };
-
-      const renderStars = (selected) => {
-        rateStarsEl.innerHTML = "";
-        for (let i=1;i<=5;i++){
-          const btn = document.createElement("button");
-          btn.className = "rateBtnStar";
-          btn.type = "button";
-          btn.innerHTML = starSvg(i <= selected);
-          btn.onclick = async () => {
-            if (!currentUser){
-              toast("Login dulu untuk rating.");
-              rateLoginBtn.style.display = "inline-flex";
-              return;
-            }
-            try{
-              await setMyRating(id, i);
-              renderStars(i);
-              rateStatusEl.textContent = "Rating kamu: " + i + "/5";
-            } catch (e){
-              toast("Gagal simpan rating.");
-              console.error(e);
-            }
-          };
-          rateStarsEl.appendChild(btn);
-        }
-      };
-
-      const renderMyRating = async () => {
-        if (!currentUser){
-          renderStars(0);
-          rateStatusEl.textContent = "Login untuk memberi rating";
-          rateLoginBtn.style.display = "inline-flex";
-          return;
-        }
-        rateLoginBtn.style.display = "none";
-        const mine = await getMyRating(id);
-        const myStars = Number(mine?.stars || 0);
-        renderStars(myStars);
-        rateStatusEl.textContent = myStars ? ("Rating kamu: " + myStars + "/5") : "Klik bintang untuk rating";
-      };
-
-      renderMyRating();
+      // review logic
+      setupReviewUI(id);
+      renderReviewsList(id);
     }
 
     function closeDetail(){
@@ -1155,6 +1232,7 @@
       const url = new URL(location.href);
       url.searchParams.delete("id");
       history.replaceState({}, "", url);
+      currentAppId = null;
     }
 
     closeBtn.onclick = closeDetail;
@@ -1180,6 +1258,201 @@
       renderList();
     });
 
+    // ===== Review UI =====
+    function setupReviewUI(appId){
+      const rateStarsEl = document.getElementById("rateStars");
+      const commentBox = document.getElementById("commentBox");
+      const submitBtn = document.getElementById("submitReviewBtn");
+      const loginReviewBtn = document.getElementById("reviewLoginBtn");
+      const hintEl = document.getElementById("reviewHint");
+      const charInfo = document.getElementById("charInfo");
+
+      let selectedStars = 0;     // ini yang dipilih user (belum terkirim)
+      let hoverStars = 0;        // warna saat hover
+      let hasExisting = false;   // sudah pernah review?
+
+      const MAX_LEN = 500;
+
+      function updateCharInfo(){
+        const len = (commentBox.value || "").length;
+        charInfo.textContent = ` • ${len}/${MAX_LEN}`;
+        if (len > MAX_LEN){
+          charInfo.classList.add("danger");
+          charInfo.textContent = ` • ${len}/${MAX_LEN} (kepanjangan)`;
+        } else {
+          charInfo.classList.remove("danger");
+        }
+      }
+
+      function renderStars(){
+        rateStarsEl.innerHTML = "";
+        const show = hoverStars || selectedStars;
+        for (let i=1;i<=5;i++){
+          const btn = document.createElement("button");
+          btn.type = "button";
+          btn.className = "starBtn";
+          btn.innerHTML = starSvg(i <= show);
+          btn.onmouseenter = () => { hoverStars = i; renderStars(); };
+          btn.onmouseleave = () => { hoverStars = 0; renderStars(); };
+          btn.onclick = () => { selectedStars = i; renderStars(); };
+          rateStarsEl.appendChild(btn);
+        }
+      }
+
+      async function loadMyExistingReview(){
+        if (!currentUser){
+          hasExisting = false;
+          selectedStars = 0;
+          commentBox.value = "";
+          submitBtn.textContent = "Kirim";
+          hintEl.textContent = "Login untuk memberi ulasan.";
+          loginReviewBtn.style.display = "inline-flex";
+          renderStars();
+          updateCharInfo();
+          return;
+        }
+
+        loginReviewBtn.style.display = "none";
+        hintEl.textContent = "Pilih bintang, tulis ulasan, lalu klik Kirim.";
+
+        const mine = await getMyReview(appId);
+        if (mine){
+          hasExisting = true;
+          selectedStars = Number(mine.stars || 0);
+          commentBox.value = String(mine.comment || "");
+          submitBtn.textContent = "Perbarui";
+          hintEl.textContent = `Ulasan kamu terakhir diupdate: ${timeAgo(mine.updatedAt)}`;
+        } else {
+          hasExisting = false;
+          selectedStars = 0;
+          commentBox.value = "";
+          submitBtn.textContent = "Kirim";
+        }
+        renderStars();
+        updateCharInfo();
+      }
+
+      loginReviewBtn.onclick = async () => {
+        try{
+          await signInWithPopup(auth, provider);
+          toast("Login berhasil!");
+          await loadMyExistingReview();
+        } catch (e){
+          toast("Login gagal. Cek Authorized domains.");
+          console.error(e);
+        }
+      };
+
+      commentBox.addEventListener("input", updateCharInfo);
+
+      submitBtn.onclick = async () => {
+        if (!currentUser){
+          toast("Login dulu untuk ulasan.");
+          loginReviewBtn.style.display = "inline-flex";
+          return;
+        }
+        if (selectedStars < 1 || selectedStars > 5){
+          toast("Pilih rating 1–5 bintang dulu.");
+          return;
+        }
+        const comment = (commentBox.value || "").trim();
+        if (comment.length > MAX_LEN){
+          toast("Komentar terlalu panjang (max 500).");
+          return;
+        }
+
+        try{
+          await submitReview(appId, selectedStars, comment);
+          submitBtn.textContent = "Perbarui";
+          hintEl.textContent = "Ulasan tersimpan. Kamu bisa perbarui kapan saja.";
+          // refresh list display (apps listener akan update juga)
+          renderReviewsList(appId);
+        } catch (e){
+          toast("Gagal menyimpan ulasan.");
+          console.error(e);
+        }
+      };
+
+      renderStars();
+      updateCharInfo();
+      loadMyExistingReview();
+
+      // Jika user login/logout saat modal terbuka, reload review form
+      const unsub = onAuthStateChanged(auth, async () => {
+        if (currentAppId === appId){
+          await loadMyExistingReview();
+        }
+      });
+      // simpan unsub untuk close? (tidak wajib untuk demo; kecil)
+      setupReviewUI._unsub = unsub;
+    }
+
+    function renderReviewsList(appId){
+      const a = allApps.find(x => x.id === appId);
+      if (!a) return;
+
+      const list = document.getElementById("reviewsList");
+      const avgNum = document.getElementById("avgNum");
+      const reviewCount = document.getElementById("reviewCount");
+
+      if (!list || !avgNum || !reviewCount) return;
+
+      const reviewsObj = a.reviews || {};
+      const entries = Object.entries(reviewsObj)
+        .map(([uid, v]) => ({
+          uid,
+          stars: Number(v?.stars || 0),
+          comment: String(v?.comment || ""),
+          userName: String(v?.userName || "User"),
+          userPhoto: String(v?.userPhoto || ""),
+          updatedAt: Number(v?.updatedAt || 0)
+        }))
+        .filter(r => r.stars >= 1 && r.stars <= 5)
+        .sort((x,y) => (y.updatedAt||0) - (x.updatedAt||0));
+
+      const stats = computeReviewStats(reviewsObj);
+      avgNum.textContent = stats.avg ? stats.avg.toFixed(1) : "0.0";
+      reviewCount.textContent = `(${stats.count})`;
+
+      list.innerHTML = "";
+
+      if (entries.length === 0){
+        list.innerHTML = `<div class="hint">Belum ada ulasan. Jadilah yang pertama!</div>`;
+        return;
+      }
+
+      // Tampilkan maksimal 20 ulasan terbaru
+      const shown = entries.slice(0, 20);
+
+      for (const r of shown){
+        const div = document.createElement("div");
+        div.className = "reviewItem";
+        div.innerHTML = `
+          <img class="rAvatar" src="${r.userPhoto || "icon/default.png"}" alt="avatar" onerror="this.src='icon/default.png'">
+          <div class="rMain">
+            <div class="rTop">
+              <div style="display:flex;gap:8px;align-items:center;min-width:0;flex-wrap:wrap">
+                <div class="rName" title="${r.userName}">${r.userName}</div>
+                <div>${starsDisplay(r.stars)}</div>
+              </div>
+              <div class="rTime">${r.updatedAt ? timeAgo(r.updatedAt) : ""}</div>
+            </div>
+            ${r.comment ? `<div class="rComment">${escapeHtml(r.comment)}</div>` : `<div class="hint" style="margin-top:6px;">(Tanpa komentar)</div>`}
+          </div>
+        `;
+        list.appendChild(div);
+      }
+    }
+
+    function escapeHtml(s){
+      return String(s)
+        .replaceAll("&","&amp;")
+        .replaceAll("<","&lt;")
+        .replaceAll(">","&gt;")
+        .replaceAll('"',"&quot;")
+        .replaceAll("'","&#039;");
+    }
+
     // Load apps realtime
     const appsRef = ref(db, "apps");
     onValue(appsRef, (snapshot)=>{
@@ -1188,10 +1461,15 @@
       buildCategories();
       renderList();
 
+      // update modal review list live if open
+      if (currentAppId){
+        renderReviewsList(currentAppId);
+      }
+
       // auto open detail if ?id=...
       const url = new URL(location.href);
       const id = url.searchParams.get("id");
-      if (id) openDetail(id);
+      if (id && !currentAppId) openDetail(id);
     }, (err)=>{
       listEl.innerHTML = `<div class="state">Gagal load data. Cek Rules / koneksi internet.<br><br><b>${safeText(err?.message,"")}</b></div>`;
       console.error(err);
