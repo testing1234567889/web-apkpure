@@ -686,6 +686,7 @@
     .starBtn:hover{background: rgba(26,115,232,.08)}
     .starBtn svg{width: 30px; height: 30px}
     .hint{color: var(--muted); font-size: 12px}
+    .hidden{display:none !important;}
     textarea{
       width:100%;min-height: 92px;resize: vertical;
       border-radius: 16px;border: 1px solid var(--line);
@@ -1439,22 +1440,26 @@
 
 
 
-    // ====== Review edit limit ======
-    const REVIEW_EDIT_LIMIT_MS = 30 * 1000;
+    // ====== Review edit cooldown ======
+    const REVIEW_EDIT_COOLDOWN_MS = 30 * 1000;
 
+    /**
+     * Non-admin: setelah mengirim / perbarui ulasan, tombol edit terkunci 30 detik.
+     * Admin: bebas edit.
+     */
     function getReviewEditRemainingMs(review, uid){
       if (!review) return 0;
       if (isAdminUid(uid)) return Infinity;
-      const created = Number(review.createdAt || review.updatedAt || 0);
-      if (!created) return 0;
-      return (created + REVIEW_EDIT_LIMIT_MS) - Date.now();
+      const updated = Number(review.updatedAt || review.createdAt || 0);
+      if (!updated) return 0;
+      return (updated + REVIEW_EDIT_COOLDOWN_MS) - Date.now();
     }
     function canEditReview(review, uid){
       const rem = getReviewEditRemainingMs(review, uid);
-      return rem === Infinity || rem > 0;
+      return rem === Infinity || rem <= 0;
     }
 
-    // ====== Realtime edit countdown (30 detik) ======
+    // ====== Realtime edit cooldown countdown (30 detik) ======
     let _reviewEditTicker = null;
     let _reviewEditTickerAppId = null;
 
@@ -1470,7 +1475,7 @@
       stopReviewEditTicker();
       _reviewEditTickerAppId = appId;
 
-      // only run when there is a review and still editable (non-admin)
+      // only run when there is a review AND still locked (non-admin)
       if (!currentUser || !currentAppId) return;
       const a0 = appById(appId);
       const mine0 = a0?.reviews?.[currentUser.uid] || null;
@@ -1494,24 +1499,55 @@
           stopReviewEditTicker();
           return;
         }
-        const secs = Math.max(0, Math.ceil(rem/1000));
-        const c1 = document.getElementById("editCountdown");
-        if (c1) c1.textContent = String(secs);
-        const c2 = document.getElementById("editorCountdown");
-        if (c2) c2.textContent = String(secs);
 
-        if (rem <= 0){
-          const editBtn = document.getElementById("editReviewBtn");
+        const editBtn = document.getElementById("editReviewBtn");
+        const submitBtn = document.getElementById("submitReviewBtn");
+        const hintEl = document.getElementById("reviewHint");
+        const editorEl = document.getElementById("reviewEditor");
+        const editorOpen = editorEl?.classList?.contains("show");
+
+        if (rem > 0){
+          const secs = Math.max(0, Math.ceil(rem/1000));
+          const c1 = document.getElementById("editCountdown");
+          if (c1) c1.textContent = String(secs);
+          const c2 = document.getElementById("editorCountdown");
+          if (c2) c2.textContent = String(secs);
+
           if (editBtn){
             editBtn.disabled = true;
             editBtn.style.opacity = ".5";
           }
-          const submitBtn = document.getElementById("submitReviewBtn");
-          if (submitBtn) submitBtn.disabled = true;
-          const hintEl = document.getElementById("reviewHint");
-          if (hintEl) hintEl.textContent = "Edit terkunci (30 dtk).";
-          stopReviewEditTicker();
+          if (submitBtn && editorOpen) submitBtn.disabled = true;
+
+          if (hintEl){
+            // keep existing countdown node if present
+            if (hintEl.querySelector("#editorCountdown")){
+              // no-op (tick updates the span)
+            } else {
+              hintEl.innerHTML = `Edit terkunci: <span id="editorCountdown">${secs}</span> dtk`;
+            }
+          }
+          return;
         }
+
+        // unlocked
+        if (editBtn){
+          editBtn.disabled = false;
+          editBtn.style.opacity = "1";
+        }
+        if (submitBtn && editorOpen) submitBtn.disabled = false;
+
+        // rerender summary to remove countdown label
+        try{
+          const a2 = appById(_reviewEditTickerAppId);
+          refreshMyReviewSummary(_reviewEditTickerAppId, a2?.reviews || {});
+        }catch{}
+
+        if (hintEl && (hintEl.querySelector("#editorCountdown") || String(hintEl.textContent||"").includes("Edit terkunci"))){
+          hintEl.textContent = "Silakan edit.";
+        }
+
+        stopReviewEditTicker();
       };
 
       tick();
@@ -2391,7 +2427,7 @@
       const uid = currentUser.uid;
       const now = Date.now();
 
-      // Read existing first to enforce edit window (30s) for non-admin
+      // Read existing first to enforce edit cooldown (30s) for non-admin
       let existing = null;
       try{
         const s = await get(ref(db, `apps/${appId}/reviews/${uid}`));
@@ -2400,11 +2436,14 @@
 
       const baseCreatedAt = existing ? Number(existing.createdAt || existing.updatedAt || now) : now;
 
+      // cooldown: setelah kirim/perbarui, tunggu 30 detik baru boleh edit lagi
       if (existing && !isAdminUid(uid)){
-        const remain = (baseCreatedAt + REVIEW_EDIT_LIMIT_MS) - now;
-        if (remain <= 0){
-          const err = new Error("EDIT_EXPIRED");
-          err.code = "EDIT_EXPIRED";
+        const last = Number(existing.updatedAt || existing.createdAt || 0);
+        const remain = (last + REVIEW_EDIT_COOLDOWN_MS) - now;
+        if (remain > 0){
+          const err = new Error("EDIT_COOLDOWN");
+          err.code = "EDIT_COOLDOWN";
+          err.remainMs = remain;
           throw err;
         }
       }
@@ -2561,7 +2600,7 @@
                 </div>
 
                 <div class="hint" style="margin-top:8px">
-                  1 akun Google = 1 ulasan (edit 30 detik). <span id="charInfo" class="hint"></span>
+                  1 akun Google = 1 ulasan. Edit terkunci 30 dtk setelah kirim. <span id="charInfo" class="hint"></span>
                 </div>
               </div>
             </div>
@@ -2704,10 +2743,8 @@
       const rem = getReviewEditRemainingMs(mine, currentUser.uid);
       if (rem === Infinity){
         extra = `<span>•</span><span class="hint">ADMIN</span>`;
-      } else {
-        extra = (rem > 0)
-          ? `<span>•</span><span class="hint">Edit: <span id="editCountdown">${Math.ceil(rem/1000)}</span> dtk</span>`
-          : `<span>•</span><span class="hint">Edit terkunci (30 dtk)</span>`;
+      } else if (rem > 0){
+        extra = `<span>•</span><span class="hint">Tunggu: <span id="editCountdown">${Math.ceil(rem/1000)}</span> dtk</span>`;
       }
 
       body.innerHTML = `
@@ -2793,13 +2830,15 @@
           const rem = getReviewEditRemainingMs(mine, currentUser.uid);
           if (rem === Infinity){
             hintEl.textContent = "Admin: edit bebas.";
+            submitBtn.disabled = false;
             stopReviewEditTicker();
           } else if (rem > 0){
-            hintEl.innerHTML = `Edit: <span id="editorCountdown">${Math.ceil(rem/1000)}</span> dtk`;
+            hintEl.innerHTML = `Edit terkunci: <span id="editorCountdown">${Math.ceil(rem/1000)}</span> dtk`;
+            submitBtn.disabled = true;
             startReviewEditTicker(appId);
           } else {
-            hintEl.textContent = "Edit terkunci (30 dtk).";
-            submitBtn.disabled = true;
+            hintEl.textContent = "Silakan edit.";
+            submitBtn.disabled = false;
             stopReviewEditTicker();
           }
         } else {
@@ -2820,7 +2859,9 @@
 
         const mine = await getMyReview(appId);
         if (mine && !canEditReview(mine, currentUser.uid)){
-          toast("Waktu edit habis (30 detik).");
+          const rem = getReviewEditRemainingMs(mine, currentUser.uid);
+          const secs = Math.max(1, Math.ceil(rem/1000));
+          toast(`Edit terkunci. Tunggu ${secs} dtk.`);
           return;
         }
 
@@ -2854,10 +2895,21 @@
           await submitReview(appId, selectedStars, comment);
           toast("Ulasan tersimpan.");
           setEditorOpen(false); // ✅ setelah kirim/perbarui, editor hilang
+
+          // lock edit instantly (tanpa nunggu listener)
+          try{
+            const a = appById(appId);
+            refreshMyReviewSummary(appId, a?.reviews || {});
+            startReviewEditTicker(appId);
+          }catch{}
+
           // summary akan ke-update dari listener
         } catch (e){
-          if (String(e?.code||e?.message||"") === "EDIT_EXPIRED") toast("Waktu edit habis (30 detik).");
-          else toast("Gagal menyimpan ulasan. Cek Rules.");
+          if (String(e?.code||e?.message||"") === "EDIT_COOLDOWN"){
+            const ms = Number(e?.remainMs || 0);
+            const secs = ms ? Math.max(1, Math.ceil(ms/1000)) : 30;
+            toast(`Edit terkunci. Tunggu ${secs} dtk.`);
+          } else toast("Gagal menyimpan ulasan. Cek Rules.");
           console.error(e);
         }
       };
