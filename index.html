@@ -220,7 +220,29 @@
     .linkBtn:hover{background: rgba(26,115,232,.08)}
     .linkBtn:active{transform:scale(.99)}
 
-    /* Banner carousel */
+    
+
+    .arrowBtn{
+      width:44px;height:44px;border-radius:999px;
+      border:1px solid var(--line);
+      background: rgba(255,255,255,.92);
+      cursor:pointer;
+      display:grid;place-items:center;
+      box-shadow: 0 10px 18px rgba(15,23,42,.06);
+      padding:0;
+      flex:0 0 auto;
+    }
+    .arrowBtn svg{width:20px;height:20px}
+    .arrowBtn:hover{background: rgba(26,115,232,.06)}
+    .arrowBtn:active{transform:scale(.99)}
+
+    .btn.dangerSolid{
+      background: var(--danger);
+      border-color: transparent;
+      color: #fff;
+      box-shadow: 0 10px 18px rgba(239,68,68,.18);
+    }
+/* Banner carousel */
     .bannerRow{
       display:flex;gap:12px;overflow:auto;
       -webkit-overflow-scrolling: touch;
@@ -412,7 +434,8 @@
       overflow:auto;-webkit-overflow-scrolling: touch;
     }
     .overlay.show{display:block}
-    .modal{
+        .overlay.dialog{z-index: 85;}
+.modal{
       width: min(960px, 100%);
       margin: 32px auto;
       background: var(--card);
@@ -766,7 +789,7 @@
     .profileStats{
       margin-top: 14px;
       display:grid;
-      grid-template-columns: repeat(3, minmax(0,1fr));
+      grid-template-columns: repeat(auto-fit, minmax(0,1fr));
       gap: 10px;
     }
     .stat{
@@ -948,6 +971,22 @@
         </button>
       </div>
       <div class="modalBody" id="modalBody"></div>
+  <!-- Dialog / info modal (for profile info + confirmations) -->
+  <div class="overlay dialog" id="dialogOverlay" aria-hidden="true">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="dialogTitle">
+      <div class="modalTop">
+        <div class="modalTitle" id="dialogTitle">Dialog</div>
+        <button class="xbtn" id="dialogCloseBtn" aria-label="Tutup dialog">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M6 6l12 12M18 6 6 18" stroke="#0f172a" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+        </button>
+      </div>
+      <div class="modalBody" id="dialogBody"></div>
+    </div>
+  </div>
+
+
     </div>
   </div>
 
@@ -998,6 +1037,10 @@
     const modalBody = $("modalBody");
     const modalTitle = $("modalTitle");
     const closeBtn = $("closeBtn");
+    const dialogOverlay = $("dialogOverlay");
+    const dialogBody = $("dialogBody");
+    const dialogTitle = $("dialogTitle");
+    const dialogCloseBtn = $("dialogCloseBtn");
     const toastEl = $("toast");
     const loginBtn = $("loginBtn");
     const avatarBtn = $("avatarBtn");
@@ -1008,6 +1051,50 @@
       toastEl.style.display = "block";
       clearTimeout(toastEl._t);
       toastEl._t = setTimeout(()=>toastEl.style.display="none", 1900);
+    }
+
+    function openDialog(title, html){
+      dialogTitle.textContent = title;
+      dialogBody.innerHTML = html;
+      dialogOverlay.classList.add("show");
+      dialogOverlay.setAttribute("aria-hidden","false");
+      lockBodyScroll(true);
+    }
+    function closeDialog(){
+      dialogOverlay.classList.remove("show");
+      dialogOverlay.setAttribute("aria-hidden","true");
+      if (!overlay.classList.contains("show")) lockBodyScroll(false);
+    }
+
+    function confirmLogout(){
+      openDialog("Logout", `
+        <div class="panel">
+          <div class="panelHead"><h3>Logout</h3></div>
+          <p style="margin:0">Yakin ingin logout dari akun ini?</p>
+          <div style="display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;margin-top:12px">
+            <button class="btn" id="dlgCancel" type="button">Batal</button>
+            <button class="btn dangerSolid" id="dlgLogout" type="button">Logout</button>
+          </div>
+        </div>
+      `);
+
+      const cancelBtn = document.getElementById("dlgCancel");
+      const okBtn = document.getElementById("dlgLogout");
+      if (cancelBtn) cancelBtn.onclick = closeDialog;
+      if (okBtn) okBtn.onclick = async ()=>{
+        okBtn.disabled = true;
+        okBtn.style.opacity = ".85";
+        try{
+          await signOut(auth);
+          closeDialog();
+          toast("Logout berhasil.");
+        } catch(e){
+          console.error(e);
+          toast("Logout gagal.");
+          okBtn.disabled = false;
+          okBtn.style.opacity = "1";
+        }
+      };
     }
     function safeText(v, fallback=""){ return (typeof v === "string" || typeof v === "number") ? String(v) : fallback; }
     function escapeHtml(s){
@@ -1095,6 +1182,17 @@
     }
     function iconThumbDown(){
       return `<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M10 14v6a2 2 0 0 0 2 2l5-10V2H7a2 2 0 0 0-2 1.5l-2 7A2 2 0 0 0 5 14h5Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M17 12h3V2h-3" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>`;
+    }
+
+    function iconChevronRight(){
+      return `<svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path d="M10 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>`;
+    }
+    function iconChevronDown(){
+      return `<svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path d="M6 10l6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>`;
     }
 
     function computeReviewStats(reviewsObj){
@@ -1439,7 +1537,7 @@
       head.className = "sectionHead";
       head.innerHTML = `
         <div class="sectionTitle">${escapeHtml(title)}</div>
-        ${onSeeAll ? `<button class="linkBtn" type="button">Lihat semua</button>` : ``}
+        ${onSeeAll ? `<button class="arrowBtn" type="button" aria-label="Lihat semua">${iconChevronRight()}</button>` : ``}
       `;
       if (onSeeAll) head.querySelector("button").onclick = onSeeAll;
 
@@ -1519,7 +1617,7 @@
       bannerSec.innerHTML = `
         <div class="sectionHead">
           <div class="sectionTitle">${state.tab === "games" ? "Populer Game" : "Populer Aplikasi"}</div>
-          <button class="linkBtn" type="button" id="goTopBtn">Lihat ranking</button>
+          <button class="arrowBtn" type="button" id="goTopBtn" aria-label="Buka Top">${iconChevronRight()}</button>
         </div>
       `;
       const row = document.createElement("div");
@@ -1615,7 +1713,7 @@
               <div class="profileStats">
                 <div class="stat"><div class="k">Whitelist</div><div class="v">0</div></div>
                 <div class="stat"><div class="k">Tab</div><div class="v">${state.tab === "games" ? "Game" : "Aplikasi"}</div></div>
-                <div class="stat"><div class="k">Status</div><div class="v">Guest</div></div>
+                
               </div>
             </div>
           </div>
@@ -1656,15 +1754,12 @@
                 <p class="pName">${escapeHtml(currentUser.displayName || "User")}</p>
                 <div class="pEmail">${escapeHtml(currentUser.email || "-")}</div>
               </div>
-              <div class="profileActions">
-                <button class="ghostBtn" id="pManageWL">Whitelist</button>
-              </div>
             </div>
 
             <div class="profileStats">
               <div class="stat"><div class="k">Whitelist</div><div class="v">${wItems.length}</div></div>
               <div class="stat"><div class="k">UID</div><div class="v" title="${escapeHtml(currentUser.uid)}">${escapeHtml(currentUser.uid).slice(0,8)}…</div></div>
-              <div class="stat"><div class="k">Status</div><div class="v">Login</div></div>
+              <div class="stat"><div class="k">Tab</div><div class="v">${state.tab === "games" ? "Game" : "Aplikasi"}</div></div>
             </div>
           </div>
         </div>
@@ -1717,11 +1812,43 @@
       `;
       contentEl.appendChild(shell);
 
-      shell.querySelector("#howData").onclick = ()=>toast("Data: apps/{appId} + reviews/{uid} + users/{uid}/whitelist");
-      shell.querySelector("#rulesTip").onclick = ()=>toast("Rules penting: write hanya boleh auth.uid untuk review/vote/whitelist");
-      shell.querySelector("#logoutRow").onclick = async ()=>{
-        try{ await signOut(auth); toast("Logout berhasil."); }catch(e){ console.error(e); toast("Logout gagal."); }
+      shell.querySelector("#howData").onclick = ()=>{
+        openDialog("Struktur data", `
+          <div class="panel">
+            <div class="panelHead"><h3>Struktur data</h3></div>
+            <p>
+              Data tersimpan di Firebase Realtime Database (RTDB).
+
+              • apps/{appId} → metadata aplikasi/game
+
+              • apps/{appId}/reviews/{uid} → 1 akun = 1 ulasan
+
+              • users/{uid}/whitelist/{appId} → item yang kamu simpan
+            </p>
+          </div>
+        `);
       };
+
+      shell.querySelector("#rulesTip").onclick = ()=>{
+        openDialog("Keamanan", `
+          <div class="panel">
+            <div class="panelHead"><h3>Keamanan</h3></div>
+            <p>
+              Saran rules dasar:
+
+              • Write review hanya untuk auth.uid milik user
+
+              • Whitelist hanya boleh write/read oleh user terkait
+
+              • Votes ulasan juga dibatasi auth.uid
+
+              (Supaya tidak ada user lain yang mengubah data akunmu.)
+            </p>
+          </div>
+        `);
+      };
+
+      shell.querySelector("#logoutRow").onclick = ()=>confirmLogout();
 
       const wlBody = shell.querySelector("#wlBody");
       if (!wItems.length){
@@ -1745,10 +1872,6 @@
         });
         wlBody.appendChild(list);
       }
-
-      shell.querySelector("#pManageWL").onclick = ()=>{
-        shell.querySelector("#wlCard").scrollIntoView({behavior:"smooth", block:"start"});
-      };
     }
 
     function render(){
@@ -2158,7 +2281,13 @@
     }
     closeBtn.onclick = closeDetail;
     overlay.addEventListener("click",(e)=>{ if (e.target===overlay) closeDetail(); });
-    window.addEventListener("keydown",(e)=>{ if (e.key==="Escape") closeDetail(); });
+    dialogCloseBtn.onclick = closeDialog;
+    dialogOverlay.addEventListener("click",(e)=>{ if (e.target===dialogOverlay) closeDialog(); });
+    window.addEventListener("keydown",(e)=>{
+      if (e.key !== "Escape") return;
+      if (dialogOverlay.classList.contains("show")) return closeDialog();
+      if (overlay.classList.contains("show")) return closeDetail();
+    });
 
     // ===== Review editor + summary =====
     let _reviewFormCache = null;
