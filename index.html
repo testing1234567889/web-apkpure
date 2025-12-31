@@ -30,12 +30,14 @@
     }
     *{box-sizing:border-box}
     html,body{height:100%}
+    html{overflow-x:clip}
     body{
       margin:0;
       font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
       background:var(--bg);
       color:var(--text);
       -webkit-tap-highlight-color: transparent;
+      overflow-x: hidden;
     }
     a{color:inherit;text-decoration:none}
     button, input, textarea, select{font:inherit}
@@ -228,7 +230,7 @@
     .banner{
       scroll-snap-align:start;
       flex:0 0 auto;
-      width: min(560px, calc(100vw - 28px - var(--safeL) - var(--safeR)));
+      width: min(560px, 100%);
       border-radius: 22px;
       border: 1px solid rgba(229,231,235,.8);
       background: #fff;
@@ -345,7 +347,10 @@
       box-shadow: var(--shadow);
       padding: 12px;
       cursor:pointer;
-      display:flex;gap: 12px;align-items:center;
+      display:grid;
+      grid-template-columns: 56px minmax(0, 1fr) auto;
+      gap: 12px;
+      align-items:center;
     }
     .rowMain{min-width:0; flex:1}
     .rowTitle{
@@ -462,6 +467,30 @@
       min-height:44px;
       display:inline-flex;align-items:center;gap:8px;
     }
+
+    .selectPill{
+      height: 40px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: #fff;
+      padding: 0 36px 0 14px;
+      cursor: pointer;
+      font-weight: 1000;
+      font-size: 13px;
+      color: var(--text);
+      outline: none;
+      appearance: none;
+      -webkit-appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none'%3E%3Cpath d='M6 8l4 4 4-4' stroke='%230f172a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+      background-size: 16px 16px;
+    }
+    .selectPill:focus{
+      border-color: rgba(26,115,232,.45);
+      box-shadow: 0 0 0 4px rgba(26,115,232,.10);
+    }
+
     .btn svg{width:18px;height:18px}
     .btn.primary{
       background: var(--brand);border-color: transparent;color:#fff;
@@ -816,6 +845,28 @@
       }
       .profileActions{justify-content:center;}
       .profileStats{grid-template-columns: repeat(2, minmax(0,1fr));}
+
+      :root{ --navH: 64px; }
+
+      /* prevent right overflow on very narrow screens */
+      .sectionHead{flex-wrap: wrap; gap: 10px;}
+      .bannerInner{flex-wrap: wrap; gap: 10px;}
+      .bannerCta{width: 100%; justify-content:center;}
+
+      /* Row card: move action button to next line so it never goes out of screen */
+      .rowCard{
+        grid-template-columns: 52px minmax(0,1fr);
+        align-items: start;
+      }
+      .rowCard > .ico{width:52px;height:52px;border-radius:14px;}
+      .rowMain{padding-top:2px;}
+      .rowCard .btnInstall{
+        grid-column: 1 / -1;
+        width: 100%;
+        justify-content: center;
+        margin-top: 8px;
+      }
+
     }
   </style>
 </head>
@@ -1228,7 +1279,8 @@
       const tab = e.target?.dataset?.tab;
       if (!tab) return;
       state.tab = tab;
-      state.page = "home";
+      // keep current page (home/top/profile) when switching tab
+      // so switching Apps/Game does not force back to Home.
       setActiveTabs();
       setActiveNav();
       updateHeaderVisibility();
@@ -1507,7 +1559,7 @@
         <div class="sectionTitle">Top ${state.tab === "games" ? "Game" : "Aplikasi"}</div>
         <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
           <div class="pill">Urutkan</div>
-          <select id="sortOnly" class="btn" style="height:40px;min-height:44px">
+          <select id="sortOnly" class="selectPill" aria-label="Urutkan daftar">
             <option value="popular">Populer</option>
             <option value="rating">Rating</option>
             <option value="latest">Terbaru</option>
