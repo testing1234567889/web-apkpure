@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<title>APK Download</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<!-- STYLE (APKPURE STYLE) -->
+<style>
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #f2f2f2;
+}
+
+.header {
+  background: #00a6ff;
+  color: white;
+  padding: 15px;
+  font-size: 20px;
+  font-weight: bold;
+}
+
+.container {
+  padding: 10px;
+}
+
+.app {
+  background: white;
+  display: flex;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 8px;
+  margin-bottom: 10px;
+  align-items: center;
+}
+
+.app img {
+  width: 60px;
+  height: 60px;
+  border-radius: 12px;
+  object-fit: cover;
+}
+
+.app-info {
+  flex: 1;
+}
+
+.app-info h3 {
+  margin: 0;
+  font-size: 16px;
+}
+
+.app-info p {
+  margin: 4px 0;
+  font-size: 13px;
+  color: #666;
+}
+
+.app-info span {
+  font-size: 12px;
+  color: #999;
+}
+
+.download-btn {
+  background: #00a6ff;
+  color: white;
+  padding: 8px 14px;
+  font-size: 13px;
+  border-radius: 20px;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.loading {
+  text-align: center;
+  color: #666;
+  padding: 20px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="header">APK Download</div>
+
+<div class="container" id="app-list">
+  <div class="loading">Loading aplikasi...</div>
+</div>
+
+<!-- FIREBASE + JS -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+/* 🔥 GANTI CONFIG INI */
+const firebaseConfig = {
+  apiKey: "API_KEY",
+  authDomain: "PROJECT.firebaseapp.com",
+  databaseURL: "https://PROJECT-ID.firebaseio.com",
+  projectId: "PROJECT-ID"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
+const appList = document.getElementById("app-list");
+const appsRef = ref(db, "apps");
+
+onValue(appsRef, (snapshot) => {
+  const data = snapshot.val();
+  appList.innerHTML = "";
+
+  if (!data) {
+    appList.innerHTML = "<div class='loading'>Belum ada aplikasi</div>";
+    return;
+  }
+
+  for (let key in data) {
+    const app = data[key];
+
+    appList.innerHTML += `
+      <div class="app">
+        <img src="${app.icon || 'https://via.placeholder.com/60'}">
+        <div class="app-info">
+          <h3>${app.name}</h3>
+          <p>${app.description}</p>
+          <span>Version ${app.version || '-'}</span>
+        </div>
+        <a class="download-btn" href="${app.downloadUrl}" target="_blank">
+          Download
+        </a>
+      </div>
+    `;
+  }
+});
+</script>
+
+</body>
+</html>
