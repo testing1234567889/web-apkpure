@@ -1388,6 +1388,23 @@
     }
 
 
+
+    // ====== Review edit limit ======
+    const REVIEW_EDIT_LIMIT_MS = 30 * 1000;
+
+    function getReviewEditRemainingMs(review, uid){
+      if (!review) return 0;
+      if (isAdminUid(uid)) return Infinity;
+      const created = Number(review.createdAt || review.updatedAt || 0);
+      if (!created) return 0;
+      return (created + REVIEW_EDIT_LIMIT_MS) - Date.now();
+    }
+    function canEditReview(review, uid){
+      const rem = getReviewEditRemainingMs(review, uid);
+      return rem === Infinity || rem > 0;
+    }
+
+
     function updateHeaderVisibility(){
       headerExtras.classList.toggle("hidden", state.page === "profile");
     }
@@ -1395,6 +1412,7 @@
     function typeOfApp(a){
       const t = String(a.type || "").toLowerCase().trim();
       if (t === "game" || t === "games") return "games";
+      if (t === "apk" || t === "aplikasi") return "apps";
       if (t === "app" || t === "apps") return "apps";
       return "apps";
     }
@@ -2188,13 +2206,33 @@
     async function submitReview(appId, stars, comment){
       if (!currentUser) throw new Error("Not logged in");
       const uid = currentUser.uid;
+      const now = Date.now();
+
+      // Read existing first to enforce edit window (30s) for non-admin
+      let existing = null;
+      try{
+        const s = await get(ref(db, `apps/${appId}/reviews/${uid}`));
+        existing = s.exists() ? (s.val() || null) : null;
+      } catch {}
+
+      const baseCreatedAt = existing ? Number(existing.createdAt || existing.updatedAt || now) : now;
+
+      if (existing && !isAdminUid(uid)){
+        const remain = (baseCreatedAt + REVIEW_EDIT_LIMIT_MS) - now;
+        if (remain <= 0){
+          const err = new Error("EDIT_EXPIRED");
+          err.code = "EDIT_EXPIRED";
+          throw err;
+        }
+      }
 
       const payload = {
         stars: Number(stars),
         comment: String(comment || ""),
         userName: currentUser.displayName || "User",
         userPhoto: currentUser.photoURL || "",
-        updatedAt: Date.now()
+        createdAt: baseCreatedAt,
+        updatedAt: now
       };
 
       // optimistic
@@ -2340,7 +2378,7 @@
                 </div>
 
                 <div class="hint" style="margin-top:8px">
-                  1 akun Google = 1 ulasan. <span id="charInfo" class="hint"></span>
+                  1 akun Google = 1 ulasan (edit 30 detik). <span id="charInfo" class="hint"></span>
                 </div>
               </div>
             </div>
@@ -2463,22 +2501,39 @@
         return;
       }
 
-      editBtn.style.opacity = "1";
-      editBtn.disabled = false;
-
       const mine = (reviews && reviews[currentUser.uid]) ? reviews[currentUser.uid] : null;
+
       if (!mine){
+        editBtn.style.opacity = "1";
+        editBtn.disabled = false;
         body.innerHTML = `<div class="myReviewEmpty">Belum ada ulasan. Tap ikon pensil untuk menulis.</div>`;
         return;
       }
+
+      const canEdit = canEditReview(mine, currentUser.uid);
+      editBtn.style.opacity = canEdit ? "1" : ".5";
+      editBtn.disabled = !canEdit;
+
       const s = Number(mine.stars || 0);
       const c = String(mine.comment || "");
+
+      let extra = "";
+      const rem = getReviewEditRemainingMs(mine, currentUser.uid);
+      if (rem === Infinity){
+        extra = `<span>•</span><span class="hint">ADMIN</span>`;
+      } else {
+        extra = (rem > 0)
+          ? `<span>•</span><span class="hint">Edit: ${Math.ceil(rem/1000)} dtk</span>`
+          : `<span>•</span><span class="hint">Edit terkunci (30 dtk)</span>`;
+      }
+
       body.innerHTML = `
         <div class="myReviewMeta">
           <span>${starsDisplay(s)}</span>
           <span class="ratingNum">${s || "0"}</span>
           <span>•</span>
           <span>${mine.updatedAt ? timeAgo(mine.updatedAt) : ""}</span>
+          ${extra}
         </div>
         ${c ? `<div class="myReviewText">${escapeHtml(c)}</div>` : `<div class="myReviewEmpty">(Tanpa komentar)</div>`}
       `;
@@ -2530,22 +2585,34 @@
           selectedStars = 0;
           commentBox.value = "";
           submitBtn.textContent = "Kirim";
+          submitBtn.disabled = true;
           hintEl.textContent = "Login dulu untuk ulasan.";
           renderStars(); updateSelectedLabel(); updateCharInfo();
           return;
         }
-        hintEl.textContent = "Isi lalu Kirim.";
+
+        submitBtn.disabled = false;
 
         const mine = await getMyReview(appId);
         if (mine){
           selectedStars = Number(mine.stars || 0);
           commentBox.value = String(mine.comment || "");
           submitBtn.textContent = "Perbarui";
-          hintEl.textContent = `Terakhir: ${timeAgo(mine.updatedAt)}`;
+
+          const rem = getReviewEditRemainingMs(mine, currentUser.uid);
+          if (rem === Infinity){
+            hintEl.textContent = "Admin: edit bebas.";
+          } else if (rem > 0){
+            hintEl.textContent = `Edit: ${Math.ceil(rem/1000)} dtk`;
+          } else {
+            hintEl.textContent = "Edit terkunci (30 dtk).";
+            submitBtn.disabled = true;
+          }
         } else {
           selectedStars = 0;
           commentBox.value = "";
           submitBtn.textContent = "Kirim";
+          hintEl.textContent = "Isi lalu Kirim.";
         }
         renderStars(); updateSelectedLabel(); updateCharInfo();
       }
@@ -2555,6 +2622,13 @@
           toast("Login dulu untuk ulasan.");
           return;
         }
+
+        const mine = await getMyReview(appId);
+        if (mine && !canEditReview(mine, currentUser.uid)){
+          toast("Waktu edit habis (30 detik).");
+          return;
+        }
+
         await loadMyExistingReview();
         setEditorOpen(true);
         // fokus halus
@@ -2587,7 +2661,8 @@
           setEditorOpen(false); // ✅ setelah kirim/perbarui, editor hilang
           // summary akan ke-update dari listener
         } catch (e){
-          toast("Gagal menyimpan ulasan. Cek Rules.");
+          if (String(e?.code||e?.message||"") === "EDIT_EXPIRED") toast("Waktu edit habis (30 detik).");
+          else toast("Gagal menyimpan ulasan. Cek Rules.");
           console.error(e);
         }
       };
@@ -2710,3 +2785,4 @@
   </script>
 </body>
 </html>
+
