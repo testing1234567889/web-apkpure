@@ -7,19 +7,20 @@
   <meta name="description" content="Preview aplikasi dan game di APK Store." />
   <meta name="theme-color" content="#f6f7fb" />
 
-  <!-- Biar path asset (icon/...) tetap aman dari root -->
+  <!-- PENTING:
+       Banyak data kamu (icon/default.png, screenshot url relatif, dll) biasanya RELATIF dari root.
+       Base ini bikin semua path relatif kebaca dari root, bukan dari /preview/.
+  -->
   <base href="../" />
 
-  <!-- CSS global (dipakai oleh preview.js untuk class-class yang sama) -->
-  <link rel="stylesheet" href="style.css" />
-  <!-- CSS khusus Android preview (HARUS di bawah style.css) -->
-  <link rel="stylesheet" href="preview/preview.css" />
+  <!-- CSS KHUSUS PREVIEW (HANYA INI) -->
+  <link rel="stylesheet" href="preview/style.css" />
 </head>
 
-<body class="preview android">
+<body class="preview">
 
-  <!-- App bar khusus preview -->
-  <header class="pAppBar" role="banner">
+  <!-- Android App Bar -->
+  <header class="pAppBar">
     <div class="pAppBarInner">
       <button class="pIconBtn" id="backBtn" type="button" aria-label="Kembali">
         <span aria-hidden="true">←</span>
@@ -31,7 +32,7 @@
       </div>
 
       <div class="pAuth">
-        <button class="pPillBtn" id="loginBtn" type="button">Login</button>
+        <button class="pLoginBtn" id="loginBtn" type="button">Login</button>
         <button class="pAvatarBtn" id="avatarBtn" type="button" aria-label="Profil">
           <img id="headerAvatar" alt="profil" />
         </button>
@@ -39,17 +40,17 @@
     </div>
   </header>
 
-  <!-- FULL PAGE content -->
-  <main class="previewPage" role="main">
+  <!-- Full page content -->
+  <main class="pMain">
     <div id="preview">
-      <div class="pState">Memuat aplikasi…</div>
+      <div class="state">Memuat aplikasi…</div>
     </div>
   </main>
 
   <!-- Toast -->
-  <div id="toast" class="pToast" aria-live="polite" aria-atomic="true"></div>
+  <div id="toast" class="toast" aria-live="polite" aria-atomic="true"></div>
 
-  <!-- Logic preview -->
+  <!-- Logic preview (tetap pakai yang kamu punya) -->
   <script type="module" src="preview/preview.js"></script>
 </body>
 </html>
