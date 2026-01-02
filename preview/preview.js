@@ -188,6 +188,17 @@ function computeVoteCounts(votesObj) {
   return counts;
 }
 
+
+// ===== Perf hint (low-end devices) =====
+try {
+  const dm = Number(navigator.deviceMemory || 0);
+  const hc = Number(navigator.hardwareConcurrency || 0);
+  // Heuristic: very low RAM / cores -> disable expensive blur/shadow in CSS
+  if ((dm && dm <= 2) || (hc && hc <= 4)) {
+    document.body.classList.add("lowPerf");
+  }
+} catch {}
+
 /* ===== Init ===== */
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
@@ -212,6 +223,28 @@ let voteCounts = {};
 let replies = {};
 let whitelist = {};
 let reviewFilterStar = 0;
+// ===== Reviews rendering perf =====
+const REVIEWS_PAGE_SIZE = 25;
+let reviewsVisibleCount = REVIEWS_PAGE_SIZE;
+
+let __reviewsRenderQueued = false;
+let __reviewsRenderMode = "full"; // "full" | "list"
+function scheduleReviewsRender(mode = "list") {
+  // Upgrade to full if any caller requests full.
+  if (mode === "full") __reviewsRenderMode = "full";
+  else if (!__reviewsRenderQueued) __reviewsRenderMode = mode;
+
+  if (__reviewsRenderQueued) return;
+  __reviewsRenderQueued = true;
+  requestAnimationFrame(() => {
+    __reviewsRenderQueued = false;
+    const m = __reviewsRenderMode;
+    __reviewsRenderMode = "list";
+    if (m === "full") renderReviewsOnly();
+    else renderReviewsList();
+  });
+}
+
 
 let unsubApp = null;
 let unsubReviews = null;
@@ -371,18 +404,18 @@ function startAppListeners() {
 
   unsubReviews = onValue(ref(db, `apps/${appId}/reviews`), (snap) => {
     reviews = snap.exists() ? (snap.val() || {}) : {};
-    renderReviewsOnly();
+    scheduleReviewsRender("full");
   });
 
   unsubVotes = onValue(ref(db, `apps/${appId}/reviewVotes`), (snap) => {
     reviewVotes = snap.exists() ? (snap.val() || {}) : {};
     voteCounts = computeVoteCounts(reviewVotes);
-    renderReviewsOnly();
+    scheduleReviewsRender("list");
   });
 
   unsubReplies = onValue(ref(db, `apps/${appId}/replies`), (snap) => {
     replies = snap.exists() ? (snap.val() || {}) : {};
-    renderReviewsOnly();
+    scheduleReviewsRender("list");
   });
 
   // whitelist listener is handled by auth state
@@ -638,6 +671,8 @@ function render() {
 function renderReviewsOnly() {
   const host = document.getElementById("reviewsPanel");
   if (!host) return;
+  // keep pagination sane
+  if (!reviewsVisibleCount || reviewsVisibleCount < REVIEWS_PAGE_SIZE) reviewsVisibleCount = REVIEWS_PAGE_SIZE;
 
   const stats = computeReviewStats(reviews);
   const distTotal = Math.max(1, stats.count);
@@ -653,7 +688,9 @@ function renderReviewsOnly() {
         <div>${c}</div>
       </div>
     `;
-  }).join("");
+  }).join("") + (hasMore ? `
+    <button class="btn" data-act="loadMore" type="button" style="align-self:center">Muat lagi</button>
+  ` : "");
 
   const me = getMyReview();
   const meStars = Number(me?.stars || 0);
@@ -723,20 +760,89 @@ function renderReviewsOnly() {
     <div class="reviewsList" id="reviewsList"></div>
   `;
 
-  // filter interactions
-  host.querySelectorAll(".barRow").forEach((row) => {
-    row.addEventListener("click", () => {
-      const star = Number(row.getAttribute("data-star") || "0");
-      reviewFilterStar = reviewFilterStar === star ? 0 : star;
-      renderReviewsOnly();
-    });
-  });
+  // interactions (delegation) - bind once
+  if (!host.__bound) {
+    host.__bound = true;
 
-  const clearFilterBtn = document.getElementById("clearFilterBtn");
-  clearFilterBtn?.addEventListener("click", () => {
-    reviewFilterStar = 0;
-    renderReviewsOnly();
-  });
+    host.addEventListener("click", (ev) => {
+      const bar = ev.target.closest(".barRow");
+      if (bar && host.contains(bar)) {
+        const star = Number(bar.getAttribute("data-star") || "0");
+        reviewFilterStar = reviewFilterStar === star ? 0 : star;
+        reviewsVisibleCount = REVIEWS_PAGE_SIZE;
+        // full re-render (updates active bars + pill)
+        renderReviewsOnly();
+        return;
+      }
+
+      const clear = ev.target.closest("#clearFilterBtn");
+      if (clear) {
+        reviewFilterStar = 0;
+        reviewsVisibleCount = REVIEWS_PAGE_SIZE;
+        renderReviewsOnly();
+        return;
+      }
+
+      const loadMore = ev.target.closest('[data-act="loadMore"]');
+      if (loadMore) {
+        reviewsVisibleCount += REVIEWS_PAGE_SIZE;
+        renderReviewsList();
+        return;
+      }
+
+      const voteBtn = ev.target.closest(".voteBtn");
+      if (voteBtn) {
+        const item = voteBtn.closest(".reviewItem");
+        const rid = item?.getAttribute("data-review");
+        const v = Number(voteBtn.getAttribute("data-v"));
+        if (rid) voteReview(rid, v);
+        return;
+      }
+
+      const toggle = ev.target.closest('[data-act="toggleReply"]');
+      if (toggle) {
+        const item = toggle.closest(".reviewItem");
+        const editor = item?.querySelector(".replyEditor");
+        const ta = editor?.querySelector("textarea");
+        editor?.classList.toggle("hidden");
+        if (editor && !editor.classList.contains("hidden")) {
+          setTimeout(() => ta?.focus(), 0);
+        }
+        return;
+      }
+
+      const cancel = ev.target.closest('[data-act="cancelReply"]');
+      if (cancel) {
+        const item = cancel.closest(".reviewItem");
+        item?.querySelector(".replyEditor")?.classList.add("hidden");
+        return;
+      }
+
+      const send = ev.target.closest('[data-act="sendReply"]');
+      if (send) {
+        const item = send.closest(".reviewItem");
+        const rid = item?.getAttribute("data-review");
+        const editor = item?.querySelector(".replyEditor");
+        const ta = editor?.querySelector("textarea");
+        const txt = (ta?.value || "").trim();
+        (async () => {
+          try {
+            send.disabled = true;
+            await submitReply(rid, txt);
+            if (ta) ta.value = "";
+            editor?.classList.add("hidden");
+          } catch (e) {
+            console.error(e);
+            toast(e?.code === "REPLY_NOT_ALLOWED" ? "Tidak diizinkan membalas." : "Gagal kirim balasan.");
+          } finally {
+            send.disabled = false;
+          }
+        })();
+        return;
+      }
+    }, { passive: true });
+  }
+
 
   // my review editor
   const editBtn = document.getElementById("editReviewBtn");
@@ -781,9 +887,9 @@ function renderReviewsOnly() {
     if (reviewText) reviewText.value = mine?.comment || "";
     editor.classList.add("show");
     renderStarPicker();
-
     // cooldown countdown (simple)
     if (mine && currentUser && !isAdminUid(currentUser.uid)) {
+      clearInterval(window.__reviewCooldownTimer);
       const tick = () => {
         const r = remainingEditMs(mine);
         if (!hintEl) return;
@@ -793,16 +899,24 @@ function renderReviewsOnly() {
         } else {
           hintEl.textContent = "Silakan isi ulasan.";
           if (submitBtn) submitBtn.disabled = false;
-          clearInterval(t);
+          clearInterval(window.__reviewCooldownTimer);
+          window.__reviewCooldownTimer = null;
         }
       };
       tick();
-      var t = setInterval(tick, 1000);
+      window.__reviewCooldownTimer = setInterval(tick, 1000);
+    } else {
+      clearInterval(window.__reviewCooldownTimer);
+      window.__reviewCooldownTimer = null;
     }
   }
 
   editBtn?.addEventListener("click", openEditor);
-  cancelBtn?.addEventListener("click", () => editor?.classList.remove("show"));
+  cancelBtn?.addEventListener("click", () => {
+    editor?.classList.remove("show");
+    clearInterval(window.__reviewCooldownTimer);
+    window.__reviewCooldownTimer = null;
+  });
 
   submitBtn?.addEventListener("click", async () => {
     if (!currentUser) {
@@ -814,6 +928,8 @@ function renderReviewsOnly() {
       submitBtn.disabled = true;
       await submitReview(selectedStars, txt);
       editor?.classList.remove("show");
+      clearInterval(window.__reviewCooldownTimer);
+      window.__reviewCooldownTimer = null;
     } catch (e) {
       console.error(e);
       if (e?.remainMs) {
@@ -857,7 +973,10 @@ function renderReviewsList() {
     return;
   }
 
-  listEl.innerHTML = sorted.map(([uid, r]) => {
+  const view = sorted.slice(0, Math.max(0, reviewsVisibleCount || REVIEWS_PAGE_SIZE));
+  const hasMore = view.length < sorted.length;
+
+  listEl.innerHTML = view.map(([uid, r]) => {
     const vc = voteCounts?.[uid] || { like: 0, dislike: 0, score: 0 };
     const my = myVote(uid);
     const rs = Number(r.stars || 0);
@@ -924,51 +1043,6 @@ function renderReviewsList() {
       </div>
     `;
   }).join("");
-
-  // wire vote + reply
-  listEl.querySelectorAll(".reviewItem").forEach((item) => {
-    const rid = item.getAttribute("data-review");
-    item.querySelectorAll(".voteBtn").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        const v = Number(btn.getAttribute("data-v"));
-        voteReview(rid, v);
-      });
-    });
-
-    const toggle = item.querySelector('[data-act="toggleReply"]');
-    if (toggle) {
-      const editor = item.querySelector(".replyEditor");
-      const ta = editor?.querySelector("textarea");
-      const cancel = item.querySelector('[data-act="cancelReply"]');
-      const send = item.querySelector('[data-act="sendReply"]');
-
-      toggle.addEventListener("click", () => {
-        editor?.classList.toggle("hidden");
-        if (!editor?.classList.contains("hidden")) {
-          setTimeout(() => ta?.focus(), 0);
-        }
-      });
-
-      cancel?.addEventListener("click", () => {
-        if (editor) editor.classList.add("hidden");
-      });
-
-      send?.addEventListener("click", async () => {
-        const txt = (ta?.value || "").trim();
-        try {
-          send.disabled = true;
-          await submitReply(rid, txt);
-          if (ta) ta.value = "";
-          editor?.classList.add("hidden");
-        } catch (e) {
-          console.error(e);
-          toast(e?.code === "REPLY_NOT_ALLOWED" ? "Tidak diizinkan membalas." : "Gagal kirim balasan.");
-        } finally {
-          send.disabled = false;
-        }
-      });
-    }
-  });
 }
 
 // boot

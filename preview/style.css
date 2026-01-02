@@ -704,3 +704,9 @@ textarea:focus{
 @media (prefers-reduced-motion: reduce){
   *{ animation:none !important; transition:none !important; scroll-behavior:auto !important; }
 }
+
+
+/* ===== Low performance mode (auto from preview.js) ===== */
+body.lowPerf .pAppBar{ backdrop-filter:none; -webkit-backdrop-filter:none; }
+body.lowPerf .panel{ box-shadow:none; }
+body.lowPerf .voteBtn.active{ box-shadow:none; }
