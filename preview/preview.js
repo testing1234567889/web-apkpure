@@ -213,6 +213,12 @@ let replies = {};
 let whitelist = {};
 let reviewFilterStar = 0;
 
+// Perf: render throttling + paging
+const REV_PAGE_SIZE = 25;
+let revVisible = REV_PAGE_SIZE;
+let _revRaf = 0;
+let _revQueued = false;
+
 let unsubApp = null;
 let unsubReviews = null;
 let unsubVotes = null;
@@ -626,92 +632,93 @@ function render() {
     };
   }
 
-  const wlBtn = document.getElementById("whitelistBtn");
-  if (wlBtn) {
-    wlBtn.onclick = () => toggleWhitelist(appId);
-  }
-  renderWhitelistButton();
-
-  renderReviewsOnly();
-}
-
-/* =========================================================
-   REVIEWS UI (PERFORMANCE PATCH)
-   - Batching render with rAF
-   - One-time wiring per host (no per-item listeners)
-   - Pagination (Load more)
-   - Reply editor created on demand (no hidden textareas for all items)
-========================================================= */
-
-const REV_PAGE_SIZE = 30;
-let _revVisible = REV_PAGE_SIZE;
-
-let _revRaf = 0;
-let _revCacheKey = "";
-let _revOrderCache = [];
-
-let _lastReviewsRef = null;
-let _lastVoteCountsRef = null;
-let _reviewsStamp = 0;
-let _votesStamp = 0;
-
-function scheduleRenderReviews() {
+  const wlBtn = document.getElementById("whifunction renderReviewsOnly() {
+  _revQueued = true;
+  const raf = window.requestAnimationFrame || ((cb) => setTimeout(cb, 16));
   if (_revRaf) return;
-  _revRaf = requestAnimationFrame(() => {
+  _revRaf = raf(() => {
     _revRaf = 0;
-    renderReviewsPanelNow();
+    if (!_revQueued) return;
+    _revQueued = false;
+    _renderReviewsOnlyNow();
   });
 }
 
-// Backward compatible: existing code calls this a lot
-function renderReviewsOnly() {
-  scheduleRenderReviews();
-}
-
-function renderReviewsList() {
-  // wrapper for compatibility
-  scheduleRenderReviews();
-}
-
-function ensureReviewsPanelSkeleton() {
+function _renderReviewsOnlyNow() {
   const host = document.getElementById("reviewsPanel");
-  if (!host) return null;
+  if (!host) return;
 
-  // render() can recreate DOM; re-init when host is new
-  if (host.dataset.inited !== "1") {
-    host.dataset.inited = "1";
-    host.innerHTML = `
-      <div class="panelHead">
-        <h3>Rating & Ulasan</h3>
-        <div class="reviewSummary">
-          <span id="reviewCountText">0 ulasan</span>
-          <button class="btn ghost" id="clearFilterBtn" type="button" style="height:28px;padding:0 10px;display:none">Reset</button>
+  const stats = computeReviewStats(reviews);
+  const distTotal = Math.max(1, stats.count);
+
+  const distRows = [5,4,3,2,1].map((star) => {
+    const c = stats.dist[star-1] || 0;
+    const pct = Math.round((c / distTotal) * 100);
+    const active = reviewFilterStar === star;
+    return `
+      <div class="barRow ${active ? "active" : ""}" data-star="${star}">
+        <div>${star}</div>
+        <div class="bar"><span style="width:${pct}%"></span></div>
+        <div>${c}</div>
+      </div>
+    `;
+  }).join("");
+
+  const me = getMyReview();
+  const meStars = Number(me?.stars || 0);
+  const meCanEdit = currentUser ? canEditReview(me, currentUser.uid) : false;
+  const rem = me && currentUser && !isAdminUid(currentUser.uid) ? remainingEditMs(me) : 0;
+
+  host.innerHTML = `
+    <div class="panelHead">
+      <h3>Rating & Ulasan</h3>
+      <span class="reviewSummary">
+        <span class="ratingNum">${stats.avg.toFixed(1)}</span>
+        ${starsDisplay(stats.avg)}
+        <span>•</span>
+        <span>${fmtNum(stats.count)} ulasan</span>
+      </span>
+    </div>
+
+    <div class="reviewGrid">
+      <div class="reviewStats">
+        <div class="bigRating">
+          <div class="num">${stats.avg.toFixed(1)}</div>
+          <div>${starsDisplay(stats.avg)}</div>
+          <div class="hint">${fmtNum(stats.count)} ulasan</div>
+        </div>
+        <div class="bars" id="barsHost">
+          ${distRows}
+          <div class="hint" style="margin-top:6px">
+            <button class="linkBtn" id="clearFilterBtn" type="button">Reset filter</button>
+            <span class="filterPill ${reviewFilterStar ? "show" : ""}" id="filterPill">Filter: ${reviewFilterStar}★</span>
+          </div>
         </div>
       </div>
 
-      <div class="reviewGrid">
-        <div class="reviewStats">
-          <div class="bigRating" id="bigRatingBox">
-            <div class="num" id="avgRatingNum">0.0</div>
-            <div id="avgStarsBox"></div>
-            <div class="hint" id="avgHintText">0 ulasan</div>
-          </div>
-          <div class="bars" id="barsHost"></div>
-        </div>
-
+      <div>
         <div class="myReviewCard">
           <div class="myReviewTop">
             <div class="t">Ulasan kamu</div>
-            <button class="iconBtn" id="editReviewBtn" type="button" aria-label="Edit ulasan">
-              ${iconEdit()}
+            <button class="iconBtn" id="editReviewBtn" type="button" ${(!currentUser || !meCanEdit) ? "disabled" : ""} style="${(!currentUser || !meCanEdit) ? "opacity:.5" : ""}">
+              ${iconPencil()}
             </button>
           </div>
-          <div class="myReviewMeta" id="myReviewMeta"></div>
-          <div id="myReviewTextBox" class="myReviewEmpty">Klik tombol Login Google di atas.</div>
+          <div class="myReviewMeta">
+            ${currentUser ? `
+              <span>${me ? `Rating: ${meStars}★` : "Belum ada ulasan"}</span>
+              <span>•</span>
+              <span>${me ? `Update: ${timeAgo(me.updatedAt || me.createdAt)}` : ""}</span>
+            ` : `Login untuk menulis ulasan.`}
+          </div>
+
+          <div class="${me?.comment ? "myReviewText" : "myReviewEmpty"}">
+            ${currentUser ? (me?.comment ? escapeHtml(me.comment) : "Tulis ulasan kamu...") : "Klik tombol Login Google di atas."}
+          </div>
 
           <div class="editor" id="reviewEditor">
             <div class="rateStars" id="rateStars"></div>
-            <div class="hint" id="reviewHint">Silakan isi ulasan.</div>
+            <div class="hint" id="reviewHint">${rem > 0 ? `Edit terkunci: <span id="editorCountdown">${Math.ceil(rem/1000)}</span> dtk` : "Silakan isi ulasan."}</div>
             <textarea id="reviewText" placeholder="Tulis ulasan..."></textarea>
             <div style="display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;margin-top:10px">
               <button class="btn" id="cancelEditBtn" type="button">Tutup</button>
@@ -720,148 +727,38 @@ function ensureReviewsPanelSkeleton() {
           </div>
         </div>
       </div>
+    </div>
 
-      <div class="reviewsList" id="reviewsList"></div>
+    <div class="reviewsList" id="reviewsList"></div>
+  `;
 
-      <div class="row" id="reviewsMoreRow" style="justify-content:center">
-        <button class="btn" id="loadMoreReviewsBtn" type="button" style="display:none">Muat lagi</button>
-      </div>
-    `;
-
-    wireReviewsPanelOnce(host);
-  }
-
-  return host;
-}
-
-function wireReviewsPanelOnce(host) {
-  if (!host || host.dataset.wired === "1") return;
-  host.dataset.wired = "1";
-
-  // Filter bars (delegation)
-  const barsHost = host.querySelector("#barsHost");
-  barsHost?.addEventListener("click", (e) => {
-    const row = e.target?.closest?.(".barRow");
-    if (!row) return;
-    const star = Number(row.getAttribute("data-star") || "0");
-    const next = (reviewFilterStar === star) ? 0 : star;
-    if (next !== reviewFilterStar) {
-      reviewFilterStar = next;
-      _revVisible = REV_PAGE_SIZE;
-      _revCacheKey = "";
-      scheduleRenderReviews();
-    } else {
-      // toggle off
-      reviewFilterStar = 0;
-      _revVisible = REV_PAGE_SIZE;
-      _revCacheKey = "";
-      scheduleRenderReviews();
-    }
+  // filter interactions
+  host.querySelectorAll(".barRow").forEach((row) => {
+    row.addEventListener("click", () => {
+      const star = Number(row.getAttribute("data-star") || "0");
+      reviewFilterStar = reviewFilterStar === star ? 0 : star;
+      revVisible = REV_PAGE_SIZE;
+      renderReviewsOnly();
+    });
   });
 
-  const clearFilterBtn = host.querySelector("#clearFilterBtn");
+  const clearFilterBtn = document.getElementById("clearFilterBtn");
   clearFilterBtn?.addEventListener("click", () => {
-    if (!reviewFilterStar) return;
     reviewFilterStar = 0;
-    _revVisible = REV_PAGE_SIZE;
-    _revCacheKey = "";
-    scheduleRenderReviews();
+    revVisible = REV_PAGE_SIZE;
+    renderReviewsOnly();
   });
 
-  const moreBtn = host.querySelector("#loadMoreReviewsBtn");
-  moreBtn?.addEventListener("click", () => {
-    _revVisible += REV_PAGE_SIZE;
-    scheduleRenderReviews();
-  });
+  // my review editor
+  const editBtn = document.getElementById("editReviewBtn");
+  const editor = document.getElementById("reviewEditor");
+  const rateStars = document.getElementById("rateStars");
+  const reviewText = document.getElementById("reviewText");
+  const cancelBtn = document.getElementById("cancelEditBtn");
+  const submitBtn = document.getElementById("submitReviewBtn");
+  const hintEl = document.getElementById("reviewHint");
 
-  // My review editor (wired once per host)
-  initMyReviewEditor(host);
-
-  // Reviews list actions (one listener, no per-item addEventListener)
-  const listEl = host.querySelector("#reviewsList");
-  listEl?.addEventListener("click", async (e) => {
-    const voteBtn = e.target?.closest?.(".voteBtn");
-    if (voteBtn) {
-      const item = voteBtn.closest(".reviewItem");
-      const rid = item?.getAttribute("data-review");
-      if (!rid) return;
-      const v = Number(voteBtn.getAttribute("data-v"));
-      voteReview(rid, v);
-      return;
-    }
-
-    const actBtn = e.target?.closest?.("button[data-act]");
-    if (!actBtn) return;
-    const act = actBtn.getAttribute("data-act");
-    const item = actBtn.closest(".reviewItem");
-    const rid = item?.getAttribute("data-review");
-    if (!rid) return;
-
-    // Lazy-create reply editor when needed
-    if (act === "toggleReply") {
-      const wrap = item.querySelector("[data-reply-wrap]");
-      if (!wrap) return;
-      let editor = wrap.querySelector(".replyEditor");
-      if (!editor) {
-        wrap.innerHTML = `
-          <div class="replyEditor">
-            <textarea placeholder="Tulis balasan..."></textarea>
-            <div class="row">
-              <button class="btn" data-act="cancelReply" type="button">Batal</button>
-              <button class="btn primary" data-act="sendReply" type="button">Kirim</button>
-            </div>
-          </div>
-        `;
-        editor = wrap.querySelector(".replyEditor");
-      } else {
-        editor.classList.toggle("hidden");
-      }
-      const ta = editor?.querySelector("textarea");
-      if (editor && !editor.classList.contains("hidden")) {
-        setTimeout(() => ta?.focus(), 0);
-      }
-      return;
-    }
-
-    if (act === "cancelReply") {
-      const editor = actBtn.closest(".replyEditor");
-      editor?.classList.add("hidden");
-      return;
-    }
-
-    if (act === "sendReply") {
-      const editor = actBtn.closest(".replyEditor");
-      const ta = editor?.querySelector("textarea");
-      const txt = (ta?.value || "").trim();
-      const send = actBtn;
-
-      try {
-        send.disabled = true;
-        await submitReply(rid, txt);
-        if (ta) ta.value = "";
-        editor?.classList.add("hidden");
-      } catch (err) {
-        console.error(err);
-        toast(err?.code === "REPLY_NOT_ALLOWED" ? "Tidak diizinkan membalas." : "Gagal kirim balasan.");
-      } finally {
-        send.disabled = false;
-      }
-      return;
-    }
-  }, { passive: true });
-}
-
-function initMyReviewEditor(host) {
-  const editBtn = host.querySelector("#editReviewBtn");
-  const editor = host.querySelector("#reviewEditor");
-  const rateStars = host.querySelector("#rateStars");
-  const reviewText = host.querySelector("#reviewText");
-  const cancelBtn = host.querySelector("#cancelEditBtn");
-  const submitBtn = host.querySelector("#submitReviewBtn");
-  const hintEl = host.querySelector("#reviewHint");
-
-  let selectedStars = 5;
-  let countdownTimer = null;
+  let selectedStars = meStars || 5;
 
   function renderStarPicker() {
     if (!rateStars) return;
@@ -883,37 +780,6 @@ function initMyReviewEditor(host) {
     }
   }
 
-  function stopCountdown() {
-    if (countdownTimer) {
-      clearInterval(countdownTimer);
-      countdownTimer = null;
-    }
-  }
-
-  function startCountdown(mine) {
-    stopCountdown();
-    if (!mine || !currentUser || isAdminUid(currentUser.uid)) {
-      if (hintEl) hintEl.textContent = "Silakan isi ulasan.";
-      if (submitBtn) submitBtn.disabled = false;
-      return;
-    }
-
-    const tick = () => {
-      const r = remainingEditMs(mine);
-      if (!hintEl) return;
-      if (r > 0) {
-        hintEl.innerHTML = `Edit terkunci: <span id="editorCountdown">${Math.ceil(r/1000)}</span> dtk`;
-        if (submitBtn) submitBtn.disabled = true;
-      } else {
-        hintEl.textContent = "Silakan isi ulasan.";
-        if (submitBtn) submitBtn.disabled = false;
-        stopCountdown();
-      }
-    };
-    tick();
-    countdownTimer = setInterval(tick, 1000);
-  }
-
   function openEditor() {
     if (!currentUser) {
       toast("Login dulu.");
@@ -926,15 +792,28 @@ function initMyReviewEditor(host) {
     if (reviewText) reviewText.value = mine?.comment || "";
     editor.classList.add("show");
     renderStarPicker();
-    startCountdown(mine);
+
+    // cooldown countdown (simple)
+    if (mine && currentUser && !isAdminUid(currentUser.uid)) {
+      const tick = () => {
+        const r = remainingEditMs(mine);
+        if (!hintEl) return;
+        if (r > 0) {
+          hintEl.innerHTML = `Edit terkunci: <span id="editorCountdown">${Math.ceil(r/1000)}</span> dtk`;
+          if (submitBtn) submitBtn.disabled = true;
+        } else {
+          hintEl.textContent = "Silakan isi ulasan.";
+          if (submitBtn) submitBtn.disabled = false;
+          clearInterval(t);
+        }
+      };
+      tick();
+      var t = setInterval(tick, 1000);
+    }
   }
 
   editBtn?.addEventListener("click", openEditor);
-
-  cancelBtn?.addEventListener("click", () => {
-    editor?.classList.remove("show");
-    stopCountdown();
-  });
+  cancelBtn?.addEventListener("click", () => editor?.classList.remove("show"));
 
   submitBtn?.addEventListener("click", async () => {
     if (!currentUser) {
@@ -948,35 +827,24 @@ function initMyReviewEditor(host) {
       editor?.classList.remove("show");
     } catch (e) {
       console.error(e);
-      if (e?.remainMs) toast(`Tunggu ${Math.ceil(e.remainMs/1000)} detik.`);
-      else toast("Gagal simpan ulasan.");
+      if (e?.remainMs) {
+        toast(`Tunggu ${Math.ceil(e.remainMs/1000)} detik.`);
+      } else {
+        toast("Gagal simpan ulasan.");
+      }
     } finally {
       submitBtn.disabled = false;
     }
   });
 
-  // Keep reference for later update
-  host.__reviewEditorApi = { startCountdown, stopCountdown };
-}
-
-function getSortedReviewUids() {
-  // detect snapshot changes without touching startAppListeners
-  if (reviews !== _lastReviewsRef) {
-    _lastReviewsRef = reviews;
-    _reviewsStamp += 1;
-    _revVisible = Math.max(_revVisible, REV_PAGE_SIZE);
-    // when reviews change a lot, reset "load more" to keep UI snappy
-    if (_revVisible > REV_PAGE_SIZE * 3) _revVisible = REV_PAGE_SIZE * 2;
-    _revCacheKey = "";
-  }
-  if (voteCounts !== _lastVoteCountsRef) {
-    _lastVoteCountsRef = voteCounts;
-    _votesStamp += 1;
-    _revCacheKey = "";
-  }
-
-  const key = `${reviewFilterStar}|${_reviewsStamp}|${reviewFilterStar ? 0 : _votesStamp}`;
-  if (key === _revCacheKey) return _revOrderCache;
+  // render reviews list
+  renderReviewsList();
+}mpan ulasan.");
+      }
+    } finally {
+      submitBtn.disabled = falsefunction renderReviewsList() {
+  const listEl = document.getElementById("reviewsList");
+  if (!listEl) return;
 
   const entries = Object.entries(reviews || {})
     .filter(([uid, r]) => Number(r?.stars) >= 1 && Number(r?.stars) <= 5);
@@ -985,7 +853,7 @@ function getSortedReviewUids() {
     ? entries.filter(([uid, r]) => Number(r.stars) === reviewFilterStar)
     : entries;
 
-  filtered.sort((a, b) => {
+  const sorted = filtered.sort((a, b) => {
     const [auid, ar] = a;
     const [buid, br] = b;
     const as = voteCounts?.[auid]?.score ?? 0;
@@ -996,109 +864,14 @@ function getSortedReviewUids() {
     return bt - at;
   });
 
-  _revOrderCache = filtered.map(([uid]) => uid);
-  _revCacheKey = key;
-  return _revOrderCache;
-}
-
-function renderReviewsPanelNow() {
-  const host = ensureReviewsPanelSkeleton();
-  if (!host) return;
-
-  const stats = computeReviewStats(reviews);
-  const distTotal = Math.max(1, stats.count);
-
-  // Summary
-  const countEl = host.querySelector("#reviewCountText");
-  if (countEl) countEl.textContent = `${stats.count} ulasan`;
-
-  const avgNum = host.querySelector("#avgRatingNum");
-  if (avgNum) avgNum.textContent = stats.avg.toFixed(1);
-
-  const avgStars = host.querySelector("#avgStarsBox");
-  if (avgStars) avgStars.innerHTML = starsDisplay(stats.avg);
-
-  const avgHint = host.querySelector("#avgHintText");
-  if (avgHint) avgHint.textContent = `${stats.count} ulasan`;
-
-  // Filter reset button
-  const clearFilterBtn = host.querySelector("#clearFilterBtn");
-  if (clearFilterBtn) clearFilterBtn.style.display = reviewFilterStar ? "inline-flex" : "none";
-
-  // Bars
-  const barsHost = host.querySelector("#barsHost");
-  if (barsHost) {
-    barsHost.innerHTML = [5,4,3,2,1].map((star) => {
-      const c = stats.dist[star-1] || 0;
-      const pct = Math.round((c / distTotal) * 100);
-      const active = reviewFilterStar === star;
-      return `
-        <div class="barRow ${active ? "active" : ""}" data-star="${star}">
-          <div>${star}</div>
-          <div class="bar"><span style="width:${pct}%"></span></div>
-          <div>${c}</div>
-        </div>
-      `;
-    }).join("");
-  }
-
-  // My review card
-  const me = getMyReview();
-  const meta = host.querySelector("#myReviewMeta");
-  const box = host.querySelector("#myReviewTextBox");
-  const editBtn = host.querySelector("#editReviewBtn");
-
-  if (!currentUser) {
-    if (meta) meta.textContent = "Login untuk memberi ulasan.";
-    if (box) {
-      box.className = "myReviewEmpty";
-      box.textContent = "Klik tombol Login Google di atas.";
-    }
-    if (editBtn) editBtn.disabled = false;
-  } else {
-    const rem = remainingEditMs(me);
-    const meStars = Number(me?.stars || 0);
-
-    const metaText = me
-      ? `${meStars.toFixed(1)}★ • ${timeAgo(me.updatedAt || me.createdAt)}${rem > 0 ? ` • edit: ${Math.ceil(rem/1000)} dtk` : ""}`
-      : "Belum ada ulasan kamu.";
-
-    if (meta) meta.textContent = metaText;
-
-    if (box) {
-      box.className = me?.comment ? "myReviewText" : "myReviewEmpty";
-      box.textContent = me?.comment ? String(me.comment) : "Tulis ulasan kamu...";
-    }
-
-    if (editBtn) editBtn.disabled = false;
-
-    // If editor is open, keep countdown accurate
-    if (host.__reviewEditorApi?.startCountdown && (host.querySelector("#reviewEditor")?.classList.contains("show"))) {
-      host.__reviewEditorApi.startCountdown(me);
-    }
-  }
-
-  // Render list (paged)
-  renderReviewsListNow(host);
-}
-
-function renderReviewsListNow(host) {
-  const listEl = host.querySelector("#reviewsList");
-  if (!listEl) return;
-
-  const uids = getSortedReviewUids();
-  if (!uids.length) {
+  if (!sorted.length) {
     listEl.innerHTML = `<div class="state">Belum ada ulasan.</div>`;
-    const moreBtn = host.querySelector("#loadMoreReviewsBtn");
-    if (moreBtn) moreBtn.style.display = "none";
     return;
   }
 
-  const take = Math.min(_revVisible, uids.length);
-  const slice = uids.slice(0, take);
+  const shown = sorted.slice(0, revVisible);
 
-  listEl.innerHTML = slice.map((uid) => {
-    const r = (reviews || {})[uid] || {};
+  listEl.innerHTML = shown.map(([uid, r]) => {
     const vc = voteCounts?.[uid] || { like: 0, dislike: 0, score: 0 };
     const my = myVote(uid);
     const rs = Number(r.stars || 0);
@@ -1107,19 +880,18 @@ function renderReviewsListNow(host) {
     const replObj = replies?.[uid] || {};
     const replArr = Object.values(replObj || {}).sort((a,b)=>Number(a.createdAt||0)-Number(b.createdAt||0));
     const replHtml = replArr.length
-      ? `<div class="replies">
-          ${replArr.map((x)=>`
-            <div class="replyItem">
-              <img class="rAvatar" src="${escapeHtml(x.userPhoto || "icon/default.png")}" alt="avatar" loading="lazy" decoding="async"/>
-              <div class="rMain">
-                <div class="rTop">
-                  <div class="rName">${escapeHtml(x.userName || "User")}${x.role === "admin" ? ` <span class="adminBadge small">ADMIN</span>` : ""}</div>
+      ? `<div class="replySection">
+          <div class="replyList">
+            ${replArr.map((x)=>`
+              <div class="replyItem">
+                <div class="replyTop">
+                  <div class="replyName">${escapeHtml(x.userName || (x.role==="admin" ? "Admin" : "User"))}${x.role==="admin" ? ` <span class="adminBadge small">ADMIN</span>` : ""}</div>
                   <div class="rTime">${timeAgo(x.updatedAt || x.createdAt)}</div>
                 </div>
                 <div class="replyText">${escapeHtml(x.text || "")}</div>
               </div>
-            </div>
-          `).join("")}
+            `).join("")}
+          </div>
         </div>`
       : "";
 
@@ -1136,12 +908,10 @@ function renderReviewsListNow(host) {
             </div>
             <div class="rTime">${escapeHtml(rTime)}</div>
           </div>
-
           <div class="reviewSummary" style="margin-top:4px">
             <span class="ratingNum">${rs.toFixed(1)}</span>
             ${starsDisplay(rs)}
           </div>
-
           <div class="rComment">${escapeHtml(r.comment || "")}</div>
 
           <div class="voteRow">
@@ -1154,20 +924,108 @@ function renderReviewsListNow(host) {
             <div class="replyActions">
               <button class="replyBtn" data-act="toggleReply" type="button">Balas</button>
             </div>
-            <div data-reply-wrap></div>
+            <div class="replyEditor hidden">
+              <textarea placeholder="Tulis balasan..."></textarea>
+              <div class="row">
+                <button class="btn" data-act="cancelReply" type="button">Batal</button>
+                <button class="btn primary" data-act="sendReply" type="button">Kirim</button>
+              </div>
+            </div>
           ` : ""}
 
           ${replHtml}
         </div>
       </div>
     `;
-  }).join("");
+  }) .join("");
 
-  const moreBtn = host.querySelector("#loadMoreReviewsBtn");
-  if (moreBtn) {
-    moreBtn.style.display = (take < uids.length) ? "inline-flex" : "none";
-    moreBtn.textContent = (take < uids.length) ? `Muat lagi (${take}/${uids.length})` : "Muat lagi";
+  // paging: show Load More if needed
+  if (sorted.length > revVisible) {
+    listEl.innerHTML += `
+      <div class="row" style="justify-content:center;margin-top:10px">
+        <button class="btn" id="loadMoreReviewsBtn" type="button">Muat lagi</button>
+      </div>
+    `;
   }
+
+
+  // Delegated actions (wired once, no per-item listeners)
+  if (listEl.dataset.wired !== "1") {
+    listEl.dataset.wired = "1";
+    listEl.addEventListener("click", async (e) => {
+      const lm = e.target?.closest?.("#loadMoreReviewsBtn");
+      if (lm) {
+        revVisible += REV_PAGE_SIZE;
+        renderReviewsList();
+        return;
+      }
+
+      const voteBtn = e.target?.closest?.(".voteBtn");
+      if (voteBtn) {
+        const item = voteBtn.closest(".reviewItem");
+        const rid = item?.getAttribute("data-review");
+        if (!rid) return;
+        const v = Number(voteBtn.getAttribute("data-v"));
+        voteReview(rid, v);
+        return;
+      }
+
+      const actBtn = e.target?.closest?.("button[data-act]");
+      if (!actBtn) return;
+
+      const item = actBtn.closest(".reviewItem");
+      const rid = item?.getAttribute("data-review");
+      if (!rid) return;
+
+      const act = actBtn.getAttribute("data-act");
+
+      if (act === "toggleReply") {
+        const editor = item.querySelector(".replyEditor");
+        editor?.classList.toggle("hidden");
+        if (editor && !editor.classList.contains("hidden")) {
+          const ta = editor.querySelector("textarea");
+          setTimeout(() => ta?.focus(), 0);
+        }
+        return;
+      }
+
+      if (act === "cancelReply") {
+        const editor = actBtn.closest(".replyEditor");
+        editor?.classList.add("hidden");
+        return;
+      }
+
+      if (act === "sendReply") {
+        const editor = actBtn.closest(".replyEditor");
+        const ta = editor?.querySelector("textarea");
+        const send = actBtn;
+        const txt = (ta?.value || "").trim();
+        if (!txt) {
+          toast("Tulis balasan dulu.");
+          return;
+        }
+        try {
+          send.disabled = true;
+          await submitReply(rid, txt);
+          if (ta) ta.value = "";
+          editor?.classList.add("hidden");
+        } catch (e2) {
+          console.error(e2);
+          toast(e2?.code === "REPLY_NOT_ALLOWED" ? "Tidak diizinkan membalas." : "Gagal kirim balasan.");
+        } finally {
+          send.disabled = false;
+        }
+        return;
+      }
+    });
+  }
+
+
+}          send.disabled = false;
+        }
+      });
+    }
+  });
 }
 
 // boot
