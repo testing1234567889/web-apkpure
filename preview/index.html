@@ -5,85 +5,51 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>Preview APK — APK Store</title>
   <meta name="description" content="Preview aplikasi dan game di APK Store." />
+  <meta name="theme-color" content="#f6f7fb" />
 
-  <!-- Supaya path icon/asset tetap aman -->
+  <!-- Biar path asset (icon/...) tetap aman dari root -->
   <base href="../" />
 
-  <!-- Global CSS -->
+  <!-- CSS global (dipakai oleh preview.js untuk class-class yang sama) -->
   <link rel="stylesheet" href="style.css" />
+  <!-- CSS khusus Android preview (HARUS di bawah style.css) -->
+  <link rel="stylesheet" href="preview/preview.css" />
 </head>
 
 <body class="preview android">
 
-  <!-- Header (tetap, tapi bukan modal) -->
-<header class="header previewHeader">
-    <div class="header-inner">
-      <div class="topRow">
-        <div class="brand" style="gap:12px;min-width:0">
-          <button
-            class="btnAuth"
-            id="backBtn"
-            type="button"
-            aria-label="Kembali ke Home"
-          >← Home</button>
+  <!-- App bar khusus preview -->
+  <header class="pAppBar" role="banner">
+    <div class="pAppBarInner">
+      <button class="pIconBtn" id="backBtn" type="button" aria-label="Kembali">
+        <span aria-hidden="true">←</span>
+      </button>
 
-          <div class="mark" aria-hidden="true">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-              <path d="M7 7h10v10H7z" stroke="white" stroke-width="2" opacity=".95"/>
-              <path d="M9 4h6" stroke="white" stroke-width="2" stroke-linecap="round"/>
-              <path d="M12 14v-6" stroke="white" stroke-width="2" stroke-linecap="round"/>
-              <path d="M9 11h6" stroke="white" stroke-width="2" stroke-linecap="round"/>
-            </svg>
-          </div>
+      <div class="pBrand" aria-label="APK Store">
+        <div class="pMark" aria-hidden="true"></div>
+        <div class="pTitle">APK Store</div>
+      </div>
 
-          <a
-            class="title"
-            href="./"
-            style="display:block;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"
-          >
-            APK Store
-          </a>
-        </div>
-
-        <div class="auth">
-          <button class="btnAuth primary" id="loginBtn">Login Google</button>
-          <button class="avatarBtn" id="avatarBtn" aria-label="Profil">
-            <img id="headerAvatar" alt="profil">
-          </button>
-        </div>
+      <div class="pAuth">
+        <button class="pPillBtn" id="loginBtn" type="button">Login</button>
+        <button class="pAvatarBtn" id="avatarBtn" type="button" aria-label="Profil">
+          <img id="headerAvatar" alt="profil" />
+        </button>
       </div>
     </div>
   </header>
 
-  <!-- ===== FULL PAGE PREVIEW (BUKAN MODAL) ===== -->
-  <main class="previewPage">
+  <!-- FULL PAGE content -->
+  <main class="previewPage" role="main">
     <div id="preview">
-      <div class="state">Loading preview...</div>
+      <div class="pState">Memuat aplikasi…</div>
     </div>
   </main>
 
   <!-- Toast -->
-  <div
-    id="toast"
-    style="
-      position:fixed;
-      left:50%;
-      bottom:calc(18px + var(--safeB));
-      transform:translateX(-50%);
-      background:rgba(2,6,23,.92);
-      color:#fff;
-      padding:10px 12px;
-      border-radius:999px;
-      font-size:13px;
-      display:none;
-      z-index:400;
-      box-shadow:0 18px 40px rgba(2,6,23,.35);
-      max-width:92vw;
-    "
-  ></div>
+  <div id="toast" class="pToast" aria-live="polite" aria-atomic="true"></div>
 
   <!-- Logic preview -->
   <script type="module" src="preview/preview.js"></script>
-
 </body>
 </html>

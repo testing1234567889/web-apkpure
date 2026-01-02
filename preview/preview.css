@@ -1,0 +1,294 @@
+/* ==================================================
+   preview/preview.css
+   ANDROID PREVIEW — FULLSCREEN, ANTI SCROLL KANAN
+   (AMAN: tidak mempengaruhi halaman Home)
+================================================== */
+
+/* ---------- Hard lock: tidak boleh scroll horizontal ---------- */
+html, body {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden !important;
+  overscroll-behavior-x: none;
+}
+
+body.preview {
+  background: #f6f7fb;
+  color: #0f172a;
+  -webkit-tap-highlight-color: transparent;
+  overflow-x: hidden !important;
+}
+
+/* Flex/grid sering overflow kalau min-width default auto */
+body.preview * {
+  box-sizing: border-box;
+  min-width: 0;
+}
+
+/* Semua media tidak boleh lebih lebar dari layar */
+body.preview img,
+body.preview svg,
+body.preview video,
+body.preview canvas {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Putuskan layout desktop bawaan (yang bikin melebar) */
+body.preview .header,
+body.preview .header-inner,
+body.preview .wrap,
+body.preview .content,
+body.preview .bottomNav,
+body.preview .overlay,
+body.preview .modal,
+body.preview .modalBody {
+  display: none !important;
+}
+
+/* ---------- App Bar (Android feel) ---------- */
+.pAppBar{
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: rgba(246,247,251,.96);
+  border-bottom: 1px solid rgba(229,231,235,.85);
+  padding-top: env(safe-area-inset-top);
+  backdrop-filter: saturate(140%) blur(8px);
+}
+
+.pAppBarInner{
+  display: grid;
+  grid-template-columns: 44px 1fr auto;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  max-width: 100%;
+  width: 100%;
+}
+
+.pIconBtn{
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  border: 1px solid rgba(229,231,235,.95);
+  background: #fff;
+  display: grid;
+  place-items: center;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.pBrand{
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.pMark{
+  width: 34px;
+  height: 34px;
+  border-radius: 12px;
+  background: linear-gradient(135deg,#1a73e8,#0b57d0);
+  flex: 0 0 auto;
+}
+
+.pTitle{
+  font-weight: 1000;
+  font-size: 15px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pAuth{
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pPillBtn{
+  height: 40px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(229,231,235,.95);
+  background: #1a73e8;
+  color: #fff;
+  font-weight: 1000;
+  cursor: pointer;
+}
+
+.pAvatarBtn{
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  border: 1px solid rgba(229,231,235,.95);
+  background: #fff;
+  overflow: hidden;
+  display: none; /* akan di-show oleh JS saat login */
+  padding: 0;
+  cursor: pointer;
+}
+.pAvatarBtn img{
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* ---------- Page container: full width ---------- */
+.previewPage{
+  width: 100%;
+  max-width: 100%;
+  padding: 12px 14px calc(24px + env(safe-area-inset-bottom));
+  overflow-x: hidden !important;
+}
+
+/* ---------- Loading state ---------- */
+.pState{
+  padding: 14px;
+  border: 1px dashed rgba(100,116,139,.35);
+  border-radius: 16px;
+  color: #64748b;
+  background: rgba(255,255,255,.75);
+  text-align: center;
+}
+
+/* ---------- Anti overflow untuk teks panjang (url, judul, dsb) ---------- */
+body.preview .panel p,
+body.preview .rowDesc,
+body.preview .rComment,
+body.preview .replyText,
+body.preview .myReviewText,
+body.preview .pState,
+body.preview #preview {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+/* ==================================================
+   STYLING UNTUK MARKUP YANG DI-RENDER preview.js
+   (mengikuti class yang sudah dipakai di project kamu)
+================================================== */
+
+/* Kartu utama */
+body.preview .panel,
+body.preview .card,
+body.preview .cardList,
+body.preview .profileHero,
+body.preview .profileShell{
+  max-width: 100%;
+}
+
+/* Hero APK */
+body.preview .hero{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 12px;
+}
+
+body.preview .hero .ico{
+  width: 96px;
+  height: 96px;
+  border-radius: 22px;
+  border: 1px solid rgba(229,231,235,.95);
+  background: #fff;
+  object-fit: cover;
+}
+
+body.preview .hero h2{
+  margin: 0;
+  font-size: 20px;
+  line-height: 1.2;
+  font-weight: 1000;
+}
+
+/* Action buttons: tampil seperti Android (stack di mobile) */
+body.preview .actions{
+  display: grid;
+  gap: 10px;
+  width: 100%;
+}
+
+body.preview .btn,
+body.preview .btnAuth,
+body.preview .ghostBtn{
+  width: 100%;
+}
+
+/* Tombol primary full width */
+body.preview .btn.primary{
+  width: 100%;
+  height: 48px;
+  font-size: 15px;
+  border-radius: 999px;
+}
+
+/* KV (info) jadi 1 kolom agar tidak melebar */
+body.preview .kv{
+  grid-template-columns: 1fr !important;
+}
+
+/* Review grid juga 1 kolom */
+body.preview .reviewGrid{
+  grid-template-columns: 1fr !important;
+}
+
+/* Screenshot row: satu-satunya yang boleh scroll X */
+body.preview .shots{
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  max-width: 100%;
+  width: 100%;
+  padding-right: 14px;
+  overscroll-behavior-x: contain;
+}
+
+body.preview .shot{
+  flex: 0 0 auto;
+  width: min(240px, 82vw);
+  aspect-ratio: 16 / 9;
+  height: auto;
+  border-radius: 16px;
+  border: 1px solid rgba(229,231,235,.95);
+  object-fit: cover;
+  background: #fff;
+}
+
+/* Review item: aman dari overflow */
+body.preview .reviewItem{
+  max-width: 100%;
+}
+
+/* Vote button tidak boleh bikin overflow */
+body.preview .voteBtn{
+  max-width: 100%;
+}
+
+/* Toast */
+.pToast{
+  position: fixed;
+  left: 50%;
+  bottom: calc(18px + env(safe-area-inset-bottom));
+  transform: translateX(-50%);
+  background: rgba(2,6,23,.92);
+  color: #fff;
+  padding: 10px 12px;
+  border-radius: 999px;
+  font-size: 13px;
+  display: none;
+  z-index: 400;
+  box-shadow: 0 18px 40px rgba(2,6,23,.35);
+  max-width: 92vw;
+}
+
+/* ---------- Optional debug: uncomment to see culprit overflow ---------- */
+/*
+body.preview * { outline: 1px solid red; }
+*/
