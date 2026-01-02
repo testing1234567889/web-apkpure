@@ -1,0 +1,73 @@
+/* ===============================
+   ANDROID PREVIEW (FULL PAGE)
+================================ */
+
+body.preview {
+  overflow-x: hidden;
+  background: #f6f7fb;
+}
+
+/* Container preview = full layar */
+.previewPage {
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
+  padding: 12px 14px 24px;
+}
+
+/* Pastikan TIDAK ADA elemen melebar */
+.preview *,
+.preview img {
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+/* Hero APK ala Play Store */
+.preview .hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 12px;
+}
+
+.preview .hero .ico {
+  width: 96px;
+  height: 96px;
+  border-radius: 22px;
+}
+
+.preview .hero h2 {
+  font-size: 20px;
+  line-height: 1.2;
+}
+
+/* Screenshot: boleh scroll horizontal, tapi cuma ini */
+.preview .shots {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+}
+
+.preview .shot {
+  width: 220px;
+  height: 140px;
+  flex: 0 0 auto;
+  border-radius: 18px;
+}
+
+/* Tombol Install full width */
+.preview .btn.primary {
+  width: 100%;
+  height: 48px;
+  font-size: 15px;
+  border-radius: 999px;
+}
+
+/* Paksa 1 kolom (Android style) */
+.preview .reviewGrid,
+.preview .kv {
+  grid-template-columns: 1fr !important;
+}
