@@ -1,83 +1,380 @@
-/* ==================================================
-   PREVIEW ANDROID — NUCLEAR FIX (ANTI SCROLL X)
-================================================== */
-
-/* 1. LOCK VIEWPORT */
-html, body {
-  width: 100%;
-  max-width: 100%;
-  overflow-x: hidden !important;
+:root{
+  --bg:#f6f7fb;
+  --card:#ffffff;
+  --text:#0f172a;
+  --muted:#64748b;
+  --line:#e5e7eb;
+  --brand:#1a73e8;
+  --brand2:#0b57d0;
+  --danger:#ef4444;
+  --star:#fbbf24;
+  --starOff:#cbd5e1;
+  --shadow: 0 10px 25px rgba(15, 23, 42, .07);
+  --shadow2: 0 18px 60px rgba(2,6,23,.14);
+  --safeT: env(safe-area-inset-top);
+  --safeB: env(safe-area-inset-bottom);
+  --safeL: env(safe-area-inset-left);
+  --safeR: env(safe-area-inset-right);
 }
 
-/* 2. IDENTITAS PREVIEW */
-body.preview {
-  background: #f6f7fb;
+/* =========================================
+   HARD STOP: ANTI SCROLL KIRI-KANAN TOTAL
+========================================= */
+html, body{
+  width:100%;
+  max-width:100%;
+  overflow-x:hidden !important;
+  overscroll-behavior-x: none;
+}
+*{box-sizing:border-box; min-width:0;}
+img, svg, video, canvas{max-width:100%; height:auto;}
+
+body.preview{
+  margin:0;
+  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  background:var(--bg);
+  color:var(--text);
+  -webkit-tap-highlight-color: transparent;
+  overflow-x:hidden !important;
 }
 
-/* 3. MATIKAN SEMUA LAYOUT DESKTOP */
-.preview .wrap,
-.preview .content {
-  all: unset;
+/* Biar teks panjang (url, changelog, dll) nggak bikin overflow */
+#preview, p, .rComment, .replyText, .myReviewText, .rowDesc{
+  overflow-wrap:anywhere;
+  word-break:break-word;
 }
 
-/* 4. HEADER KHUSUS PREVIEW (BUKAN DESKTOP) */
-.previewHeader {
-  position: sticky;
-  top: 0;
-  width: 100%;
-  max-width: 100%;
-  overflow-x: hidden;
+/* =========================================
+   ANDROID APP BAR (FULL WIDTH)
+========================================= */
+.pAppBar{
+  position:sticky;
+  top:0;
+  z-index:50;
+  background: rgba(246,247,251,.96);
+  border-bottom:1px solid rgba(229,231,235,.85);
+  padding-top: var(--safeT);
+  backdrop-filter: blur(10px) saturate(140%);
+}
+.pAppBarInner{
+  width:100%;
+  max-width:100%;
+  padding:10px 12px;
+  padding-left: calc(12px + var(--safeL));
+  padding-right: calc(12px + var(--safeR));
+  display:grid;
+  grid-template-columns: 44px 1fr auto;
+  gap:10px;
+  align-items:center;
 }
 
-.previewHeader .header-inner {
-  max-width: 100% !important;
-  width: 100%;
-  padding-left: 12px;
-  padding-right: 12px;
+.pIconBtn{
+  width:44px;height:44px;
+  border-radius:14px;
+  border:1px solid rgba(229,231,235,.95);
+  background:#fff;
+  display:grid;place-items:center;
+  font-weight:1000;
+  cursor:pointer;
+}
+.pIconBtn:active{transform:scale(.99)}
+
+.pBrand{display:flex;align-items:center;gap:10px;min-width:0;}
+.pMark{
+  width:34px;height:34px;border-radius:12px;
+  background: linear-gradient(135deg,var(--brand),var(--brand2));
+  flex:0 0 auto;
+}
+.pTitle{
+  font-weight:1000;
+  font-size:15px;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
 }
 
-/* 5. CONTAINER UTAMA */
-.previewPage,
-.preview #preview {
-  width: 100%;
-  max-width: 100%;
-  overflow-x: hidden;
-  padding: 12px 14px 24px;
+.pAuth{display:flex;align-items:center;gap:8px;flex:0 0 auto;}
+.pLoginBtn{
+  height:40px;
+  border-radius:999px;
+  padding:0 12px;
+  border:1px solid rgba(229,231,235,.95);
+  background:var(--brand);
+  color:#fff;
+  font-weight:1000;
+  cursor:pointer;
+}
+.pLoginBtn:active{transform:scale(.99)}
+
+.pAvatarBtn{
+  width:40px;height:40px;border-radius:999px;
+  border:1px solid rgba(229,231,235,.95);
+  background:#fff;
+  overflow:hidden;
+  display:none; /* preview.js bakal show saat login */
+  padding:0;
+  cursor:pointer;
+}
+.pAvatarBtn img{width:100%;height:100%;object-fit:cover;display:block;}
+
+/* =========================================
+   MAIN CONTAINER (ANDROID FULL PAGE)
+========================================= */
+.pMain{
+  width:100%;
+  max-width:100%;
+  padding: 12px 14px calc(24px + var(--safeB));
+  padding-left: calc(14px + var(--safeL));
+  padding-right: calc(14px + var(--safeR));
 }
 
-/* 6. SEMUA ELEMEN TUNDUK KE LAYAR */
-.preview * {
-  max-width: 100%;
-  box-sizing: border-box;
+/* =========================================
+   GENERIC UI (yang dipakai preview.js)
+========================================= */
+a{color:inherit;text-decoration:none}
+button, input, textarea, select{font:inherit}
+
+.state{
+  padding:14px;
+  border:1px dashed rgba(100,116,139,.35);
+  border-radius:16px;
+  color:var(--muted);
+  background: rgba(255,255,255,.75);
+  text-align:center;
 }
 
-/* ===== HERO ===== */
-.preview .hero {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-  gap: 12px;
+/* panel */
+.panel{
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 12px;
+  background: rgba(255,255,255,.9);
+}
+.panelHead{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:10px;
+  margin-bottom:10px;
+}
+.panelHead h3{margin:0;font-size:14px;font-weight:1000;}
+.panel p{margin:0;color:var(--muted);font-size:13px;line-height:1.55;white-space:pre-wrap;}
+
+/* Hero (Android style) */
+.hero{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  text-align:center;
+  gap:12px;
+}
+.ico{
+  width:96px;height:96px;border-radius:22px;
+  border: 1px solid var(--line);
+  background:#fff;
+  object-fit:cover;
+}
+.hero h2{
+  margin:0;
+  font-size:20px;
+  line-height:1.2;
+  font-weight:1000;
+}
+.heroSmall{
+  margin-top:6px;
+  color:var(--muted);
+  font-size:13px;
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+  justify-content:center;
 }
 
-/* ===== SCREENSHOT (SATU-SATUNYA YANG BOLEH SCROLL X) ===== */
-.preview .shots {
-  display: flex;
-  gap: 10px;
-  overflow-x: auto;
-  overflow-y: hidden;
-  width: 100%;
+/* Buttons */
+.actions{
+  display:grid;
+  gap:10px;
+  width:100%;
+  margin-top:12px;
+}
+.btn{
+  height:48px;
+  padding:0 14px;
+  border-radius:999px;
+  border:1px solid var(--line);
+  background:#fff;
+  cursor:pointer;
+  font-weight:1000;
+  font-size:14px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+  width:100%;
+}
+.btn:active{transform:scale(.99)}
+.btn svg{width:18px;height:18px}
+.btn.primary{
+  background:var(--brand);
+  border-color:transparent;
+  color:#fff;
+  box-shadow: 0 10px 18px rgba(26,115,232,.18);
+}
+.btn.dangerSolid{
+  background: var(--danger);
+  border-color: transparent;
+  color: #fff;
 }
 
-.preview .shot {
-  flex: 0 0 auto;
-  width: min(220px, 80vw);
-  aspect-ratio: 16 / 9;
-  height: auto;
-}
-
-/* ===== FORCE 1 COLUMN ===== */
-.preview .reviewGrid,
-.preview .kv {
+/* KV/info jadi 1 kolom biar nggak melebar */
+.kv{
+  display:grid;
   grid-template-columns: 1fr !important;
+  gap:10px;
+}
+.kv .box{
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 10px 12px;
+  background: rgba(255,255,255,.9);
+}
+.kv .k{color:var(--muted);font-size:12px}
+.kv .v{margin-top:4px;font-weight:1000;font-size:14px}
+
+/* Stars */
+.stars{display:inline-flex;gap:2px;align-items:center;transform: translateY(1px)}
+.stars svg{width:13px;height:13px}
+.on{fill: var(--star)}
+.off{fill: var(--starOff)}
+
+/* Screenshots: hanya area ini boleh swipe kiri-kanan */
+.shots{
+  display:flex;
+  gap:10px;
+  overflow-x:auto;
+  overflow-y:hidden;
+  -webkit-overflow-scrolling: touch;
+  width:100%;
+  max-width:100%;
+  padding-bottom:6px;
+  overscroll-behavior-x: contain;
+}
+.shot{
+  flex:0 0 auto;
+  width: min(240px, 85vw);
+  aspect-ratio: 16 / 9;
+  height:auto;
+  border-radius:16px;
+  border: 1px solid var(--line);
+  object-fit:cover;
+  background:#fff;
+}
+
+/* Reviews layout 1 kolom */
+.reviewGrid{
+  display:grid;
+  grid-template-columns: 1fr !important;
+  gap:12px;
+  margin-top:10px;
+}
+
+.reviewItem{
+  background:#fff;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 10px 12px;
+  display:flex;
+  gap: 10px;
+  align-items:flex-start;
+  max-width:100%;
+}
+.rAvatar{
+  width: 36px; height: 36px;
+  border-radius:999px;
+  border: 1px solid var(--line);
+  object-fit:cover;
+  background:#fff;
+  flex:0 0 auto;
+}
+.rMain{min-width:0;flex:1}
+.rTop{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:8px;
+  flex-wrap:wrap;
+}
+.rName{
+  font-weight:1000;
+  font-size:13px;
+  max-width: 260px;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.rTime{color:var(--muted);font-size:12px;white-space:nowrap;}
+.rComment{margin-top:6px;font-size:13px;line-height:1.45;color:var(--text);white-space:pre-wrap;}
+
+.voteRow{
+  margin-top:8px;
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+  align-items:center;
+  color:var(--muted);
+  font-size:12px;
+}
+.voteBtn{
+  height:44px;
+  border-radius:999px;
+  padding:0 10px;
+  border:1px solid rgba(229,231,235,.95);
+  background:rgba(255,255,255,.92);
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  cursor:pointer;
+  font-weight:1000;
+  max-width:100%;
+}
+.voteBtn:active{transform:scale(.99)}
+.voteBtn svg{width:16px;height:16px}
+
+/* Textarea/editor */
+textarea{
+  width:100%;
+  min-height:92px;
+  resize:vertical;
+  border-radius:16px;
+  border:1px solid var(--line);
+  padding:10px 12px;
+  outline:none;
+  font-size:14px;
+  background:#fff;
+}
+textarea:focus{
+  border-color: rgba(26,115,232,.35);
+  box-shadow: 0 0 0 4px rgba(26,115,232,.12);
+}
+
+/* Toast */
+.toast{
+  position:fixed;
+  left:50%;
+  bottom:calc(18px + var(--safeB));
+  transform:translateX(-50%);
+  background:rgba(2,6,23,.92);
+  color:#fff;
+  padding:10px 12px;
+  border-radius:999px;
+  font-size:13px;
+  display:none;
+  z-index:400;
+  box-shadow:0 18px 40px rgba(2,6,23,.35);
+  max-width:92vw;
+}
+
+/* Reduce motion */
+@media (prefers-reduced-motion: reduce){
+  *{animation:none !important; transition:none !important; scroll-behavior:auto !important;}
 }
