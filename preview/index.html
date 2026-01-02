@@ -7,20 +7,17 @@
   <meta name="description" content="Preview aplikasi dan game di APK Store." />
   <meta name="theme-color" content="#f6f7fb" />
 
-  <!-- PENTING:
-       Banyak data kamu (icon/default.png, screenshot url relatif, dll) biasanya RELATIF dari root.
-       Base ini bikin semua path relatif kebaca dari root, bukan dari /preview/.
-  -->
+  <!-- Buat asset relatif (icon/..., dll) kebaca dari root -->
   <base href="../" />
 
-  <!-- CSS KHUSUS PREVIEW (HANYA INI) -->
+  <!-- CSS KHUSUS PREVIEW (tanpa file tambahan lain) -->
   <link rel="stylesheet" href="preview/style.css" />
 </head>
 
 <body class="preview">
 
   <!-- Android App Bar -->
-  <header class="pAppBar">
+  <header class="pAppBar" role="banner">
     <div class="pAppBarInner">
       <button class="pIconBtn" id="backBtn" type="button" aria-label="Kembali">
         <span aria-hidden="true">←</span>
@@ -33,15 +30,15 @@
 
       <div class="pAuth">
         <button class="pLoginBtn" id="loginBtn" type="button">Login</button>
-        <button class="pAvatarBtn" id="avatarBtn" type="button" aria-label="Profil">
+        <button class="pAvatarBtn" id="avatarBtn" type="button" aria-label="Profil" title="Profil">
           <img id="headerAvatar" alt="profil" />
         </button>
       </div>
     </div>
   </header>
 
-  <!-- Full page content -->
-  <main class="pMain">
+  <!-- FULL PAGE -->
+  <main class="pMain" role="main">
     <div id="preview">
       <div class="state">Memuat aplikasi…</div>
     </div>
@@ -50,7 +47,6 @@
   <!-- Toast -->
   <div id="toast" class="toast" aria-live="polite" aria-atomic="true"></div>
 
-  <!-- Logic preview (tetap pakai yang kamu punya) -->
   <script type="module" src="preview/preview.js"></script>
 </body>
 </html>

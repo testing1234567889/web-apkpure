@@ -532,8 +532,17 @@ function render() {
   }
 
   if (!appData) {
-    previewEl.innerHTML = `<div class="state">Aplikasi tidak ditemukan.</div>`;
+    // jangan tampilkan "tidak ditemukan" dulu (biar nggak flicker)
+    if (!window.__nfTimer) {
+      previewEl.innerHTML = `<div class="state">Memuat aplikasi…</div>`;
+      window.__nfTimer = setTimeout(() => {
+        if (!appData) previewEl.innerHTML = `<div class="state">Aplikasi tidak ditemukan.</div>`;
+        window.__nfTimer = null;
+      }, 1200);
+    }
     return;
+  } else {
+    if (window.__nfTimer) { clearTimeout(window.__nfTimer); window.__nfTimer = null; }
   }
 
   const a = appData;
@@ -572,7 +581,7 @@ function render() {
             <div class="actions">
               ${downloadBtn}
               <button class="btn ghost" id="shareBtn" type="button">${iconShare()} Share</button>
-              <button class="btn wl" id="whitelistBtn" type="button">${iconBookmark()} Whitelist</button>
+              <button class="btn wl" id="whitelistBtn" type="button">${iconBookmark()} Simpan</button>
             </div>
           </div>
         </div>
