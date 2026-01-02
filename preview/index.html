@@ -19,9 +19,9 @@
   <!-- Android App Bar -->
   <header class="pAppBar" role="banner">
     <div class="pAppBarInner">
-      <button class="pIconBtn" id="backBtn" type="button" aria-label="Kembali">
+      <a class="pIconBtn" id="backBtn" href="./" aria-label="Kembali" role="button">
         <span aria-hidden="true">←</span>
-      </button>
+      </a>
 
       <div class="pBrand" aria-label="APK Store">
         <div class="pMark" aria-hidden="true"></div>
@@ -39,8 +39,12 @@
 
   <!-- FULL PAGE -->
   <main class="pMain" role="main">
+    <noscript>
+      <div class="state" style="padding:16px">Halaman ini butuh JavaScript aktif.</div>
+    </noscript>
     <div id="preview">
       <div class="state">Memuat aplikasi…</div>
+      <div class="state" style="padding:14px;font-size:12px;opacity:.75">Kalau layar putih: jangan buka lewat <b>file://</b>. Jalankan via <b>http/https</b> (Live Server/hosting).</div>
     </div>
   </main>
 

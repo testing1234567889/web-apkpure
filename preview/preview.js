@@ -44,6 +44,16 @@ function toast(msg) {
   toastEl._t = setTimeout(() => (toastEl.style.display = "none"), 1900);
 }
 
+// Global error surface (biar nggak jadi layar putih tanpa petunjuk)
+window.addEventListener("error", (e) => {
+  try { toast("Error: " + (e?.message || "unknown")); } catch {}
+  console.error(e);
+});
+window.addEventListener("unhandledrejection", (e) => {
+  try { toast("Error: " + (e?.reason?.message || "promise rejected")); } catch {}
+  console.error(e);
+});
+
 async function copyToClipboard(text) {
   try {
     if (navigator.clipboard && window.isSecureContext) {
@@ -363,33 +373,78 @@ function startAppListeners() {
 
   if (!appId) {
     previewEl.innerHTML = `
-      <div class="state">
-        ID aplikasi tidak ditemukan.<br/>
-        <a class="linkBtn" href="./">Kembali ke Home</a>
-      </div>`;
+      <div class="modal" style="margin-top:18px">
+        <div class="modalBody">
+          <div class="state" style="padding:12px">
+            <div style="font-weight:800;margin-bottom:6px">Masukkan ID aplikasi</div>
+            <div style="opacity:.85;margin-bottom:10px">Contoh: <b>mlbb</b>, <b>gta-sa</b>, dll.</div>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center">
+              <input id="appIdInput" class="pInput" placeholder="id aplikasi..." style="min-width:220px" />
+              <button id="goPreviewBtn" class="btn primary" type="button">Buka</button>
+              <a class="btn" href="./">Kembali</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+    const go = document.getElementById("goPreviewBtn");
+    go?.addEventListener("click", () => {
+      const id = (document.getElementById("appIdInput")?.value || "").trim();
+      if (!id) return toast("Isi ID dulu.");
+      location.search = `?id=${encodeURIComponent(id)}`;
+    });
     return;
   }
 
-  unsubApp = onValue(ref(db, `apps/${appId}`), (snap) => {
-    appData = snap.exists() ? normalizeApp(snap.val()) : null;
-    render();
-  });
+  unsubApp = onValue(
+    ref(db, `apps/${appId}`),
+    (snap) => {
+      appData = snap.exists() ? normalizeApp(snap.val()) : null;
+      render();
+    },
+    (err) => {
+      console.error(err);
+      previewEl.innerHTML = `<div class="state">Gagal memuat aplikasi. ${err?.code || ""} ${err?.message || ""}<br/>Coba Login atau cek rules Firebase.</div>`;
+      toast("Gagal memuat data.");
+    }
+  );
 
-  unsubReviews = onValue(ref(db, `apps/${appId}/reviews`), (snap) => {
-    reviews = snap.exists() ? (snap.val() || {}) : {};
-    renderReviewsOnly();
-  });
+  unsubReviews = onValue(
+    ref(db, `apps/${appId}/reviews`),
+    (snap) => {
+      reviews = snap.exists() ? (snap.val() || {}) : {};
+      renderReviewsOnly();
+    },
+    (err) => {
+      console.error(err);
+      toast("Gagal memuat ulasan.");
+    }
+  );
 
-  unsubVotes = onValue(ref(db, `apps/${appId}/reviewVotes`), (snap) => {
-    reviewVotes = snap.exists() ? (snap.val() || {}) : {};
-    voteCounts = computeVoteCounts(reviewVotes);
-    renderReviewsOnly();
-  });
+  unsubVotes = onValue(
+    ref(db, `apps/${appId}/reviewVotes`),
+    (snap) => {
+      reviewVotes = snap.exists() ? (snap.val() || {}) : {};
+      voteCounts = computeVoteCounts(reviewVotes);
+      renderReviewsOnly();
+    },
+    (err) => {
+      console.error(err);
+      toast("Gagal memuat vote.");
+    }
+  );
 
-  unsubReplies = onValue(ref(db, `apps/${appId}/replies`), (snap) => {
-    replies = snap.exists() ? (snap.val() || {}) : {};
-    renderReviewsOnly();
-  });
+  unsubReplies = onValue(
+    ref(db, `apps/${appId}/replies`),
+    (snap) => {
+      replies = snap.exists() ? (snap.val() || {}) : {};
+      renderReviewsOnly();
+    },
+    (err) => {
+      console.error(err);
+      toast("Gagal memuat balasan.");
+    }
+  );
 
   // whitelist listener is handled by auth state
 }
@@ -632,7 +687,15 @@ function render() {
     };
   }
 
-  const wlBtn = document.getElementById("whifunction renderReviewsOnly() {
+  const wlBtn = document.getElementById("whitelistBtn");
+  wlBtn?.addEventListener("click", () => toggleWhitelist(appId));
+  renderWhitelistButton();
+
+  // render reviews panel
+  renderReviewsOnly();
+}
+
+function renderReviewsOnly() {
   _revQueued = true;
   const raf = window.requestAnimationFrame || ((cb) => setTimeout(cb, 16));
   if (_revRaf) return;
@@ -839,10 +902,9 @@ function _renderReviewsOnlyNow() {
 
   // render reviews list
   renderReviewsList();
-}mpan ulasan.");
-      }
-    } finally {
-      submitBtn.disabled = falsefunction renderReviewsList() {
+}
+
+function renderReviewsList() {
   const listEl = document.getElementById("reviewsList");
   if (!listEl) return;
 
@@ -1021,12 +1083,6 @@ function _renderReviewsOnlyNow() {
   }
 
 
-}          send.disabled = false;
-        }
-      });
-    }
-  });
 }
-
 // boot
 startAppListeners();
