@@ -188,17 +188,6 @@ function computeVoteCounts(votesObj) {
   return counts;
 }
 
-
-// ===== Perf hint (low-end devices) =====
-try {
-  const dm = Number(navigator.deviceMemory || 0);
-  const hc = Number(navigator.hardwareConcurrency || 0);
-  // Heuristic: very low RAM / cores -> disable expensive blur/shadow in CSS
-  if ((dm && dm <= 2) || (hc && hc <= 4)) {
-    document.body.classList.add("lowPerf");
-  }
-} catch {}
-
 /* ===== Init ===== */
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
@@ -223,28 +212,6 @@ let voteCounts = {};
 let replies = {};
 let whitelist = {};
 let reviewFilterStar = 0;
-// ===== Reviews rendering perf =====
-const REVIEWS_PAGE_SIZE = 25;
-let reviewsVisibleCount = REVIEWS_PAGE_SIZE;
-
-let __reviewsRenderQueued = false;
-let __reviewsRenderMode = "full"; // "full" | "list"
-function scheduleReviewsRender(mode = "list") {
-  // Upgrade to full if any caller requests full.
-  if (mode === "full") __reviewsRenderMode = "full";
-  else if (!__reviewsRenderQueued) __reviewsRenderMode = mode;
-
-  if (__reviewsRenderQueued) return;
-  __reviewsRenderQueued = true;
-  requestAnimationFrame(() => {
-    __reviewsRenderQueued = false;
-    const m = __reviewsRenderMode;
-    __reviewsRenderMode = "list";
-    if (m === "full") renderReviewsOnly();
-    else renderReviewsList();
-  });
-}
-
 
 let unsubApp = null;
 let unsubReviews = null;
@@ -404,18 +371,18 @@ function startAppListeners() {
 
   unsubReviews = onValue(ref(db, `apps/${appId}/reviews`), (snap) => {
     reviews = snap.exists() ? (snap.val() || {}) : {};
-    scheduleReviewsRender("full");
+    renderReviewsOnly();
   });
 
   unsubVotes = onValue(ref(db, `apps/${appId}/reviewVotes`), (snap) => {
     reviewVotes = snap.exists() ? (snap.val() || {}) : {};
     voteCounts = computeVoteCounts(reviewVotes);
-    scheduleReviewsRender("list");
+    renderReviewsOnly();
   });
 
   unsubReplies = onValue(ref(db, `apps/${appId}/replies`), (snap) => {
     replies = snap.exists() ? (snap.val() || {}) : {};
-    scheduleReviewsRender("list");
+    renderReviewsOnly();
   });
 
   // whitelist listener is handled by auth state
@@ -668,85 +635,83 @@ function render() {
   renderReviewsOnly();
 }
 
+/* =========================================================
+   REVIEWS UI (PERFORMANCE PATCH)
+   - Batching render with rAF
+   - One-time wiring per host (no per-item listeners)
+   - Pagination (Load more)
+   - Reply editor created on demand (no hidden textareas for all items)
+========================================================= */
+
+const REV_PAGE_SIZE = 30;
+let _revVisible = REV_PAGE_SIZE;
+
+let _revRaf = 0;
+let _revCacheKey = "";
+let _revOrderCache = [];
+
+let _lastReviewsRef = null;
+let _lastVoteCountsRef = null;
+let _reviewsStamp = 0;
+let _votesStamp = 0;
+
+function scheduleRenderReviews() {
+  if (_revRaf) return;
+  _revRaf = requestAnimationFrame(() => {
+    _revRaf = 0;
+    renderReviewsPanelNow();
+  });
+}
+
+// Backward compatible: existing code calls this a lot
 function renderReviewsOnly() {
+  scheduleRenderReviews();
+}
+
+function renderReviewsList() {
+  // wrapper for compatibility
+  scheduleRenderReviews();
+}
+
+function ensureReviewsPanelSkeleton() {
   const host = document.getElementById("reviewsPanel");
-  if (!host) return;
-  // keep pagination sane
-  if (!reviewsVisibleCount || reviewsVisibleCount < REVIEWS_PAGE_SIZE) reviewsVisibleCount = REVIEWS_PAGE_SIZE;
+  if (!host) return null;
 
-  const stats = computeReviewStats(reviews);
-  const distTotal = Math.max(1, stats.count);
-
-  const distRows = [5,4,3,2,1].map((star) => {
-    const c = stats.dist[star-1] || 0;
-    const pct = Math.round((c / distTotal) * 100);
-    const active = reviewFilterStar === star;
-    return `
-      <div class="barRow ${active ? "active" : ""}" data-star="${star}">
-        <div>${star}</div>
-        <div class="bar"><span style="width:${pct}%"></span></div>
-        <div>${c}</div>
-      </div>
-    `;
-  }).join("") + (hasMore ? `
-    <button class="btn" data-act="loadMore" type="button" style="align-self:center">Muat lagi</button>
-  ` : "");
-
-  const me = getMyReview();
-  const meStars = Number(me?.stars || 0);
-  const meCanEdit = currentUser ? canEditReview(me, currentUser.uid) : false;
-  const rem = me && currentUser && !isAdminUid(currentUser.uid) ? remainingEditMs(me) : 0;
-
-  host.innerHTML = `
-    <div class="panelHead">
-      <h3>Rating & Ulasan</h3>
-      <span class="reviewSummary">
-        <span class="ratingNum">${stats.avg.toFixed(1)}</span>
-        ${starsDisplay(stats.avg)}
-        <span>•</span>
-        <span>${fmtNum(stats.count)} ulasan</span>
-      </span>
-    </div>
-
-    <div class="reviewGrid">
-      <div class="reviewStats">
-        <div class="bigRating">
-          <div class="num">${stats.avg.toFixed(1)}</div>
-          <div>${starsDisplay(stats.avg)}</div>
-          <div class="hint">${fmtNum(stats.count)} ulasan</div>
+  // render() can recreate DOM; re-init when host is new
+  if (host.dataset.inited !== "1") {
+    host.dataset.inited = "1";
+    host.innerHTML = `
+      <div class="panelHead">
+        <h3>Rating & Ulasan</h3>
+        <div class="reviewSummary">
+          <span id="reviewCountText">0 ulasan</span>
+          <button class="btn ghost" id="clearFilterBtn" type="button" style="height:28px;padding:0 10px;display:none">Reset</button>
         </div>
-        <div class="bars" id="barsHost">
-          ${distRows}
-          <div class="hint" style="margin-top:6px">
-            <button class="linkBtn" id="clearFilterBtn" type="button">Reset filter</button>
-            <span class="filterPill ${reviewFilterStar ? "show" : ""}" id="filterPill">Filter: ${reviewFilterStar}★</span>
+      </div>
+
+      <div class="reviewGrid">
+        <div class="reviewStats">
+          <div class="bigRating" id="bigRatingBox">
+            <div class="num" id="avgRatingNum">0.0</div>
+            <div id="avgStarsBox"></div>
+            <div class="hint" id="avgHintText">0 ulasan</div>
           </div>
+          <div class="bars" id="barsHost"></div>
         </div>
-      </div>
 
-      <div>
         <div class="myReviewCard">
           <div class="myReviewTop">
             <div class="t">Ulasan kamu</div>
-            <button class="iconBtn" id="editReviewBtn" type="button" ${(!currentUser || !meCanEdit) ? "disabled" : ""} style="${(!currentUser || !meCanEdit) ? "opacity:.5" : ""}">
-              ${iconPencil()}
+            <button class="iconBtn" id="editReviewBtn" type="button" aria-label="Edit ulasan">
+              ${iconEdit()}
             </button>
           </div>
-          <div class="myReviewMeta">
-            ${currentUser ? `
-              <span>${me ? `Rating: ${meStars}★` : "Belum ada ulasan"}</span>
-              <span>•</span>
-              <span>${me ? `Update: ${timeAgo(me.updatedAt || me.createdAt)}` : ""}</span>
-            ` : `Login untuk menulis ulasan.`}
-          </div>
-
-          <div class="${me?.comment ? "myReviewText" : "myReviewEmpty"}">
-            ${currentUser ? (me?.comment ? escapeHtml(me.comment) : "Tulis ulasan kamu...") : "Klik tombol Login Google di atas."}
-          </div>
+          <div class="myReviewMeta" id="myReviewMeta"></div>
+          <div id="myReviewTextBox" class="myReviewEmpty">Klik tombol Login Google di atas.</div>
 
           <div class="editor" id="reviewEditor">
             <div class="rateStars" id="rateStars"></div>
-            <div class="hint" id="reviewHint">${rem > 0 ? `Edit terkunci: <span id="editorCountdown">${Math.ceil(rem/1000)}</span> dtk` : "Silakan isi ulasan."}</div>
+            <div class="hint" id="reviewHint">Silakan isi ulasan.</div>
             <textarea id="reviewText" placeholder="Tulis ulasan..."></textarea>
             <div style="display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;margin-top:10px">
               <button class="btn" id="cancelEditBtn" type="button">Tutup</button>
@@ -755,105 +720,148 @@ function renderReviewsOnly() {
           </div>
         </div>
       </div>
-    </div>
 
-    <div class="reviewsList" id="reviewsList"></div>
-  `;
+      <div class="reviewsList" id="reviewsList"></div>
 
-  // interactions (delegation) - bind once
-  if (!host.__bound) {
-    host.__bound = true;
+      <div class="row" id="reviewsMoreRow" style="justify-content:center">
+        <button class="btn" id="loadMoreReviewsBtn" type="button" style="display:none">Muat lagi</button>
+      </div>
+    `;
 
-    host.addEventListener("click", (ev) => {
-      const bar = ev.target.closest(".barRow");
-      if (bar && host.contains(bar)) {
-        const star = Number(bar.getAttribute("data-star") || "0");
-        reviewFilterStar = reviewFilterStar === star ? 0 : star;
-        reviewsVisibleCount = REVIEWS_PAGE_SIZE;
-        // full re-render (updates active bars + pill)
-        renderReviewsOnly();
-        return;
-      }
-
-      const clear = ev.target.closest("#clearFilterBtn");
-      if (clear) {
-        reviewFilterStar = 0;
-        reviewsVisibleCount = REVIEWS_PAGE_SIZE;
-        renderReviewsOnly();
-        return;
-      }
-
-      const loadMore = ev.target.closest('[data-act="loadMore"]');
-      if (loadMore) {
-        reviewsVisibleCount += REVIEWS_PAGE_SIZE;
-        renderReviewsList();
-        return;
-      }
-
-      const voteBtn = ev.target.closest(".voteBtn");
-      if (voteBtn) {
-        const item = voteBtn.closest(".reviewItem");
-        const rid = item?.getAttribute("data-review");
-        const v = Number(voteBtn.getAttribute("data-v"));
-        if (rid) voteReview(rid, v);
-        return;
-      }
-
-      const toggle = ev.target.closest('[data-act="toggleReply"]');
-      if (toggle) {
-        const item = toggle.closest(".reviewItem");
-        const editor = item?.querySelector(".replyEditor");
-        const ta = editor?.querySelector("textarea");
-        editor?.classList.toggle("hidden");
-        if (editor && !editor.classList.contains("hidden")) {
-          setTimeout(() => ta?.focus(), 0);
-        }
-        return;
-      }
-
-      const cancel = ev.target.closest('[data-act="cancelReply"]');
-      if (cancel) {
-        const item = cancel.closest(".reviewItem");
-        item?.querySelector(".replyEditor")?.classList.add("hidden");
-        return;
-      }
-
-      const send = ev.target.closest('[data-act="sendReply"]');
-      if (send) {
-        const item = send.closest(".reviewItem");
-        const rid = item?.getAttribute("data-review");
-        const editor = item?.querySelector(".replyEditor");
-        const ta = editor?.querySelector("textarea");
-        const txt = (ta?.value || "").trim();
-        (async () => {
-          try {
-            send.disabled = true;
-            await submitReply(rid, txt);
-            if (ta) ta.value = "";
-            editor?.classList.add("hidden");
-          } catch (e) {
-            console.error(e);
-            toast(e?.code === "REPLY_NOT_ALLOWED" ? "Tidak diizinkan membalas." : "Gagal kirim balasan.");
-          } finally {
-            send.disabled = false;
-          }
-        })();
-        return;
-      }
-    }, { passive: true });
+    wireReviewsPanelOnce(host);
   }
 
+  return host;
+}
 
-  // my review editor
-  const editBtn = document.getElementById("editReviewBtn");
-  const editor = document.getElementById("reviewEditor");
-  const rateStars = document.getElementById("rateStars");
-  const reviewText = document.getElementById("reviewText");
-  const cancelBtn = document.getElementById("cancelEditBtn");
-  const submitBtn = document.getElementById("submitReviewBtn");
-  const hintEl = document.getElementById("reviewHint");
+function wireReviewsPanelOnce(host) {
+  if (!host || host.dataset.wired === "1") return;
+  host.dataset.wired = "1";
 
-  let selectedStars = meStars || 5;
+  // Filter bars (delegation)
+  const barsHost = host.querySelector("#barsHost");
+  barsHost?.addEventListener("click", (e) => {
+    const row = e.target?.closest?.(".barRow");
+    if (!row) return;
+    const star = Number(row.getAttribute("data-star") || "0");
+    const next = (reviewFilterStar === star) ? 0 : star;
+    if (next !== reviewFilterStar) {
+      reviewFilterStar = next;
+      _revVisible = REV_PAGE_SIZE;
+      _revCacheKey = "";
+      scheduleRenderReviews();
+    } else {
+      // toggle off
+      reviewFilterStar = 0;
+      _revVisible = REV_PAGE_SIZE;
+      _revCacheKey = "";
+      scheduleRenderReviews();
+    }
+  });
+
+  const clearFilterBtn = host.querySelector("#clearFilterBtn");
+  clearFilterBtn?.addEventListener("click", () => {
+    if (!reviewFilterStar) return;
+    reviewFilterStar = 0;
+    _revVisible = REV_PAGE_SIZE;
+    _revCacheKey = "";
+    scheduleRenderReviews();
+  });
+
+  const moreBtn = host.querySelector("#loadMoreReviewsBtn");
+  moreBtn?.addEventListener("click", () => {
+    _revVisible += REV_PAGE_SIZE;
+    scheduleRenderReviews();
+  });
+
+  // My review editor (wired once per host)
+  initMyReviewEditor(host);
+
+  // Reviews list actions (one listener, no per-item addEventListener)
+  const listEl = host.querySelector("#reviewsList");
+  listEl?.addEventListener("click", async (e) => {
+    const voteBtn = e.target?.closest?.(".voteBtn");
+    if (voteBtn) {
+      const item = voteBtn.closest(".reviewItem");
+      const rid = item?.getAttribute("data-review");
+      if (!rid) return;
+      const v = Number(voteBtn.getAttribute("data-v"));
+      voteReview(rid, v);
+      return;
+    }
+
+    const actBtn = e.target?.closest?.("button[data-act]");
+    if (!actBtn) return;
+    const act = actBtn.getAttribute("data-act");
+    const item = actBtn.closest(".reviewItem");
+    const rid = item?.getAttribute("data-review");
+    if (!rid) return;
+
+    // Lazy-create reply editor when needed
+    if (act === "toggleReply") {
+      const wrap = item.querySelector("[data-reply-wrap]");
+      if (!wrap) return;
+      let editor = wrap.querySelector(".replyEditor");
+      if (!editor) {
+        wrap.innerHTML = `
+          <div class="replyEditor">
+            <textarea placeholder="Tulis balasan..."></textarea>
+            <div class="row">
+              <button class="btn" data-act="cancelReply" type="button">Batal</button>
+              <button class="btn primary" data-act="sendReply" type="button">Kirim</button>
+            </div>
+          </div>
+        `;
+        editor = wrap.querySelector(".replyEditor");
+      } else {
+        editor.classList.toggle("hidden");
+      }
+      const ta = editor?.querySelector("textarea");
+      if (editor && !editor.classList.contains("hidden")) {
+        setTimeout(() => ta?.focus(), 0);
+      }
+      return;
+    }
+
+    if (act === "cancelReply") {
+      const editor = actBtn.closest(".replyEditor");
+      editor?.classList.add("hidden");
+      return;
+    }
+
+    if (act === "sendReply") {
+      const editor = actBtn.closest(".replyEditor");
+      const ta = editor?.querySelector("textarea");
+      const txt = (ta?.value || "").trim();
+      const send = actBtn;
+
+      try {
+        send.disabled = true;
+        await submitReply(rid, txt);
+        if (ta) ta.value = "";
+        editor?.classList.add("hidden");
+      } catch (err) {
+        console.error(err);
+        toast(err?.code === "REPLY_NOT_ALLOWED" ? "Tidak diizinkan membalas." : "Gagal kirim balasan.");
+      } finally {
+        send.disabled = false;
+      }
+      return;
+    }
+  }, { passive: true });
+}
+
+function initMyReviewEditor(host) {
+  const editBtn = host.querySelector("#editReviewBtn");
+  const editor = host.querySelector("#reviewEditor");
+  const rateStars = host.querySelector("#rateStars");
+  const reviewText = host.querySelector("#reviewText");
+  const cancelBtn = host.querySelector("#cancelEditBtn");
+  const submitBtn = host.querySelector("#submitReviewBtn");
+  const hintEl = host.querySelector("#reviewHint");
+
+  let selectedStars = 5;
+  let countdownTimer = null;
 
   function renderStarPicker() {
     if (!rateStars) return;
@@ -875,6 +883,37 @@ function renderReviewsOnly() {
     }
   }
 
+  function stopCountdown() {
+    if (countdownTimer) {
+      clearInterval(countdownTimer);
+      countdownTimer = null;
+    }
+  }
+
+  function startCountdown(mine) {
+    stopCountdown();
+    if (!mine || !currentUser || isAdminUid(currentUser.uid)) {
+      if (hintEl) hintEl.textContent = "Silakan isi ulasan.";
+      if (submitBtn) submitBtn.disabled = false;
+      return;
+    }
+
+    const tick = () => {
+      const r = remainingEditMs(mine);
+      if (!hintEl) return;
+      if (r > 0) {
+        hintEl.innerHTML = `Edit terkunci: <span id="editorCountdown">${Math.ceil(r/1000)}</span> dtk`;
+        if (submitBtn) submitBtn.disabled = true;
+      } else {
+        hintEl.textContent = "Silakan isi ulasan.";
+        if (submitBtn) submitBtn.disabled = false;
+        stopCountdown();
+      }
+    };
+    tick();
+    countdownTimer = setInterval(tick, 1000);
+  }
+
   function openEditor() {
     if (!currentUser) {
       toast("Login dulu.");
@@ -887,35 +926,14 @@ function renderReviewsOnly() {
     if (reviewText) reviewText.value = mine?.comment || "";
     editor.classList.add("show");
     renderStarPicker();
-    // cooldown countdown (simple)
-    if (mine && currentUser && !isAdminUid(currentUser.uid)) {
-      clearInterval(window.__reviewCooldownTimer);
-      const tick = () => {
-        const r = remainingEditMs(mine);
-        if (!hintEl) return;
-        if (r > 0) {
-          hintEl.innerHTML = `Edit terkunci: <span id="editorCountdown">${Math.ceil(r/1000)}</span> dtk`;
-          if (submitBtn) submitBtn.disabled = true;
-        } else {
-          hintEl.textContent = "Silakan isi ulasan.";
-          if (submitBtn) submitBtn.disabled = false;
-          clearInterval(window.__reviewCooldownTimer);
-          window.__reviewCooldownTimer = null;
-        }
-      };
-      tick();
-      window.__reviewCooldownTimer = setInterval(tick, 1000);
-    } else {
-      clearInterval(window.__reviewCooldownTimer);
-      window.__reviewCooldownTimer = null;
-    }
+    startCountdown(mine);
   }
 
   editBtn?.addEventListener("click", openEditor);
+
   cancelBtn?.addEventListener("click", () => {
     editor?.classList.remove("show");
-    clearInterval(window.__reviewCooldownTimer);
-    window.__reviewCooldownTimer = null;
+    stopCountdown();
   });
 
   submitBtn?.addEventListener("click", async () => {
@@ -928,27 +946,37 @@ function renderReviewsOnly() {
       submitBtn.disabled = true;
       await submitReview(selectedStars, txt);
       editor?.classList.remove("show");
-      clearInterval(window.__reviewCooldownTimer);
-      window.__reviewCooldownTimer = null;
     } catch (e) {
       console.error(e);
-      if (e?.remainMs) {
-        toast(`Tunggu ${Math.ceil(e.remainMs/1000)} detik.`);
-      } else {
-        toast("Gagal simpan ulasan.");
-      }
+      if (e?.remainMs) toast(`Tunggu ${Math.ceil(e.remainMs/1000)} detik.`);
+      else toast("Gagal simpan ulasan.");
     } finally {
       submitBtn.disabled = false;
     }
   });
 
-  // render reviews list
-  renderReviewsList();
+  // Keep reference for later update
+  host.__reviewEditorApi = { startCountdown, stopCountdown };
 }
 
-function renderReviewsList() {
-  const listEl = document.getElementById("reviewsList");
-  if (!listEl) return;
+function getSortedReviewUids() {
+  // detect snapshot changes without touching startAppListeners
+  if (reviews !== _lastReviewsRef) {
+    _lastReviewsRef = reviews;
+    _reviewsStamp += 1;
+    _revVisible = Math.max(_revVisible, REV_PAGE_SIZE);
+    // when reviews change a lot, reset "load more" to keep UI snappy
+    if (_revVisible > REV_PAGE_SIZE * 3) _revVisible = REV_PAGE_SIZE * 2;
+    _revCacheKey = "";
+  }
+  if (voteCounts !== _lastVoteCountsRef) {
+    _lastVoteCountsRef = voteCounts;
+    _votesStamp += 1;
+    _revCacheKey = "";
+  }
+
+  const key = `${reviewFilterStar}|${_reviewsStamp}|${reviewFilterStar ? 0 : _votesStamp}`;
+  if (key === _revCacheKey) return _revOrderCache;
 
   const entries = Object.entries(reviews || {})
     .filter(([uid, r]) => Number(r?.stars) >= 1 && Number(r?.stars) <= 5);
@@ -957,7 +985,7 @@ function renderReviewsList() {
     ? entries.filter(([uid, r]) => Number(r.stars) === reviewFilterStar)
     : entries;
 
-  const sorted = filtered.sort((a, b) => {
+  filtered.sort((a, b) => {
     const [auid, ar] = a;
     const [buid, br] = b;
     const as = voteCounts?.[auid]?.score ?? 0;
@@ -968,15 +996,109 @@ function renderReviewsList() {
     return bt - at;
   });
 
-  if (!sorted.length) {
+  _revOrderCache = filtered.map(([uid]) => uid);
+  _revCacheKey = key;
+  return _revOrderCache;
+}
+
+function renderReviewsPanelNow() {
+  const host = ensureReviewsPanelSkeleton();
+  if (!host) return;
+
+  const stats = computeReviewStats(reviews);
+  const distTotal = Math.max(1, stats.count);
+
+  // Summary
+  const countEl = host.querySelector("#reviewCountText");
+  if (countEl) countEl.textContent = `${stats.count} ulasan`;
+
+  const avgNum = host.querySelector("#avgRatingNum");
+  if (avgNum) avgNum.textContent = stats.avg.toFixed(1);
+
+  const avgStars = host.querySelector("#avgStarsBox");
+  if (avgStars) avgStars.innerHTML = starsDisplay(stats.avg);
+
+  const avgHint = host.querySelector("#avgHintText");
+  if (avgHint) avgHint.textContent = `${stats.count} ulasan`;
+
+  // Filter reset button
+  const clearFilterBtn = host.querySelector("#clearFilterBtn");
+  if (clearFilterBtn) clearFilterBtn.style.display = reviewFilterStar ? "inline-flex" : "none";
+
+  // Bars
+  const barsHost = host.querySelector("#barsHost");
+  if (barsHost) {
+    barsHost.innerHTML = [5,4,3,2,1].map((star) => {
+      const c = stats.dist[star-1] || 0;
+      const pct = Math.round((c / distTotal) * 100);
+      const active = reviewFilterStar === star;
+      return `
+        <div class="barRow ${active ? "active" : ""}" data-star="${star}">
+          <div>${star}</div>
+          <div class="bar"><span style="width:${pct}%"></span></div>
+          <div>${c}</div>
+        </div>
+      `;
+    }).join("");
+  }
+
+  // My review card
+  const me = getMyReview();
+  const meta = host.querySelector("#myReviewMeta");
+  const box = host.querySelector("#myReviewTextBox");
+  const editBtn = host.querySelector("#editReviewBtn");
+
+  if (!currentUser) {
+    if (meta) meta.textContent = "Login untuk memberi ulasan.";
+    if (box) {
+      box.className = "myReviewEmpty";
+      box.textContent = "Klik tombol Login Google di atas.";
+    }
+    if (editBtn) editBtn.disabled = false;
+  } else {
+    const rem = remainingEditMs(me);
+    const meStars = Number(me?.stars || 0);
+
+    const metaText = me
+      ? `${meStars.toFixed(1)}★ • ${timeAgo(me.updatedAt || me.createdAt)}${rem > 0 ? ` • edit: ${Math.ceil(rem/1000)} dtk` : ""}`
+      : "Belum ada ulasan kamu.";
+
+    if (meta) meta.textContent = metaText;
+
+    if (box) {
+      box.className = me?.comment ? "myReviewText" : "myReviewEmpty";
+      box.textContent = me?.comment ? String(me.comment) : "Tulis ulasan kamu...";
+    }
+
+    if (editBtn) editBtn.disabled = false;
+
+    // If editor is open, keep countdown accurate
+    if (host.__reviewEditorApi?.startCountdown && (host.querySelector("#reviewEditor")?.classList.contains("show"))) {
+      host.__reviewEditorApi.startCountdown(me);
+    }
+  }
+
+  // Render list (paged)
+  renderReviewsListNow(host);
+}
+
+function renderReviewsListNow(host) {
+  const listEl = host.querySelector("#reviewsList");
+  if (!listEl) return;
+
+  const uids = getSortedReviewUids();
+  if (!uids.length) {
     listEl.innerHTML = `<div class="state">Belum ada ulasan.</div>`;
+    const moreBtn = host.querySelector("#loadMoreReviewsBtn");
+    if (moreBtn) moreBtn.style.display = "none";
     return;
   }
 
-  const view = sorted.slice(0, Math.max(0, reviewsVisibleCount || REVIEWS_PAGE_SIZE));
-  const hasMore = view.length < sorted.length;
+  const take = Math.min(_revVisible, uids.length);
+  const slice = uids.slice(0, take);
 
-  listEl.innerHTML = view.map(([uid, r]) => {
+  listEl.innerHTML = slice.map((uid) => {
+    const r = (reviews || {})[uid] || {};
     const vc = voteCounts?.[uid] || { like: 0, dislike: 0, score: 0 };
     const my = myVote(uid);
     const rs = Number(r.stars || 0);
@@ -985,18 +1107,19 @@ function renderReviewsList() {
     const replObj = replies?.[uid] || {};
     const replArr = Object.values(replObj || {}).sort((a,b)=>Number(a.createdAt||0)-Number(b.createdAt||0));
     const replHtml = replArr.length
-      ? `<div class="replySection">
-          <div class="replyList">
-            ${replArr.map((x)=>`
-              <div class="replyItem">
-                <div class="replyTop">
-                  <div class="replyName">${escapeHtml(x.userName || (x.role==="admin" ? "Admin" : "User"))}${x.role==="admin" ? ` <span class="adminBadge small">ADMIN</span>` : ""}</div>
+      ? `<div class="replies">
+          ${replArr.map((x)=>`
+            <div class="replyItem">
+              <img class="rAvatar" src="${escapeHtml(x.userPhoto || "icon/default.png")}" alt="avatar" loading="lazy" decoding="async"/>
+              <div class="rMain">
+                <div class="rTop">
+                  <div class="rName">${escapeHtml(x.userName || "User")}${x.role === "admin" ? ` <span class="adminBadge small">ADMIN</span>` : ""}</div>
                   <div class="rTime">${timeAgo(x.updatedAt || x.createdAt)}</div>
                 </div>
                 <div class="replyText">${escapeHtml(x.text || "")}</div>
               </div>
-            `).join("")}
-          </div>
+            </div>
+          `).join("")}
         </div>`
       : "";
 
@@ -1013,10 +1136,12 @@ function renderReviewsList() {
             </div>
             <div class="rTime">${escapeHtml(rTime)}</div>
           </div>
+
           <div class="reviewSummary" style="margin-top:4px">
             <span class="ratingNum">${rs.toFixed(1)}</span>
             ${starsDisplay(rs)}
           </div>
+
           <div class="rComment">${escapeHtml(r.comment || "")}</div>
 
           <div class="voteRow">
@@ -1029,13 +1154,7 @@ function renderReviewsList() {
             <div class="replyActions">
               <button class="replyBtn" data-act="toggleReply" type="button">Balas</button>
             </div>
-            <div class="replyEditor hidden">
-              <textarea placeholder="Tulis balasan..."></textarea>
-              <div class="row">
-                <button class="btn" data-act="cancelReply" type="button">Batal</button>
-                <button class="btn primary" data-act="sendReply" type="button">Kirim</button>
-              </div>
-            </div>
+            <div data-reply-wrap></div>
           ` : ""}
 
           ${replHtml}
@@ -1043,6 +1162,12 @@ function renderReviewsList() {
       </div>
     `;
   }).join("");
+
+  const moreBtn = host.querySelector("#loadMoreReviewsBtn");
+  if (moreBtn) {
+    moreBtn.style.display = (take < uids.length) ? "inline-flex" : "none";
+    moreBtn.textContent = (take < uids.length) ? `Muat lagi (${take}/${uids.length})` : "Muat lagi";
+  }
 }
 
 // boot
